@@ -151,6 +151,10 @@ def check_pages():
             nest.feed(text)
             if nest.nested:
                 warns.append(f"{rel(page)}: {nest.nested} блок(ов) .block вложены друг в друга — не закрыт <div>")
+            # внутри незакрытой таблицы браузер игнорирует </div> — следующие блоки «проваливаются» внутрь
+            plain = re.sub(r"<pre\b.*?</pre>|<script\b.*?</script>|<!--.*?-->", "", text, flags=re.S | re.I)
+            if len(re.findall(r"<table\b", plain, re.I)) != len(re.findall(r"</table\s*>", plain, re.I)):
+                warns.append(f"{rel(page)}: незакрытый <table> — ломает вёрстку следующих блоков")
     report(errs, warns, f"ссылок проверено: {total} (страниц: {len(pages)}), разметка кода в порядке")
 
 

@@ -302,21 +302,22 @@ for epoch in range(num_epochs):
       <li>Практические применения</li>
       <li>Метрики и оценка качества</li>
     </ul>
-    <pre><code># Wasserstein GAN (WGAN) Loss
-import torch
+    <pre><code># Правила архитектуры DCGAN (Radford et al., 2015)
+# • вместо пулинга — свёртки со stride 2 (D) и транспонированные свёртки (G)
+# • BatchNorm в G и D (кроме выхода G и входа D)
+# • без полносвязных скрытых слоёв
+# • G: ReLU, на выходе Tanh;  D: LeakyReLU(0.2)
+import torch.nn as nn
 
-def wasserstein_loss_d(real_output, fake_output):
-    """Discriminator loss для WGAN"""
-    return -(torch.mean(real_output) - torch.mean(fake_output))
+def weights_init(m):
+    """Инициализация весов из статьи DCGAN: N(0, 0.02)."""
+    if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
+        nn.init.normal_(m.weight, 0.0, 0.02)
+    elif isinstance(m, nn.BatchNorm2d):
+        nn.init.normal_(m.weight, 1.0, 0.02)
+        nn.init.zeros_(m.bias)
 
-def wasserstein_loss_g(fake_output):
-    """Generator loss для WGAN"""
-    return -torch.mean(fake_output)
-
-# Weight clipping для WGAN
-def clip_weights(model, clip_value=0.01):
-    for p in model.parameters():
-        p.data.clamp_(-clip_value, clip_value)</code></pre>
+# netG.apply(weights_init); netD.apply(weights_init)</code></pre>
   </div>
   <div class="block">
     <h2>🔷 3. Generator Network</h2>
@@ -332,16 +333,31 @@ def clip_weights(model, clip_value=0.01):
       <li>Практические применения</li>
       <li>Метрики и оценка качества</li>
     </ul>
-    <pre><code># Data Augmentation для GAN
-from torchvision import transforms
+    <pre><code>import torch
+import torch.nn as nn
 
-transform = transforms.Compose([
-    transforms.Resize(64),
-    transforms.RandomHorizontalFlip(),
-    transforms.ColorJitter(brightness=0.2, contrast=0.2),
-    transforms.ToTensor(),
-    transforms.Normalize([0.5], [0.5])
-])</code></pre>
+class Generator(nn.Module):
+    """z (nz×1×1) → изображение 3×64×64 в диапазоне [-1, 1]."""
+    def __init__(self, nz=100, ngf=64, nc=3):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.ConvTranspose2d(nz, ngf * 8, 4, 1, 0, bias=False),      # 4×4
+            nn.BatchNorm2d(ngf * 8), nn.ReLU(True),
+            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False), # 8×8
+            nn.BatchNorm2d(ngf * 4), nn.ReLU(True),
+            nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, 2, 1, bias=False), # 16×16
+            nn.BatchNorm2d(ngf * 2), nn.ReLU(True),
+            nn.ConvTranspose2d(ngf * 2, ngf, 4, 2, 1, bias=False),     # 32×32
+            nn.BatchNorm2d(ngf), nn.ReLU(True),
+            nn.ConvTranspose2d(ngf, nc, 4, 2, 1, bias=False),          # 64×64
+            nn.Tanh(),
+        )
+
+    def forward(self, z):
+        return self.net(z)
+
+z = torch.randn(16, 100, 1, 1)
+fake = Generator()(z)          # torch.Size([16, 3, 64, 64])</code></pre>
   </div>
   <div class="block">
     <h2>🔷 4. Discriminator Network</h2>
@@ -357,300 +373,27 @@ transform = transforms.Compose([
       <li>Практические применения</li>
       <li>Метрики и оценка качества</li>
     </ul>
-    <pre><code># Conditional GAN Implementation
-import torch
-import torch.nn as nn
+    <pre><code>import torch.nn as nn
 
-class ConditionalGenerator(nn.Module):
-    def __init__(self, latent_dim, num_classes, img_dim):
+class Discriminator(nn.Module):
+    """Изображение 3×64×64 → вероятность «настоящее»."""
+    def __init__(self, ndf=64, nc=3):
         super().__init__()
-        self.label_emb = nn.Embedding(num_classes, num_classes)
-        
-        self.model = nn.Sequential(
-            nn.Linear(latent_dim + num_classes, 128),
-            nn.LeakyReLU(0.2),
-            nn.Linear(128, 256),
-            nn.BatchNorm1d(256),
-            nn.LeakyReLU(0.2),
-            nn.Linear(256, 512),
-            nn.BatchNorm1d(512),
-            nn.LeakyReLU(0.2),
-            nn.Linear(512, img_dim),
-            nn.Tanh()
+        self.net = nn.Sequential(
+            nn.Conv2d(nc, ndf, 4, 2, 1, bias=False),                   # 32×32
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),              # 16×16
+            nn.BatchNorm2d(ndf * 2), nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(ndf * 2, ndf * 4, 4, 2, 1, bias=False),          # 8×8
+            nn.BatchNorm2d(ndf * 4), nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(ndf * 4, ndf * 8, 4, 2, 1, bias=False),          # 4×4
+            nn.BatchNorm2d(ndf * 8), nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(ndf * 8, 1, 4, 1, 0, bias=False),                # 1×1
+            nn.Sigmoid(),   # с nn.BCEWithLogitsLoss сигмоиду убирают
         )
-    
-    def forward(self, z, labels):
-        label_input = self.label_emb(labels)
-        x = torch.cat([z, label_input], dim=1)
-        return self.model(x)
 
-# Conditional Discriminator
-class ConditionalDiscriminator(nn.Module):
-    def __init__(sel<pre><code># Mode Collapse Detection and Prevention
-import numpy as np
-
-def check_mode_collapse(generated_samples, num_modes=10):
-    """
-    Проверяем разнообразие генерированных образцов
-    """
-    from sklearn.cluster import KMeans
-    
-    kmeans = KMeans(n_clusters=num_modes)
-    kmeans.fit(generated_samples)
-    
-    # Считаем распределение по кластерам
-    unique, counts = np.unique(kmeans.labels_, return_counts=True)
-    distribution = counts / len(generated_samples)
-    
-    # Если больше 80% в одном кластере - вероятный mode collapse
-    if max(distribution) > 0.8:
-        print("⚠ Warning: Possible mode collapse detected!")
-        return True
-    return False
-
-# Minibatch Discrimination для борьбы с mode collapse
-class MinibatchDiscrimination(nn.Module):
-    def __init__(self, in_features, out_features, kernel_dims):
-        super().__init__()
-        self.T = nn.Pa<pre><code># GAN Evaluation Metrics
-import torch
-from scipy.linalg import sqrtm
-import numpy as np
-
-def calculate_fid(real_features, generated_features):
-    """
-    Fréchet Inception Distance (FID)
-    Меньше = лучше (более похоже на реальные данные)
-    """
-    # Вычисляем mean и covariance
-    mu1, sigma1 = real_features.mean(axis=0), np.cov(real_features, rowvar=False)
-    mu2, sigma2 = generated_features.mean(axis=0), np.cov(generated_features, rowvar=False)
-    
-    # FID формула
-    diff = mu1 - mu2
-    covmean = sqrtm(sigma1.dot(sigma2))
-    
-    if np.iscomplexobj(covmean):
-        covmean = covmean.real
-    
-    fid = diff.dot(diff) + np.trace(sigma1 + sigma2 - 2 * covmean)
-    return fid
-
-def inception_score(generated_images, model, splits=10):
-    """
-    Inception Score (IS)
-    Больше = лучше (более разнообразные и качественные)
-    """
-    # Получаем предска<pre><code># Conditional GAN Implementation
-import torch
-import torch.nn as nn
-
-class ConditionalGenerator(nn.Module):
-    def __init__(self, latent_dim, num_classes, img_dim):
-        super().__init__()
-        self.label_emb = nn.Embedding(num_classes, num_classes)
-        
-        self.model = nn.Sequential(
-            nn.Linear(latent_dim + num_classes, 128),
-            nn.LeakyReLU(0.2),
-            nn.Linear(128, 256),
-            nn.BatchNorm1d(256),
-            nn.LeakyReLU(0.2),
-            nn.Linear(256, 512),
-            nn.BatchNorm1d(512),
-            nn.LeakyReLU(0.2),
-            nn.Linear(512, img_dim),
-            nn.Tanh()
-        )
-    
-    def forward(self, z, labels):
-        label_input = self.label_emb(labels)
-        x = torch.cat([z, label_input], dim=1)
-        return self.model(x)
-
-# Conditional Discriminator
-class ConditionalDiscriminato<pre><code># Mode Collapse Detection and Prevention
-import numpy as np
-
-def check_mode_collapse(generated_samples, num_modes=10):
-    """
-    Проверяем разнообразие генерированных образцов
-    """
-    from sklearn.cluster import KMeans
-    
-    kmeans = KMeans(n_clusters=num_modes)
-    kmeans.fit(generated_samples)
-    
-    # Считаем распределение по кластерам
-    unique, counts = np.unique(kmeans.labels_, return_counts=True)
-    distribution = counts / len(generated_samples)
-    
-    # Если больше 80% в одном кластере - вероятный mode collapse
-    if max(distribution) > 0.8:
-        print("⚠ Warning: Possible mode collapse detected!")
-        return True
-    return False
-
-# Minibatch Discrimination для борьбы с mode collapse
-class MinibatchDiscrimination(nn.Module):
-    def __init__(self, in_features, out_features, kernel_dims):
-        super().__init__()
-        self.T = nn.Parameter(t<pre><code># GAN Evaluation Metrics
-import torch
-from scipy.linalg import sqrtm
-import numpy as np
-
-def calculate_fid(real_features, generated_features):
-    """
-    Fréchet Inception Distance (FID)
-    Меньше = лучше (более похоже на реальные данные)
-    """
-    # Вычисляем mean и covariance
-    mu1, sigma1 = real_features.mean(axis=0), np.cov(real_features, rowvar=False)
-    mu2, sigma2 = generated_features.mean(axis=0), np.cov(generated_features, rowvar=False)
-    
-    # FID формула
-    diff = mu1 - mu2
-    covmean = sqrtm(sigma1.dot(sigma2))
-    
-    if np.iscomplexobj(covmean):
-        covmean = covmean.real
-    
-    fid = diff.dot(diff) + np.trace(sigma1 + sigma2 - 2 * covmean)
-    return fid
-
-def inception_score(generated_images, model, splits=10):
-    """
-    Inception Score (IS)
-    Больше = лучше (более разнообразные и качественные)
-    """
-    # Получаем предсказани<pre><code># Conditional GAN Implementation
-import torch
-import torch.nn as nn
-
-class ConditionalGenerator(nn.Module):
-    def __init__(self, latent_dim, num_classes, img_dim):
-        super().__init__()
-        self.label_emb = nn.Embedding(num_classes, num_classes)
-        
-        self.model = nn.Sequential(
-            nn.Linear(latent_dim + num_classes, 128),
-            nn.LeakyReLU(0.2),
-            nn.Linear(128, 256),
-            nn.BatchNorm1d(256),
-            nn.LeakyReLU(0.2),
-            nn.Linear(256, 512),
-            nn.BatchNorm1d(512),
-            nn.LeakyReLU(0.2),
-            nn.Linear(512, img_dim),
-            nn.Tanh()
-        )
-    
-    def forward(self, z, labels):
-        label_input = self.label_emb(labels)
-        x = torch.cat([z, label_input], dim=1)
-        return self.model(x)
-
-# Conditional Discriminator
-class ConditionalDiscriminator(nn.Module):
- <pre><code># Mode Collapse Detection and Prevention
-import numpy as np
-
-def check_mode_collapse(generated_samples, num_modes=10):
-    """
-    Проверяем разнообразие генерированных образцов
-    """
-    from sklearn.cluster import KMeans
-    
-    kmeans = KMeans(n_clusters=num_modes)
-    kmeans.fit(generated_samples)
-    
-    # Считаем распределение по кластерам
-    unique, counts = np.unique(kmeans.labels_, return_counts=True)
-    distribution = counts / len(generated_samples)
-    
-    # Если больше 80% в одном кластере - вероятный mode collapse
-    if max(distribution) > 0.8:
-        print("⚠ Warning: Possible mode collapse detected!")
-        return True
-    return False
-
-# Minibatch Discrimination для борьбы с mode collapse
-class MinibatchDiscrimination(nn.Module):
-    def __init__(self, in_features, out_features, kernel_dims):
-        super().__init__(<pre><code># GAN Evaluation Metrics
-import torch
-from scipy.linalg import sqrtm
-import numpy as np
-
-def calculate_fid(real_features, generated_features):
-    """
-    Fréchet Inception Distance (FID)
-    Меньше = лучше (более похоже на реальные данные)
-    """
-    # Вычисляем mean и covariance
-    mu1, sigma1 = real_features.mean(axis=0), np.cov(real_features, rowvar=False)
-    mu2, sigma2 = generated_features.mean(axis=0), np.cov(generated_features, rowvar=False)
-    
-    # FID формула
-    diff = mu1 - mu2
-    covmean = sqrtm(sigma1.dot(sigma2))
-    
-    if np.iscomplexobj(covmean):
-        covmean = covmean.real
-    
-    fid = diff.dot(diff) + np.trace(sigma1 + sigma2 - 2 * covmean)
-    return fid
-
-def inception_score(generated_images, model, splits=10):
-    """
-    Inception Score (IS)
-    Больше = лучше (более разнообразные и качественные)
-    """
-    # Получаем предсказания Inception модели
-    with torch.no_grad():
-        preds = model(generated_images)
-    
-    # Вычисляем IS
-    split_scores = []
-    for k in range(splits):
-        part = preds[k * (len(preds) // splits): (k + 1) * (len(preds) // splits)]
-        py = part.mean(axis=0)
-        scores = []
-        for p in part:
-            scores.append((p * (np.log(p) - np.log(py))).sum())
-        split_scores.append(np.exp(np.mean(scores)))
-    
-    return np.mean(split_scores), np.std(split_scores)</code></pre>minibatch_features = torch.sum(torch.exp(-abs_diffs), dim=0)
-        return torch.cat([x, minibatch_features], dim=1)</code></pre>56, 1),
-            nn.Sigmoid()
-        )
-    
-    def forward(self, img, labels):
-        label_input = self.label_emb(labels)
-        x = torch.cat([img, label_input], dim=1)
-        return self.model(x)</code></pre>) - np.log(py))).sum())
-        split_scores.append(np.exp(np.mean(scores)))
-    
-    return np.mean(split_scores), np.std(split_scores)</code></pre>sum(torch.exp(-abs_diffs), dim=0)
-        return torch.cat([x, minibatch_features], dim=1)</code></pre>   nn.Linear(256, 1),
-            nn.Sigmoid()
-        )
-    
-    def forward(self, img, labels):
-        label_input = self.label_emb(labels)
-        x = torch.cat([img, label_input], dim=1)
-        return self.model(x)</code></pre>np.log(p) - np.log(py))).sum())
-        split_scores.append(np.exp(np.mean(scores)))
-    
-    return np.mean(split_scores), np.std(split_scores)</code></pre> torch.sum(torch.exp(-abs_diffs), dim=0)
-        return torch.cat([x, minibatch_features], dim=1)</code></pre>Sigmoid()
-        )
-    
-    def forward(self, img, labels):
-        label_input = self.label_emb(labels)
-        x = torch.cat([img, label_input], dim=1)
-        return self.model(x)</code></pre>
+    def forward(self, x):
+        return self.net(x).view(-1)</code></pre>
   </div>
   <div class="block">
     <h2>🔷 5. Training Process</h2>
@@ -666,22 +409,28 @@ def inception_score(generated_images, model, splits=10):
       <li>Практические применения</li>
       <li>Метрики и оценка качества</li>
     </ul>
-    <pre><code># Progressive Growing GAN
-class ProgressiveGenerator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.blocks = nn.ModuleList([
-            self._block(512, 512),
-            self._block(512, 256),
-            self._block(256, 128),
-        ])
-    
-    def _block(self, in_ch, out_ch):
-        return nn.Sequential(
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(in_ch, out_ch, 3, padding=1),
-            nn.LeakyReLU(0.2)
-        )</code></pre>
+    <pre><code>import torch
+import torch.nn as nn
+
+criterion = nn.BCELoss()
+optD = torch.optim.Adam(netD.parameters(), lr=2e-4, betas=(0.5, 0.999))
+optG = torch.optim.Adam(netG.parameters(), lr=2e-4, betas=(0.5, 0.999))
+
+for epoch in range(num_epochs):
+    for real, _ in dataloader:
+        real = real.to(device)
+        b = real.size(0)
+        ones, zeros = torch.ones(b, device=device), torch.zeros(b, device=device)
+
+        # 1) Дискриминатор: max log D(x) + log(1 − D(G(z)))
+        z = torch.randn(b, 100, 1, 1, device=device)
+        fake = netG(z)
+        loss_D = criterion(netD(real), ones) + criterion(netD(fake.detach()), zeros)
+        optD.zero_grad(); loss_D.backward(); optD.step()
+
+        # 2) Генератор: max log D(G(z)) — «non-saturating» вариант
+        loss_G = criterion(netD(fake), ones)
+        optG.zero_grad(); loss_G.backward(); optG.step()</code></pre>
   </div>
   <div class="block">
     <h2>🔷 6. Conditional GAN</h2>
@@ -697,21 +446,38 @@ class ProgressiveGenerator(nn.Module):
       <li>Практические применения</li>
       <li>Метрики и оценка качества</li>
     </ul>
-    <pre><code># Wasserstein GAN (WGAN) Loss
-import torch
+    <pre><code>import torch
+import torch.nn as nn
 
-def wasserstein_loss_d(real_output, fake_output):
-    """Discriminator loss для WGAN"""
-    return -(torch.mean(real_output) - torch.mean(fake_output))
+class CondGenerator(nn.Module):
+    """G(z, y): к шуму добавляется эмбеддинг метки класса."""
+    def __init__(self, nz=100, n_classes=10, img_dim=28 * 28):
+        super().__init__()
+        self.label_emb = nn.Embedding(n_classes, n_classes)
+        self.net = nn.Sequential(
+            nn.Linear(nz + n_classes, 256), nn.LeakyReLU(0.2),
+            nn.Linear(256, 512), nn.BatchNorm1d(512), nn.LeakyReLU(0.2),
+            nn.Linear(512, img_dim), nn.Tanh(),
+        )
 
-def wasserstein_loss_g(fake_output):
-    """Generator loss для WGAN"""
-    return -torch.mean(fake_output)
+    def forward(self, z, labels):
+        return self.net(torch.cat([z, self.label_emb(labels)], dim=1))
 
-# Weight clipping для WGAN
-def clip_weights(model, clip_value=0.01):
-    for p in model.parameters():
-        p.data.clamp_(-clip_value, clip_value)</code></pre>
+class CondDiscriminator(nn.Module):
+    """D(x, y): получает и изображение, и метку."""
+    def __init__(self, n_classes=10, img_dim=28 * 28):
+        super().__init__()
+        self.label_emb = nn.Embedding(n_classes, n_classes)
+        self.net = nn.Sequential(
+            nn.Linear(img_dim + n_classes, 512), nn.LeakyReLU(0.2),
+            nn.Linear(512, 256), nn.LeakyReLU(0.2),
+            nn.Linear(256, 1), nn.Sigmoid(),
+        )
+
+    def forward(self, img, labels):
+        return self.net(torch.cat([img.view(img.size(0), -1), self.label_emb(labels)], dim=1))
+
+# Генерация цифры «7»: G(torch.randn(16, 100), torch.full((16,), 7))</code></pre>
   </div>
   <div class="block">
     <h2>🔷 7. Loss Functions</h2>
@@ -727,16 +493,27 @@ def clip_weights(model, clip_value=0.01):
       <li>Практические применения</li>
       <li>Метрики и оценка качества</li>
     </ul>
-    <pre><code># Data Augmentation для GAN
-from torchvision import transforms
+    <pre><code>import torch
+import torch.nn.functional as F
 
-transform = transforms.Compose([
-    transforms.Resize(64),
-    transforms.RandomHorizontalFlip(),
-    transforms.ColorJitter(brightness=0.2, contrast=0.2),
-    transforms.ToTensor(),
-    transforms.Normalize([0.5], [0.5])
-])</code></pre>
+# Стандартная GAN (BCE на логитах)
+def d_loss_bce(real_logits, fake_logits):
+    return (F.binary_cross_entropy_with_logits(real_logits, torch.ones_like(real_logits)) +
+            F.binary_cross_entropy_with_logits(fake_logits, torch.zeros_like(fake_logits)))
+
+def g_loss_bce(fake_logits):                      # non-saturating: max log D(G(z))
+    return F.binary_cross_entropy_with_logits(fake_logits, torch.ones_like(fake_logits))
+
+# Wasserstein GAN с gradient penalty (WGAN-GP): у критика нет сигмоиды
+def d_loss_wgan_gp(critic, real, fake, lam=10.0):
+    eps = torch.rand(real.size(0), 1, 1, 1, device=real.device)
+    mix = (eps * real + (1 - eps) * fake).requires_grad_(True)
+    grad = torch.autograd.grad(critic(mix).sum(), mix, create_graph=True)[0]
+    gp = ((grad.flatten(1).norm(2, dim=1) - 1) ** 2).mean()
+    return critic(fake).mean() - critic(real).mean() + lam * gp
+
+def g_loss_wgan(critic, fake):
+    return -critic(fake).mean()</code></pre>
   </div>
   <div class="block">
     <h2>🔷 8. Training Tips</h2>
@@ -752,22 +529,25 @@ transform = transforms.Compose([
       <li>Практические применения</li>
       <li>Метрики и оценка качества</li>
     </ul>
-    <pre><code># Progressive Growing GAN
-class ProgressiveGenerator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.blocks = nn.ModuleList([
-            self._block(512, 512),
-            self._block(512, 256),
-            self._block(256, 128),
-        ])
-    
-    def _block(self, in_ch, out_ch):
-        return nn.Sequential(
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(in_ch, out_ch, 3, padding=1),
-            nn.LeakyReLU(0.2)
-        )</code></pre>
+    <pre><code>import torch
+import torch.nn as nn
+
+# 1. One-sided label smoothing: метки «настоящих» = 0.9 вместо 1
+real_labels = torch.full((b,), 0.9, device=device)
+
+# 2. Шум на входе D (instance noise), уменьшающийся со временем
+sigma = 0.1 * max(0.0, 1 - epoch / num_epochs)
+real_noisy = real + sigma * torch.randn_like(real)
+
+# 3. Spectral normalization в D — стабилизирует обучение
+sn_conv = nn.utils.spectral_norm(nn.Conv2d(64, 128, 4, 2, 1))
+
+# 4. TTUR: разные learning rate для D и G
+optD = torch.optim.Adam(netD.parameters(), lr=4e-4, betas=(0.0, 0.9))
+optG = torch.optim.Adam(netG.parameters(), lr=1e-4, betas=(0.0, 0.9))
+
+# 5. Следите за обеими потерями: loss_D → 0 означает, что D «победил»
+#    и градиенты для G исчезают — ослабьте D или усильте G.</code></pre>
   </div>
   <div class="block">
     <h2>🔷 9. Mode Collapse</h2>
@@ -783,21 +563,26 @@ class ProgressiveGenerator(nn.Module):
       <li>Практические применения</li>
       <li>Метрики и оценка качества</li>
     </ul>
-    <pre><code># Wasserstein GAN (WGAN) Loss
-import torch
+    <pre><code>import torch
+import torch.nn as nn
 
-def wasserstein_loss_d(real_output, fake_output):
-    """Discriminator loss для WGAN"""
-    return -(torch.mean(real_output) - torch.mean(fake_output))
+# Диагностика: насколько различаются сгенерированные образцы
+def diversity(fake):
+    flat = fake.flatten(1)
+    return torch.cdist(flat, flat).mean().item()   # резкое падение — признак mode collapse
 
-def wasserstein_loss_g(fake_output):
-    """Generator loss для WGAN"""
-    return -torch.mean(fake_output)
+# Решение: minibatch discrimination (Salimans et al., 2016) —
+# D видит статистику по батчу и замечает одинаковые образцы
+class MinibatchDiscrimination(nn.Module):
+    def __init__(self, in_features, out_features=50, kernel_dims=5):
+        super().__init__()
+        self.T = nn.Parameter(torch.randn(in_features, out_features, kernel_dims) * 0.1)
 
-# Weight clipping для WGAN
-def clip_weights(model, clip_value=0.01):
-    for p in model.parameters():
-        p.data.clamp_(-clip_value, clip_value)</code></pre>
+    def forward(self, x):                                    # x: (B, in_features)
+        M = torch.einsum("bi,iok-&gt;bok", x, self.T)           # (B, out, k)
+        l1 = (M.unsqueeze(0) - M.unsqueeze(1)).abs().sum(3)  # (B, B, out)
+        o = torch.exp(-l1).sum(1) - 1                        # без сравнения с собой
+        return torch.cat([x, o], dim=1)</code></pre>
   </div>
   <div class="block">
     <h2>🔷 10. Evaluation Metrics</h2>
@@ -813,16 +598,24 @@ def clip_weights(model, clip_value=0.01):
       <li>Практические применения</li>
       <li>Метрики и оценка качества</li>
     </ul>
-    <pre><code># Data Augmentation для GAN
-from torchvision import transforms
+    <pre><code>import numpy as np
+from scipy import linalg
 
-transform = transforms.Compose([
-    transforms.Resize(64),
-    transforms.RandomHorizontalFlip(),
-    transforms.ColorJitter(brightness=0.2, contrast=0.2),
-    transforms.ToTensor(),
-    transforms.Normalize([0.5], [0.5])
-])</code></pre>
+def fid(mu1, sigma1, mu2, sigma2):
+    """Fréchet Inception Distance между двумя наборами признаков Inception-v3.
+    mu, sigma — среднее и ковариация 2048-мерных признаков. Меньше — лучше."""
+    covmean = linalg.sqrtm(sigma1 @ sigma2)
+    covmean = covmean.real if np.iscomplexobj(covmean) else covmean   # убираем численный мусор
+    return float(((mu1 - mu2) ** 2).sum() + np.trace(sigma1 + sigma2 - 2 * covmean))
+
+def inception_score(p_yx, eps=1e-12):
+    """p_yx: (N, классы) — предсказания Inception для сгенерированных изображений. Больше — лучше."""
+    p_y = p_yx.mean(axis=0, keepdims=True)
+    kl = (p_yx * (np.log(p_yx + eps) - np.log(p_y + eps))).sum(axis=1)
+    return float(np.exp(kl.mean()))
+
+# На практике: torchmetrics.image.fid.FrechetInceptionDistance
+# fid_metric.update(real_uint8, real=True); fid_metric.update(fake_uint8, real=False); fid_metric.compute()</code></pre>
   </div>
   <div class="block">
     <h2>🔷 11. Applications</h2>
@@ -838,22 +631,23 @@ transform = transforms.Compose([
       <li>Практические применения</li>
       <li>Метрики и оценка качества</li>
     </ul>
-    <pre><code># Progressive Growing GAN
-class ProgressiveGenerator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.blocks = nn.ModuleList([
-            self._block(512, 512),
-            self._block(512, 256),
-            self._block(256, 128),
-        ])
-    
-    def _block(self, in_ch, out_ch):
-        return nn.Sequential(
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(in_ch, out_ch, 3, padding=1),
-            nn.LeakyReLU(0.2)
-        )</code></pre>
+    <pre><code>import torch
+
+netG.eval()
+with torch.no_grad():
+    # Генерация новых изображений
+    samples = netG(torch.randn(64, 100, 1, 1, device=device))
+
+    # Интерполяция в латентном пространстве: плавный переход между двумя образами
+    z1, z2 = torch.randn(2, 100, 1, 1, device=device)
+    path = torch.stack([(1 - t) * z1 + t * z2 for t in torch.linspace(0, 1, 8)])
+    morph = netG(path)
+
+    # Data augmentation: досгенерировать редкий класс условной GAN
+    labels = torch.full((500,), rare_class, device=device)
+    extra = condG(torch.randn(500, 100, device=device), labels)
+
+# torchvision.utils.save_image(samples, "samples.png", normalize=True, nrow=8)</code></pre>
   </div>
   <div class="block">
     <h2>🔷 12. Code Implementation</h2>
@@ -869,21 +663,25 @@ class ProgressiveGenerator(nn.Module):
       <li>Практические применения</li>
       <li>Метрики и оценка качества</li>
     </ul>
-    <pre><code># Wasserstein GAN (WGAN) Loss
-import torch
+    <pre><code># Минимальный DCGAN на MNIST (64×64, 1 канал) — собирает куски из разделов выше
+import torch, torchvision
+import torchvision.transforms as T
 
-def wasserstein_loss_d(real_output, fake_output):
-    """Discriminator loss для WGAN"""
-    return -(torch.mean(real_output) - torch.mean(fake_output))
+device = "cuda" if torch.cuda.is_available() else "cpu"
+tf = T.Compose([T.Resize(64), T.ToTensor(), T.Normalize([0.5], [0.5])])   # → [-1, 1]
+data = torchvision.datasets.MNIST("data", train=True, download=True, transform=tf)
+dataloader = torch.utils.data.DataLoader(data, batch_size=128, shuffle=True)
 
-def wasserstein_loss_g(fake_output):
-    """Generator loss для WGAN"""
-    return -torch.mean(fake_output)
+netG = Generator(nz=100, nc=1).to(device).apply(weights_init)
+netD = Discriminator(nc=1).to(device).apply(weights_init)
+fixed_z = torch.randn(64, 100, 1, 1, device=device)   # для сравнения прогресса по эпохам
 
-# Weight clipping для WGAN
-def clip_weights(model, clip_value=0.01):
-    for p in model.parameters():
-        p.data.clamp_(-clip_value, clip_value)</code></pre>
+num_epochs = 5
+# ... цикл обучения из раздела 5 ...
+
+with torch.no_grad():
+    grid = netG(fixed_z).cpu()
+torchvision.utils.save_image(grid, "dcgan_mnist.png", normalize=True, nrow=8)</code></pre>
   </div>
 </div>
 
