@@ -54,7 +54,8 @@ def main():
 
     handler = functools.partial(PortalHandler, directory=str(ROOT))
     server = http.server.ThreadingHTTPServer(("127.0.0.1", args.port), handler)
-    url = f"http://localhost:{args.port}/index.html"
+    # ?v=… — чтобы браузер не открыл старую копию портала из кэша после обновления проекта
+    url = f"http://localhost:{args.port}/index.html?v={int((ROOT / 'index.html').stat().st_mtime)}"
     print(f"Портал открыт: {url}\nОстановить: Ctrl+C")
     if not args.no_browser:
         threading.Timer(0.5, webbrowser.open, [url]).start()

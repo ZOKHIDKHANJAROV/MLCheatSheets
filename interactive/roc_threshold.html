@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="mlcs-topics" content="roc_auc confusion_matrix classification_metrics logreg">
 <title>Порог, матрица ошибок и ROC — интерактив</title>
-<script src="../assets/theme.js"></script>
-<link rel="stylesheet" href="lab.css">
+<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="lab.css?v=2">
 <style>
   .cm { display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px; font-size: 14px; text-align: center; margin-bottom: 12px; }
   .cm div { padding: 8px 4px; border-radius: 6px; }
@@ -58,7 +58,7 @@
   </div>
 </div>
 
-<script src="lab.js"></script>
+<script src="lab.js?v=2"></script>
 <script>
 // Оценки: класс 0 ~ N(0, 1), класс 1 ~ N(d′, 1)
 const pdf = (x, m) => Math.exp(-0.5 * (x - m) ** 2) / Math.sqrt(2 * Math.PI);

@@ -92,8 +92,12 @@ def check_markdown_links():
 
 def check_theme():
     section("Тема оформления в шпаргалках")
-    missing = [rel(p) for p in sorted(CHEATSHEETS.glob("*.html")) if b"<!-- mlcs-theme -->" not in p.read_bytes()]
+    from apply_theme import with_current_version
+    pages = sorted(CHEATSHEETS.glob("*.html"))
+    missing = [rel(p) for p in pages if b"<!-- mlcs-theme -->" not in p.read_bytes()]
+    outdated = [rel(p) for p in pages if b"<!-- mlcs-theme -->" in p.read_bytes() and with_current_version(p.read_bytes()) is not None]
     errs = [f"{p}: тема не подключена — запустите python tools/apply_theme.py" for p in missing]
+    errs += [f"{p}: старая версия подключения темы — запустите python tools/apply_theme.py" for p in outdated]
     report(errs, [], f"тема подключена ко всем страницам ({len(list(CHEATSHEETS.glob('*.html')))})")
 
 

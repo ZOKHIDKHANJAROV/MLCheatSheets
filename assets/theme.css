@@ -113,7 +113,13 @@
     color: var(--t-text) !important;
   }
 
-  /* Графики matplotlib нарисованы на белом фоне — оставляем подложку, чуть приглушаем яркость */
+  /* Графики matplotlib и SVG-схемы (.illustration, .boosting-viz) нарисованы тёмным по белому —
+     оставляем светлую подложку, чтобы их можно было прочитать, и лишь чуть приглушаем яркость */
+  html[data-theme="dark"] .illustration,
+  html[data-theme="dark"] .boosting-viz {
+    filter: brightness(0.9);
+    border-radius: 6px;
+  }
   html[data-theme="dark"] img {
     filter: brightness(0.9);
     border-radius: 4px;

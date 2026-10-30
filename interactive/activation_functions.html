@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="mlcs-topics" content="activation_functions vanishing_gradient">
 <title>Функции активации — интерактив</title>
-<script src="../assets/theme.js"></script>
-<link rel="stylesheet" href="lab.css">
+<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="lab.css?v=2">
 <style>
   .fn-list label { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 2px 0; cursor: pointer; }
   .fn-list i { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
@@ -49,7 +49,7 @@
   </div>
 </div>
 
-<script src="lab.js"></script>
+<script src="lab.js?v=2"></script>
 <script>
 const erf = x => { const t = 1 / (1 + 0.3275911 * Math.abs(x)); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; };
 const sig = x => 1 / (1 + Math.exp(-x));
