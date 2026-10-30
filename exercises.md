@@ -25,6 +25,7 @@
 
 Упражнения соответствуют разделам из [Дорожной карты](ROADMAP.md):
 - **Этап 3 (Путь 1: Полный новичок)**: Упражнения 1-8
+- **Этапы 2, 4–6 (Путь 1)**: Упражнения 9-15 (метрики, регрессия, классификация, деревья, бустинг)
 - **Подготовка данных**: Все упражнения полезны
 - **Feature Engineering**: Упражнения 6.1-6.7
 
@@ -151,6 +152,95 @@
 - [Входные данные](exercises/imbalanced_data/input.csv)
 - [Условие задачи](exercises/imbalanced_data/task.md)
 - [Ответ](exercises/imbalanced_data/answer.csv)
+
+## Базовые алгоритмы ML
+
+> Упражнения к этапам 2, 4–6 [Пути новичка](ROADMAP.md). Данные и эталоны создаёт `tools/generate_basic_exercises.py`.
+
+### 9. Метрики регрессии
+
+**Теория:** [Метрики регрессии](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/regression_metrics_cheatsheet.html)
+
+**Описание:** MAE, MSE, RMSE, R² и MAPE — вручную и через sklearn.metrics.
+
+**Файлы:**
+- [Входные данные](exercises/regression_metrics/input.csv)
+- [Условие задачи](exercises/regression_metrics/task.md)
+- [Ответ](exercises/regression_metrics/answer.csv)
+- [Решение с комментариями](exercises/regression_metrics/solution.py)
+
+### 10. Метрики классификации
+
+**Теория:** [Метрики классификации](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/classification_metrics_cheatsheet.html)
+
+**Описание:** Матрица ошибок, accuracy, precision, recall, F1 и ROC-AUC.
+
+**Файлы:**
+- [Входные данные](exercises/classification_metrics/input.csv)
+- [Условие задачи](exercises/classification_metrics/task.md)
+- [Ответ](exercises/classification_metrics/answer.csv)
+- [Решение с комментариями](exercises/classification_metrics/solution.py)
+
+### 11. Линейная регрессия: цена квартиры
+
+**Теория:** [Линейная регрессия](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/linreg_cheatsheet.html)
+
+**Описание:** Обучение LinearRegression на train, предсказание на test, разбор коэффициентов.
+
+**Файлы:**
+- [Входные данные](exercises/linreg/input.csv)
+- [Условие задачи](exercises/linreg/task.md)
+- [Ответ](exercises/linreg/answer.csv)
+- [Решение с комментариями](exercises/linreg/solution.py)
+
+### 12. Логистическая регрессия: отток клиентов
+
+**Теория:** [Логистическая регрессия](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/logreg_cheatsheet.html)
+
+**Описание:** StandardScaler без утечки данных, LogisticRegression, вероятности и порог.
+
+**Файлы:**
+- [Входные данные](exercises/logreg/input.csv)
+- [Условие задачи](exercises/logreg/task.md)
+- [Ответ](exercises/logreg/answer.csv)
+- [Решение с комментариями](exercises/logreg/solution.py)
+
+### 13. Дерево решений: одобрение кредита
+
+**Теория:** [Деревья решений](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/decision_trees_cheatsheet.html)
+
+**Описание:** DecisionTreeClassifier с ограничением глубины, правила дерева, важность признаков, переобучение.
+
+**Файлы:**
+- [Входные данные](exercises/decision_trees/input.csv)
+- [Условие задачи](exercises/decision_trees/task.md)
+- [Ответ](exercises/decision_trees/answer.csv)
+- [Решение с комментариями](exercises/decision_trees/solution.py)
+
+### 14. Кросс-валидация
+
+**Теория:** [Кросс-валидация](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/cross_validation_cheatsheet.html)
+
+**Описание:** KFold вручную и через cross_val_score, R² по фолдам.
+
+**Файлы:**
+- [Входные данные](exercises/cross_validation/input.csv)
+- [Условие задачи](exercises/cross_validation/task.md)
+- [Ответ](exercises/cross_validation/answer.csv)
+- [Решение с комментариями](exercises/cross_validation/solution.py)
+
+### 15. Градиентный бустинг: прокат велосипедов
+
+**Теория:** [Градиентный бустинг для регрессии](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/gradient_boosting_regression_cheatsheet.html)
+
+**Описание:** GradientBoostingRegressor на нелинейных данных, сравнение с линейной моделью.
+
+**Файлы:**
+- [Входные данные](exercises/gradient_boosting_regression/input.csv)
+- [Условие задачи](exercises/gradient_boosting_regression/task.md)
+- [Ответ](exercises/gradient_boosting_regression/answer.csv)
+- [Решение с комментариями](exercises/gradient_boosting_regression/solution.py)
+
 
 ---
 

@@ -115,8 +115,8 @@ pip install -r animations/requirements.txt
 
 * 📘 [I. Классическое машинное обучение](#i-классическое-машинное-обучение) (32 раздела, 250+ cheatsheets)
 * 🧠 [II. Глубокое обучение](#ii-глубокое-обучение) (27 разделов, 200+ cheatsheets)
-* 🔬 [III. Разные темы машинного обучения](#iii-разные-темы-машинного-обучения) (6 разделов, 50+ cheatsheets)
-* 💪 EXPERIMENTAL [Практические упражнения](exercises.md) (8 упражнений с решениями)
+* 🔬 [III. Разные темы машинного обучения](#iii-разные-темы-машинного-обучения) (4 раздела, 17 cheatsheets)
+* 💪 EXPERIMENTAL [Практические упражнения](exercises.md) (21 упражнение с автопроверкой, решенияи)
 * 🎥 EXPERIMENTAL [Анимации и визуализации](animations/README.md)
 
 ## 🗺️ Рекомендуемые пути обучения
@@ -696,16 +696,6 @@ Computer Vision, NLP, Time Series, Reinforcement Learning
 1. [Материальные информатики](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/material_informatics_cheatsheet.html)
 1. [Свойства материалов и ML](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/material_properties_ml_cheatsheet.html)
 1. [Дизайн материалов](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/material_design_cheatsheet.html)
-
-### **5. Квантовое машинное обучение**
-1. [Квантовые алгоритмы для ML](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/quantum_algorithms_ml_cheatsheet.html)
-1. [Квантовые нейронные сети](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/quantum_neural_networks_cheatsheet.html)
-1. [Квантовое усиление классических алгоритмов](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/quantum_classical_enhancement_cheatsheet.html)
-
-### **6. Нейро-символьное ИИ**
-1. [Гибридные нейро-символьные системы](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/neuro_symbolic_ai_systems_cheatsheet.html)
-1. [Rule-based системы с ML](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/rule_based_ml_systems_cheatsheet.html)
-1. [Логический вывод с обучением](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/logical_inference_learning_cheatsheet.html)
 
 ---
 

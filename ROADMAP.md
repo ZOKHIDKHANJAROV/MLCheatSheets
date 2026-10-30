@@ -37,6 +37,7 @@
 2. [Переобучение и недообучение](cheatsheets/overfitting_underfitting_cheatsheet.html)
 3. [Кросс-валидация](cheatsheets/cross_validation_cheatsheet.html)
 4. [Градиентный спуск](cheatsheets/gradient_descent_cheatsheet.html)
+5. **Упражнения:** cross_validation
 
 #### Этап 3: Подготовка данных (2-3 недели) 🟢
 1. [Предобработка данных](cheatsheets/preprocessing_cheatsheet.html)
@@ -51,6 +52,7 @@
 2. [Метрики регрессии](cheatsheets/regression_metrics_cheatsheet.html)
 3. [Полиномиальная регрессия](cheatsheets/polynomial_regression_cheatsheet.html)
 4. [Ридж, Лассо, ElasticNet](cheatsheets/ridge_lasso_elasticnet_cheatsheet.html)
+5. **Упражнения:** linreg, regression_metrics
 
 #### Этап 5: Классические алгоритмы - Классификация (2-3 недели) 🟢-🟡
 1. [Логистическая регрессия](cheatsheets/logreg_cheatsheet.html)
@@ -59,6 +61,7 @@
 4. [ROC и AUC](cheatsheets/roc_auc_cheatsheet.html)
 5. [k-ближайших соседей (k-NN)](cheatsheets/knn_cheatsheet.html)
 6. [Наивный Байес](cheatsheets/naive_bayes_cheatsheet.html)
+7. **Упражнения:** logreg, classification_metrics
 
 #### Этап 6: Деревья и ансамбли (3-4 недели) 🟡
 1. [Деревья решений](cheatsheets/decision_trees_cheatsheet.html)
@@ -67,6 +70,7 @@
 4. [XGBoost](cheatsheets/xgboost_cheatsheet.html)
 5. [LightGBM](cheatsheets/lightgbm_cheatsheet.html)
 6. [CatBoost](cheatsheets/catboost_cheatsheet.html)
+7. **Упражнения:** decision_trees, gradient_boosting_regression
 
 ---
 

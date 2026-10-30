@@ -25,6 +25,7 @@ TEMPLATE = Path(__file__).resolve().parent / "portal_template.html"
 OUTPUT = ROOT / "index.html"
 
 LINK_RE = re.compile(r"\[([^\]]+)\]\([^)]*?cheatsheets/([\w\-]+\.html)\)")
+LOCAL_FILES = {"my_answer.csv", "solution_output.csv"}  # личные файлы ученика, в git не попадают
 LEVEL_ICONS = {"🟢": "beginner", "🟡": "intermediate", "🔴": "advanced"}
 
 
@@ -80,7 +81,7 @@ def parse_roadmap(titles):
             level = next((v for k, v in LEVEL_ICONS.items() if k in heading), "")
             for icon in LEVEL_ICONS:
                 heading = heading.replace(icon, "")
-            stage = {"title": heading.strip(" -"), "level": level, "items": [], "notes": []}
+            stage = {"title": heading.strip(" -"), "level": level, "items": [], "notes": [], "exercises": []}
             path["stages"].append(stage)
         elif stage is not None:
             links = LINK_RE.findall(line)
@@ -90,7 +91,13 @@ def parse_roadmap(titles):
                     titles.setdefault(file_name, title)
             text = re.sub(r"^\s*\d+\.\s*", "", line).strip()
             if not links and text and not text.startswith("-") and not text.endswith(":"):
-                stage["notes"].append(text.replace("**", ""))
+                text = text.replace("**", "")
+                # «Упражнения: linreg, logreg» -> ссылки на папки exercises/<имя>
+                named = [w.strip() for w in text.split(":", 1)[-1].split(",")]
+                if text.startswith("Упражнения:") and all((EXERCISES / w).is_dir() for w in named):
+                    stage["exercises"] = named
+                else:
+                    stage["notes"].append(text)
     return paths
 
 
@@ -113,7 +120,7 @@ def parse_exercises():
             "title": first_heading(md, folder.name).replace("Упражнение:", "").strip(),
             "topic": topic,
             "cheatsheet": cheatsheet if (CHEATSHEETS / cheatsheet).exists() else None,
-            "files": sorted(p.name for p in folder.iterdir() if p.is_file()),
+            "files": sorted(p.name for p in folder.iterdir() if p.is_file() and p.name not in LOCAL_FILES),
             "task": md,
         })
     return exercises
@@ -147,14 +154,21 @@ def main():
         if file_name not in titles:
             titles[file_name] = cheatsheet_title(file_name)
 
-    data = {"parts": parts, "paths": paths, "exercises": exercises, "titles": titles}
+    # Тесты вида <тема>_test.html привязываем к шпаргалке <тема>_cheatsheet.html
+    quizzes = {
+        q.name.replace("_test.html", "_cheatsheet.html"): q.name
+        for q in CHEATSHEETS.glob("*_test.html")
+        if (CHEATSHEETS / q.name.replace("_test.html", "_cheatsheet.html")).exists()
+    }
+
+    data = {"parts": parts, "paths": paths, "exercises": exercises, "titles": titles, "quizzes": quizzes}
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     page = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
     OUTPUT.write_text(page, encoding="utf-8")
 
     print(f"Готово: {OUTPUT.relative_to(ROOT)}")
     print(f"  тем: {len(titles)}, разделов: {sum(len(p['sections']) for p in parts)}, "
-          f"путей: {len(paths)}, упражнений: {len(exercises)}, вне README: {len(orphans)}")
+          f"путей: {len(paths)}, упражнений: {len(exercises)}, тестов: {len(quizzes)}, вне README: {len(orphans)}")
 
 
 if __name__ == "__main__":

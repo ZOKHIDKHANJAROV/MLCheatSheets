@@ -346,13 +346,22 @@ function viewPath(i) {
       <h3>${esc(s.title)} ${s.level ? `<span class="lvl ${s.level}">${{ beginner: "начальный", intermediate: "средний", advanced: "продвинутый" }[s.level]}</span>` : ""} ${countLabel(s.items)}</h3>
       ${s.notes.map(n => `<p class="note">ℹ ${esc(n)}</p>`).join("")}
       <ol class="topics">${s.items.map(f => topicRow(f, ctx)).join("")}</ol>
+      ${stageExercises(s)}
     </div>`).join("")}
-    ${relatedExercises(items)}
+    ${relatedExercises(items, p.stages.flatMap(s => s.exercises))}
   </div>`;
 }
 
-function relatedExercises(items) {
-  const ex = DATA.exercises.map((e, i) => [e, i]).filter(([e]) => e.cheatsheet && items.includes(e.cheatsheet));
+function stageExercises(stage) {
+  const ex = DATA.exercises.map((e, i) => [e, i]).filter(([e]) => stage.exercises.includes(e.topic));
+  if (!ex.length) return "";
+  return `<p class="files" style="margin-top:8px">💪 ${ex.map(([e, i]) =>
+    `<a class="btn ${state.exDone[e.id] ? "on" : ""}" href="#/x/${i}">${state.exDone[e.id] ? "✔ " : ""}${esc(e.title)}</a>`).join("")}</p>`;
+}
+
+function relatedExercises(items, shownTopics = []) {
+  const ex = DATA.exercises.map((e, i) => [e, i])
+    .filter(([e]) => e.cheatsheet && items.includes(e.cheatsheet) && !shownTopics.includes(e.topic));
   if (!ex.length) return "";
   return `<h2>💪 Практика по этим темам</h2><div class="cards">${ex.map(([e, i]) =>
     `<a class="card" href="#/x/${i}">${state.exDone[e.id] ? "✅ " : ""}${esc(e.title)}<div class="meta">${esc(e.id)}</div></a>`).join("")}</div>`;
@@ -373,6 +382,7 @@ function viewTopic(f, ctx) {
       <a class="btn" ${prev ? `href="${link(prev)}" title="${esc(title(prev))} (←)"` : 'style="opacity:.4;pointer-events:none"'} data-nav="prev">← Назад</a>
       <div class="title">${esc(title(f))} ${c ? `<span class="ctx">· ${esc(c.label)} · ${idx + 1}/${c.items.length}</span>` : ""}</div>
       ${ex >= 0 ? `<a class="btn" href="#/x/${ex}">💪 Практика</a>` : ""}
+      ${DATA.quizzes[f] ? `<a class="btn" href="cheatsheets/${encodeURIComponent(DATA.quizzes[f])}" target="_blank" title="Проверьте себя">📝 Тест</a>` : ""}
       <a class="btn" href="cheatsheets/${encodeURIComponent(f)}" target="_blank" title="Открыть отдельно (удобно для печати)">↗</a>
       <button class="btn ${isDone(f) ? "on" : ""}" data-toggle="${esc(f)}" title="Клавиша M">${isDone(f) ? "✔ Изучено" : "☐ Изучено"}</button>
       <a class="btn" ${next ? `href="${link(next)}" title="${esc(title(next))} (→)"` : 'style="opacity:.4;pointer-events:none"'} data-nav="next">Далее →</a>

@@ -102,7 +102,7 @@ def main():
     print("Шаг 6: Сохранение результатов")
     print("="*50)
     
-    output_file = 'answer.csv'
+    output_file = 'solution_output.csv'  # answer.csv — эталон, его не перезаписываем
     df_result.to_csv(output_file, index=False)
     print(f"Результаты сохранены в {output_file}")
     

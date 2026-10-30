@@ -138,7 +138,7 @@ def main():
     print("\nФинальные данные (первые 10 строк):")
     print(result.head(10))
     
-    output_file = 'answer.csv'
+    output_file = 'solution_output.csv'  # answer.csv — эталон, его не перезаписываем
     result.to_csv(output_file, index=False)
     print(f"\n✅ Результаты сохранены в {output_file}")
     
