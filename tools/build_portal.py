@@ -177,6 +177,13 @@ def parse_demos():
     return demos
 
 
+def build_version():
+    """Метка сборки для адресов файлов в портале (…/x.html?v=метка) — сбрасывает старый кэш браузера.
+    Зависит от времени изменения материалов, поэтому повторная сборка без изменений даёт ту же метку."""
+    sources = [*CHEATSHEETS.glob("*.html"), *INTERACTIVE.glob("*"), *(ROOT / "assets").glob("*"), *EXERCISES.rglob("*.*")]
+    return format(int(max(p.stat().st_mtime for p in sources)), "x")
+
+
 def collect_titles(parts):
     titles = {}
     for line in (ROOT / "README.md").read_text(encoding="utf-8").splitlines():
@@ -216,7 +223,7 @@ def main():
     demos = parse_demos()
 
     data = {"parts": parts, "paths": paths, "exercises": exercises, "titles": titles,
-            "quizzes": quizzes, "questions": questions, "demos": demos}
+            "quizzes": quizzes, "questions": questions, "demos": demos, "build": build_version()}
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     page = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
     OUTPUT.write_text(page, encoding="utf-8")

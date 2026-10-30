@@ -26,6 +26,7 @@
 Упражнения соответствуют разделам из [Дорожной карты](ROADMAP.md):
 - **Этап 3 (Путь 1: Полный новичок)**: Упражнения 1-8
 - **Этапы 2, 4–6 (Путь 1)**: Упражнения 9-15 (метрики, регрессия, классификация, деревья, бустинг)
+- **Этапы 1, 3, 5 (Путь 2)**: Упражнения 16-22 (активации, softmax, backprop, MLP, оптимизаторы, свёртка, attention)
 - **Подготовка данных**: Все упражнения полезны
 - **Feature Engineering**: Упражнения 6.1-6.7
 
@@ -240,6 +241,103 @@
 - [Условие задачи](exercises/gradient_boosting_regression/task.md)
 - [Ответ](exercises/gradient_boosting_regression/answer.csv)
 - [Решение с комментариями](exercises/gradient_boosting_regression/solution.py)
+
+## Основы Deep Learning (NumPy)
+
+> Упражнения к Пути 2: всё, что фреймворки делают внутри, посчитано вручную на NumPy — PyTorch не нужен. Данные и эталоны создаёт `tools/generate_dl_exercises.py`.
+
+### 16. Функции активации и их производные
+
+**Теория:** [Функции активации](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/activation_functions_cheatsheet.html)
+
+**Описание:** sigmoid, tanh, ReLU и их производные; почему сигмоида ведёт к затуханию градиента.
+
+**Файлы:**
+- [Входные данные](exercises/activation_functions/input.csv)
+- [Условие задачи](exercises/activation_functions/task.md)
+- [Ответ](exercises/activation_functions/answer.csv)
+- [Решение с комментариями](exercises/activation_functions/solution.py)
+- [Тетрадка Jupyter](exercises/activation_functions/exercise.ipynb)
+
+### 17. Softmax и кросс-энтропия
+
+**Теория:** [Функции потерь](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/loss_functions_cheatsheet.html)
+
+**Описание:** Численно устойчивые softmax и log-sum-exp на логитах ±1000.
+
+**Файлы:**
+- [Входные данные](exercises/loss_functions/input.csv)
+- [Условие задачи](exercises/loss_functions/task.md)
+- [Ответ](exercises/loss_functions/answer.csv)
+- [Решение с комментариями](exercises/loss_functions/solution.py)
+- [Тетрадка Jupyter](exercises/loss_functions/exercise.ipynb)
+
+### 18. Обратное распространение для одного нейрона
+
+**Теория:** [Обратное распространение ошибки](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/backpropagation_cheatsheet.html)
+
+**Описание:** Прямой и обратный проход по цепному правилу, проверка градиента численно.
+
+**Файлы:**
+- [Входные данные](exercises/backpropagation/input.csv)
+- [Условие задачи](exercises/backpropagation/task.md)
+- [Ответ](exercises/backpropagation/answer.csv)
+- [Решение с комментариями](exercises/backpropagation/solution.py)
+- [Тетрадка Jupyter](exercises/backpropagation/exercise.ipynb)
+
+### 19. Прямой проход MLP
+
+**Теория:** [Архитектура MLP](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/mlp_cheatsheet.html)
+
+**Описание:** Сеть 2 → 3 → 1 с весами из weights.json: матричный прямой проход.
+
+**Файлы:**
+- [Входные данные](exercises/mlp/input.csv)
+- [Веса сети](exercises/mlp/weights.json)
+- [Условие задачи](exercises/mlp/task.md)
+- [Ответ](exercises/mlp/answer.csv)
+- [Решение с комментариями](exercises/mlp/solution.py)
+- [Тетрадка Jupyter](exercises/mlp/exercise.ipynb)
+
+### 20. SGD, Momentum и Adam
+
+**Теория:** [Оптимизаторы](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/optimizers_cheatsheet.html)
+
+**Описание:** Три оптимизатора на функции-«овраге» по формулам, 50 шагов.
+
+**Файлы:**
+- [Входные данные](exercises/optimizers/input.csv)
+- [Условие задачи](exercises/optimizers/task.md)
+- [Ответ](exercises/optimizers/answer.csv)
+- [Решение с комментариями](exercises/optimizers/solution.py)
+- [Тетрадка Jupyter](exercises/optimizers/exercise.ipynb)
+
+### 21. Свёртка, ReLU и max pooling
+
+**Теория:** [Основы свёртки](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/cnn_basics_cheatsheet.html)
+
+**Описание:** Детектор вертикальной границы на изображении 7×7, затем ReLU и пулинг 2×2.
+
+**Файлы:**
+- [Входные данные](exercises/cnn_basics/input.csv)
+- [Условие задачи](exercises/cnn_basics/task.md)
+- [Ответ](exercises/cnn_basics/answer.csv)
+- [Решение с комментариями](exercises/cnn_basics/solution.py)
+- [Тетрадка Jupyter](exercises/cnn_basics/exercise.ipynb)
+
+### 22. Scaled dot-product attention
+
+**Теория:** [Self-attention](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/self_attention_cheatsheet.html)
+
+**Описание:** softmax(QKᵀ/√d)·V для 4 токенов; бонус — каузальная маска.
+
+**Файлы:**
+- [Входные данные](exercises/self_attention/input.csv)
+- [Условие задачи](exercises/self_attention/task.md)
+- [Ответ](exercises/self_attention/answer.csv)
+- [Решение с комментариями](exercises/self_attention/solution.py)
+- [Тетрадка Jupyter](exercises/self_attention/exercise.ipynb)
+
 
 
 ---

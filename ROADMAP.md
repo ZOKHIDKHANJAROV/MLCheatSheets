@@ -85,6 +85,7 @@
 4. [Функции потерь](cheatsheets/loss_functions_cheatsheet.html)
 5. [Обратное распространение ошибки](cheatsheets/backpropagation_cheatsheet.html)
 6. [Оптимизаторы](cheatsheets/optimizers_cheatsheet.html)
+7. **Упражнения:** activation_functions, loss_functions, backpropagation, mlp, optimizers
 
 #### Этап 2: Фреймворки (2-3 недели) 🟡
 1. [PyTorch полный гайд](cheatsheets/pytorch_full_guide_cheatsheet.html)
@@ -99,6 +100,7 @@
 5. [Transfer learning для CNN](cheatsheets/transfer_learning_cnn_cheatsheet.html)
 6. [Data augmentation](cheatsheets/data_augmentation_cheatsheet.html)
 7. Применение: [Детекция объектов (YOLO)](cheatsheets/yolo_cheatsheet.html)
+8. **Упражнения:** cnn_basics
 
 #### Этап 4: Рекуррентные сети и NLP (3-4 недели) 🟡-🔴
 1. [Основы RNN](cheatsheets/rnn_basics_cheatsheet.html)
@@ -115,6 +117,7 @@
 5. [GPT-архитектуры](cheatsheets/gpt_architectures_cheatsheet.html)
 6. [Prompt Engineering](cheatsheets/prompt_engineering_cheatsheet.html)
 7. [Vision Transformers (ViT)](cheatsheets/vision_transformers_vit_cheatsheet.html)
+8. **Упражнения:** self_attention
 
 #### Этап 6: Генеративные модели (3-4 недели) 🔴
 1. [Автоэнкодеры](cheatsheets/autoencoders_cheatsheet.html)

@@ -197,6 +197,8 @@
 <script>
 const DATA = /*__DATA__*/null;
 const STORE_KEY = "mlcs-progress-v1";
+// Версия сборки в адресах файлов: после обновления проекта браузер не покажет старые копии из кэша
+const V = "?v=" + DATA.build;
 // Для страниц во фрейме (интерактивы): открыть шпаргалку в самом портале
 window.mlcsPortal = { open: f => { if (!DATA.titles[f]) return false; location.hash = "#/t/" + encodeURIComponent(f); return true; } };
 
@@ -429,9 +431,9 @@ function viewDemo(file) {
       <a class="btn" href="${main ? "#/t/" + encodeURIComponent(main) : "#/"}" title="К шпаргалке">← 📘 Шпаргалка</a>
       <div class="title">🎮 ${esc(d.title)} <span class="ctx">· интерактивная демонстрация</span></div>
       ${d.topics.slice(1).map(t => `<a class="btn" href="#/t/${encodeURIComponent(t)}">📘 ${esc(title(t))}</a>`).join("")}
-      <a class="btn" href="interactive/${encodeURIComponent(file)}" target="_blank" title="Открыть отдельно">↗</a>
+      <a class="btn" href="interactive/${encodeURIComponent(file)}${V}" target="_blank" title="Открыть отдельно">↗</a>
     </div>
-    <div class="vbody"><iframe src="interactive/${encodeURIComponent(file)}" title="${esc(d.title)}"></iframe></div>
+    <div class="vbody"><iframe src="interactive/${encodeURIComponent(file)}${V}" title="${esc(d.title)}"></iframe></div>
   </div>`;
 }
 
@@ -531,13 +533,13 @@ function viewTopic(f, ctx) {
       ${demosOf(f).map(d => `<a class="btn" href="#/d/${encodeURIComponent(d.file)}" title="Интерактивная демонстрация: ${esc(d.title)}">🎮 ${demosOf(f).length > 1 ? esc(d.title) : "Интерактив"}</a>`).join("")}
       <button class="btn" data-qtoggle title="Вопросы для самопроверки (Q)">❓ Вопросы${questionsOf(f).length ? ` (${questionsOf(f).length})` : ""}</button>
       ${ex >= 0 ? `<a class="btn" href="#/x/${ex}">💪 Практика</a>` : ""}
-      ${DATA.quizzes[f] ? `<a class="btn" href="cheatsheets/${encodeURIComponent(DATA.quizzes[f])}" target="_blank" title="Проверьте себя">📝 Тест</a>` : ""}
-      <a class="btn" href="cheatsheets/${encodeURIComponent(f)}" target="_blank" title="Открыть отдельно (удобно для печати)">↗</a>
+      ${DATA.quizzes[f] ? `<a class="btn" href="cheatsheets/${encodeURIComponent(DATA.quizzes[f])}${V}" target="_blank" title="Проверьте себя">📝 Тест</a>` : ""}
+      <a class="btn" href="cheatsheets/${encodeURIComponent(f)}${V}" target="_blank" title="Открыть отдельно (удобно для печати)">↗</a>
       <button class="btn ${isDone(f) ? "on" : ""}" data-toggle="${esc(f)}" title="Клавиша M">${isDone(f) ? "✔ Изучено" : "☐ Изучено"}</button>
       <a class="btn" ${next ? `href="${link(next)}" title="${esc(title(next))} (→)"` : 'style="opacity:.4;pointer-events:none"'} data-nav="next">Далее →</a>
     </div>
     <div class="vbody">
-      <iframe src="cheatsheets/${encodeURIComponent(f)}" title="${esc(title(f))}"></iframe>
+      <iframe src="cheatsheets/${encodeURIComponent(f)}${V}" title="${esc(title(f))}"></iframe>
       <aside class="qpanel">
         <h3>❓ Проверьте себя</h3>
         <p class="note">Ответьте мысленно или вслух, затем раскройте ответ.</p>
@@ -560,7 +562,7 @@ function viewExercise(i) {
       <button class="btn ${state.exDone[e.id] ? "on" : ""}" data-ex="${esc(e.id)}">${state.exDone[e.id] ? "✔ Решено" : "☐ Решено"}</button>
     </p>
     <h2>📁 Файлы</h2>
-    <div class="files">${e.files.map(n => `<a class="btn" href="${esc(dir)}/${encodeURIComponent(n)}" target="_blank">${esc(n)}</a>`).join("")}</div>
+    <div class="files">${e.files.map(n => `<a class="btn" href="${esc(dir)}/${encodeURIComponent(n)}${V}" target="_blank">${esc(n)}</a>`).join("")}</div>
     <h2>✅ Самопроверка</h2>
     <p class="note">Сохраните свой результат в <code>my_answer.csv</code> в папке упражнения и выполните в корне репозитория:</p>
     <div class="cmd"><code>python tools/check_exercise.py ${esc(dir)}</code><button class="btn" data-copy="python tools/check_exercise.py ${esc(dir)}">Копировать</button></div>
@@ -590,10 +592,11 @@ function markdown(src) {
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-  const out = []; let list = null, code = null, table = null;
+  const out = []; let list = null, code = null, table = null, para = null;   // para — строки текущего абзаца
   const flush = () => {
     if (list) { out.push(`<${list.tag}>${list.items.map(i => `<li>${i}</li>`).join("")}</${list.tag}>`); list = null; }
     if (table) { out.push(`<table>${table.map((r, k) => `<tr>${r.map(c => k ? `<td>${inline(c)}</td>` : `<th>${inline(c)}</th>`).join("")}</tr>`).join("")}</table>`); table = null; }
+    if (para) { out.push(`<p>${para.map(inline).join(" ")}</p>`); para = null; }
   };
   for (const line of src.split(/\r?\n/)) {
     if (code !== null) {
@@ -604,7 +607,7 @@ function markdown(src) {
     let m;
     if ((m = line.match(/^(#{1,6})\s+(.*)/))) { flush(); const l = Math.min(m[1].length + 1, 4); out.push(`<h${l}>${inline(m[2])}</h${l}>`); }
     else if (/^\s*\|.*\|\s*$/.test(line)) {
-      if (list) flush();
+      if (list || para) flush();
       const cells = line.trim().slice(1, -1).split("|").map(c => c.trim());
       if (!cells.every(c => /^:?-+:?$/.test(c))) (table = table || []).push(cells);
     }
@@ -616,7 +619,7 @@ function markdown(src) {
     }
     else if (!line.trim()) flush();
     else if (/^\s+\S/.test(line) && list) list.items[list.items.length - 1] += " " + inline(line.trim());
-    else { flush(); out.push(`<p>${inline(line)}</p>`); }
+    else { if (list || table) flush(); (para = para || []).push(line.trim()); }   // строки подряд — один абзац
   }
   if (code !== null) out.push(`<pre><code>${esc(code.join("\n"))}</code></pre>`);
   flush();

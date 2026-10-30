@@ -532,7 +532,13 @@ def build(exercise, seed):
     folder = EXERCISES / exercise["name"]
     folder.mkdir(parents=True, exist_ok=True)
 
-    exercise["data"](np.random.default_rng(seed)).to_csv(folder / "input.csv", index=False)
+    # data() возвращает DataFrame (это input.csv) или словарь {имя файла: DataFrame или текст}
+    data = exercise["data"](np.random.default_rng(seed))
+    for name, content in (data if isinstance(data, dict) else {"input.csv": data}).items():
+        if isinstance(content, pd.DataFrame):
+            content.to_csv(folder / name, index=False)
+        else:
+            (folder / name).write_text(content, encoding="utf-8")
 
     task = f"# Упражнение: {exercise['title']}\n\n## Задание\n\n"
     task += textwrap.dedent(exercise["task"]).strip() + "\n"

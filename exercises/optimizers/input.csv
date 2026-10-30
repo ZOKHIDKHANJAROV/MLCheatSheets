@@ -1,0 +1,4 @@
+optimizer,lr,beta1,beta2,eps
+sgd,0.05,0.0,0.0,0.0
+momentum,0.02,0.9,0.0,0.0
+adam,0.1,0.9,0.999,1e-08
