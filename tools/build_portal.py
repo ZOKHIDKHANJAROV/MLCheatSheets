@@ -21,6 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CHEATSHEETS = ROOT / "cheatsheets"
 EXERCISES = ROOT / "exercises"
+QUESTIONS = ROOT / "questions"
 TEMPLATE = Path(__file__).resolve().parent / "portal_template.html"
 OUTPUT = ROOT / "index.html"
 
@@ -126,6 +127,30 @@ def parse_exercises():
     return exercises
 
 
+def parse_questions():
+    """questions/<тема>.md: каждый заголовок «### » — вопрос, текст под ним — ответ."""
+    questions = {}
+    for md in sorted(QUESTIONS.glob("*.md")):
+        if md.name.lower() == "readme.md":
+            continue
+        file_name = f"{md.stem}_cheatsheet.html"
+        if not (CHEATSHEETS / file_name).exists():
+            print(f"  ⚠ {md.relative_to(ROOT).as_posix()}: нет шпаргалки {file_name}, пропущено")
+            continue
+        items, current = [], None
+        for line in md.read_text(encoding="utf-8").splitlines():
+            if line.startswith("### "):
+                current = {"q": line[4:].strip(), "a": []}
+                items.append(current)
+            elif current is not None:
+                current["a"].append(line)
+        for item in items:
+            item["a"] = "\n".join(item["a"]).strip()
+        if items:
+            questions[file_name] = items
+    return questions
+
+
 def collect_titles(parts):
     titles = {}
     for line in (ROOT / "README.md").read_text(encoding="utf-8").splitlines():
@@ -161,14 +186,18 @@ def main():
         if (CHEATSHEETS / q.name.replace("_test.html", "_cheatsheet.html")).exists()
     }
 
-    data = {"parts": parts, "paths": paths, "exercises": exercises, "titles": titles, "quizzes": quizzes}
+    questions = parse_questions()
+
+    data = {"parts": parts, "paths": paths, "exercises": exercises, "titles": titles,
+            "quizzes": quizzes, "questions": questions}
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     page = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
     OUTPUT.write_text(page, encoding="utf-8")
 
     print(f"Готово: {OUTPUT.relative_to(ROOT)}")
     print(f"  тем: {len(titles)}, разделов: {sum(len(p['sections']) for p in parts)}, "
-          f"путей: {len(paths)}, упражнений: {len(exercises)}, тестов: {len(quizzes)}, вне README: {len(orphans)}")
+          f"путей: {len(paths)}, упражнений: {len(exercises)}, тестов: {len(quizzes)}, "
+          f"вопросов: {sum(map(len, questions.values()))} к {len(questions)} темам, вне README: {len(orphans)}")
 
 
 if __name__ == "__main__":
