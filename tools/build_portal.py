@@ -208,7 +208,7 @@ def main():
             "title": "Прочие шпаргалки (нет в README)",
             "sections": [{"title": "Без раздела", "items": orphans}],
         })
-    for file_name in {f for p in parts for s in p["sections"] for f in s["items"]}:
+    for file_name in sorted({f for p in parts for s in p["sections"] for f in s["items"]}):   # sorted — сборка детерминирована
         if file_name not in titles:
             titles[file_name] = cheatsheet_title(file_name)
 
