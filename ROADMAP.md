@@ -135,6 +135,7 @@
 1. [Grid Search / Random Search](cheatsheets/hyperparameter_tuning_cheatsheet.html)
 2. [Bayesian Optimization](cheatsheets/bayesian_optimization_cheatsheet.html)
 3. [Optuna / Hyperopt](cheatsheets/optuna_hyperopt_cheatsheet.html)
+4. **Упражнения:** hyperparameter_tuning
 4. [Важность признаков](cheatsheets/feature_importance_cheatsheet.html)
 
 #### Этап 2: Интерпретируемость (2 недели) 🟡
@@ -142,6 +143,7 @@
 2. [LIME](cheatsheets/lime_cheatsheet.html)
 3. [Частичные зависимости](cheatsheets/partial_dependence_cheatsheet.html)
 4. [Explainable AI (XAI)](cheatsheets/explainable_ai_xai_cheatsheet.html)
+5. **Упражнения:** shap
 
 #### Этап 3: Production и MLOps (3-4 недели) 🟡-🔴
 1. [Production ML Best Practices](cheatsheets/production_ml_best_practices_cheatsheet.html)
@@ -151,12 +153,14 @@
 5. [Мониторинг моделей и A/B тестирование](cheatsheets/model_monitoring_ab_testing_cheatsheet.html)
 6. [Feature stores](cheatsheets/feature_stores_cheatsheet.html)
 7. [CI/CD для ML](cheatsheets/cicd_ml_cheatsheet.html)
+8. **Упражнения:** ml_pipelines
 
 #### Этап 4: Специальные темы (2-3 недели) 🟡
 1. [Несбалансированные данные](cheatsheets/imbalanced_data_cheatsheet.html)
 2. [Дрейф данных](cheatsheets/concept_drift_cheatsheet.html)
 3. [Fairness в ML](cheatsheets/fairness_ml_cheatsheet.html)
 4. [Adversarial robustness](cheatsheets/adversarial_robustness_cheatsheet.html)
+5. **Упражнения:** concept_drift
 
 ---
 
@@ -176,6 +180,7 @@
 3. [BERT fine-tuning](cheatsheets/bert_finetuning_cheatsheet.html)
 4. [Задачи NLP](cheatsheets/nlp_tasks_ner_classification_summarization_cheatsheet.html)
 5. [Тематическое моделирование](cheatsheets/topic_modeling_lda_nmf_cheatsheet.html)
+6. **Упражнения:** tfidf
 
 #### Time Series специалист 🟡-🔴
 1. Классические методы:
@@ -186,6 +191,7 @@
    - [RNN/LSTM для временных рядов](cheatsheets/rnn_lstm_time_series_cheatsheet.html)
    - [CNN для временных рядов (TCN)](cheatsheets/cnn_time_series_tcn_cheatsheet.html)
    - [Transformers для временных рядов](cheatsheets/transformers_time_series_cheatsheet.html)
+3. **Упражнения:** exponential_smoothing
 
 #### Reinforcement Learning специалист 🔴
 1. Классическое RL:
@@ -196,6 +202,7 @@
    - [DQN](cheatsheets/dqn_cheatsheet.html)
    - [Policy Gradient методы](cheatsheets/policy_gradient_cheatsheet.html)
    - [PPO](cheatsheets/ppo_reinforcement_learning_cheatsheet.html)
+3. **Упражнения:** q_learning_sarsa
 
 ---
 
