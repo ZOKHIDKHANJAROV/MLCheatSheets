@@ -39,6 +39,7 @@ def portal_is_stale():
         return True
     sources = [ROOT / "README.md", ROOT / "ROADMAP.md", ROOT / "tools" / "portal_template.html"]
     sources += list((ROOT / "exercises").rglob("task.md")) + list((ROOT / "questions").glob("*.md"))
+    sources += list((ROOT / "interactive").glob("*.html"))
     return any(p.stat().st_mtime > index.stat().st_mtime for p in sources if p.exists())
 
 

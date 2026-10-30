@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="roc_auc confusion_matrix classification_metrics logreg">
+<title>Порог, матрица ошибок и ROC — интерактив</title>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="lab.css">
+<style>
+  .cm { display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px; font-size: 14px; text-align: center; margin-bottom: 12px; }
+  .cm div { padding: 8px 4px; border-radius: 6px; }
+  .cm .h { color: var(--muted); font-size: 12px; padding: 4px; }
+  .cm .tp, .cm .tn { background: var(--region-a); }
+  .cm .fp, .cm .fn { background: var(--region-b); }
+  .cm b { display: block; font-size: 18px; }
+</style>
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Порог классификации, матрица ошибок и ROC</h1><a href="../cheatsheets/roc_auc_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Модель выдаёт оценку (score) каждому объекту. Слева — распределения оценок для отрицательного и положительного классов,
+    вертикальная линия — порог: всё правее неё модель называет положительным. Двигайте порог и смотрите, как меняются метрики и точка на ROC-кривой.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="dist"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>отрицательные (класс 0)</span><span><i style="background:var(--c-b)"></i>положительные (класс 1)</span></div>
+    </div>
+    <div class="card controls">
+      <div class="ctl"><label for="thr">Порог <output for="thr"></output></label><input id="thr" type="range" min="-3" max="5" step="0.02" value="1"></div>
+      <div class="ctl"><label for="sep">Разделимость классов d′ <output for="sep"></output></label><input id="sep" type="range" min="0" max="4" step="0.05" value="2"></div>
+      <div class="ctl"><label for="pos">Доля положительных <output for="pos"></output></label><input id="pos" type="range" min="0.01" max="0.5" step="0.01" value="0.3"></div>
+      <h3>Матрица ошибок (на 1000 объектов)</h3>
+      <div class="cm">
+        <div></div><div class="h">предсказано 1</div><div class="h">предсказано 0</div>
+        <div class="h">истина 1</div><div class="tp">TP<b id="tp"></b></div><div class="fn">FN<b id="fn"></b></div>
+        <div class="h">истина 0</div><div class="fp">FP<b id="fp"></b></div><div class="tn">TN<b id="tn"></b></div>
+      </div>
+      <div class="stats">
+        <span>Accuracy</span><b id="acc"></b>
+        <span>Precision</span><b id="prec"></b>
+        <span>Recall (TPR)</span><b id="rec"></b>
+        <span>FPR</span><b id="fpr"></b>
+        <span>F1</span><b id="f1"></b>
+        <span>ROC-AUC</span><b id="auc"></b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">ROC-кривая</h3><canvas id="roc"></canvas></div>
+    <div class="card hint"><h3>Что попробовать</h3><ul>
+      <li>Сдвигайте порог влево: recall растёт, но растёт и FPR, precision падает. Это компромисс, а не «правильный» порог.</li>
+      <li>Сделайте d′ = 0: распределения совпадают, ROC — диагональ, AUC = 0.5 (случайное угадывание).</li>
+      <li>Поставьте долю положительных 0.02: <b>accuracy</b> остаётся высокой даже у плохой модели, а precision резко падает — а ROC-кривая не меняется!</li>
+      <li>Порог влияет только на точку на ROC-кривой, а AUC зависит лишь от того, насколько разделены классы.</li>
+    </ul></div>
+  </div>
+</div>
+
+<script src="lab.js"></script>
+<script>
+// Оценки: класс 0 ~ N(0, 1), класс 1 ~ N(d′, 1)
+const pdf = (x, m) => Math.exp(-0.5 * (x - m) ** 2) / Math.sqrt(2 * Math.PI);
+function cdf(x) {                       // Φ(x) через аппроксимацию erf (Абрамовиц–Стиган)
+  const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+  return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+}
+
+const thr = Lab.slider("thr", () => refresh(), v => v.toFixed(2));
+const sep = Lab.slider("sep", () => refresh(), v => v.toFixed(2));
+const pos = Lab.slider("pos", () => refresh(), v => v.toFixed(2));
+const distView = Lab.canvas(document.getElementById("dist"), 0.55, drawDist);
+const rocView = Lab.canvas(document.getElementById("roc"), 0.8, drawRoc);
+
+function rates(t) { return { tpr: 1 - cdf(t - sep.value), fpr: 1 - cdf(t) }; }
+
+function refresh() {
+  const { tpr, fpr } = rates(thr.value), P = 1000 * pos.value, N = 1000 - P;
+  const tp = tpr * P, fn = P - tp, fp = fpr * N, tn = N - fp;
+  const set = (id, v) => document.getElementById(id).textContent = v;
+  set("tp", Math.round(tp)); set("fn", Math.round(fn)); set("fp", Math.round(fp)); set("tn", Math.round(tn));
+  const prec = tp + fp > 0 ? tp / (tp + fp) : NaN;
+  set("acc", ((tp + tn) / 1000).toFixed(3));
+  set("prec", isNaN(prec) ? "—" : prec.toFixed(3));
+  set("rec", tpr.toFixed(3)); set("fpr", fpr.toFixed(3));
+  set("f1", isNaN(prec) || prec + tpr === 0 ? "—" : (2 * prec * tpr / (prec + tpr)).toFixed(3));
+  set("auc", cdf(sep.value / Math.SQRT2).toFixed(3));     // для двух гауссиан с σ = 1: AUC = Φ(d′/√2)
+  distView.redraw(); rocView.redraw();
+}
+
+function drawDist(ctx, w, h) {
+  const x0 = -4, x1 = 8, sx = Lab.frame(x0, x1, 10, w - 10), sy = Lab.frame(0, 0.45, h - 22, 10);
+  ctx.clearRect(0, 0, w, h);
+  Lab.axes(ctx, sx, sy, { xTicks: [-4, -2, 0, 2, 4, 6, 8], xLabel: "оценка модели" });
+  // высота кривых пропорциональна доле класса, чтобы был виден дисбаланс
+  const classes = [[0, 1 - pos.value, "c-a", "region-a"], [sep.value, pos.value, "c-b", "region-b"]];
+  const scaleH = 1 / Math.max(1 - pos.value, pos.value);
+  classes.forEach(([m, share, col, fill]) => {
+    const yv = x => pdf(x, m) * share * scaleH;
+    ctx.beginPath(); ctx.moveTo(sx(thr.value), sy(0));
+    for (let x = thr.value; x <= x1; x += 0.03) ctx.lineTo(sx(x), sy(yv(x)));
+    ctx.lineTo(sx(x1), sy(0)); ctx.closePath(); ctx.fillStyle = Lab.color(fill); ctx.fill();
+    ctx.strokeStyle = Lab.color(col); ctx.lineWidth = 2; ctx.beginPath();
+    for (let x = x0; x <= x1; x += 0.03) x === x0 ? ctx.moveTo(sx(x), sy(yv(x))) : ctx.lineTo(sx(x), sy(yv(x)));
+    ctx.stroke();
+  });
+  ctx.strokeStyle = Lab.color("text"); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(sx(thr.value), 6); ctx.lineTo(sx(thr.value), h - 22); ctx.stroke();
+  ctx.fillStyle = Lab.color("text"); ctx.font = "12px system-ui, sans-serif"; ctx.textAlign = "left";
+  ctx.fillText("предсказываем 1 →", sx(thr.value) + 6, 20);
+  ctx.textAlign = "right"; ctx.fillText("← предсказываем 0", sx(thr.value) - 6, 20);
+}
+
+function drawRoc(ctx, w, h) {
+  const s = Math.min(w, h), ox = (w - s) / 2 + 24;
+  const sx = Lab.frame(0, 1, ox, ox + s - 34), sy = Lab.frame(0, 1, h - 22, h - s + 8);
+  ctx.clearRect(0, 0, w, h);
+  Lab.axes(ctx, sx, sy, { xTicks: [0, 0.5, 1], yTicks: [0, 0.5, 1], xLabel: "FPR", yLabel: "TPR" });
+  ctx.strokeStyle = Lab.color("axis"); ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(sx(0), sy(0)); ctx.lineTo(sx(1), sy(1)); ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(sx(0), sy(0));
+  for (let t = 8; t >= -5; t -= 0.05) { const r = rates(t); ctx.lineTo(sx(r.fpr), sy(r.tpr)); }
+  ctx.lineTo(sx(1), sy(0)); ctx.closePath(); ctx.fillStyle = Lab.color("region-a"); ctx.fill();
+  ctx.strokeStyle = Lab.color("c-a"); ctx.lineWidth = 2.5; ctx.beginPath();
+  for (let t = 8; t >= -5; t -= 0.05) { const r = rates(t); t === 8 ? ctx.moveTo(sx(r.fpr), sy(r.tpr)) : ctx.lineTo(sx(r.fpr), sy(r.tpr)); }
+  ctx.stroke();
+  const r = rates(thr.value);
+  Lab.dot(ctx, sx(r.fpr), sy(r.tpr), 7, Lab.color("c-b"), Lab.color("panel"));
+}
+
+refresh();
+</script>
+</body>
+</html>

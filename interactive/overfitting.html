@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="overfitting_underfitting bias_variance polynomial_regression ridge_lasso_elasticnet">
+<title>Переобучение — интерактив</title>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Недообучение и переобучение</h1><a href="../cheatsheets/overfitting_underfitting_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Полиномиальная регрессия на зашумлённых точках. Меняйте степень полинома и смотрите, как ведут себя
+    ошибка на обучении и на тесте. Справа внизу — классическая U-образная кривая.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="fit"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>обучающие точки</span><span><i style="background:var(--muted)"></i>тестовые точки</span><span><i style="background:var(--c-b)"></i>модель</span><span><i style="background:var(--c-ok)"></i>истинная зависимость</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Модель</h3>
+      <div class="ctl"><label for="deg">Степень полинома <output for="deg"></output></label><input id="deg" type="range" min="0" max="14" step="1" value="3"></div>
+      <div class="ctl"><label for="lam">Регуляризация λ (Ridge) <output for="lam"></output></label><input id="lam" type="range" min="-9" max="1" step="0.25" value="-9"></div>
+      <h3>Данные</h3>
+      <div class="ctl"><label for="n">Обучающих точек <output for="n"></output></label><input id="n" type="range" min="6" max="60" step="1" value="15"></div>
+      <div class="ctl"><label for="noise">Шум σ <output for="noise"></output></label><input id="noise" type="range" min="0" max="0.6" step="0.02" value="0.25"></div>
+      <div class="buttons"><button id="regen">Новая выборка</button></div>
+      <h3>Ошибки (MSE)</h3>
+      <div class="stats">
+        <span>На обучении</span><b id="trainErr"></b>
+        <span>На тесте</span><b id="testErr"></b>
+        <span>Диагноз</span><b id="diag"></b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Ошибка от степени полинома (лог. шкала)</h3><canvas id="curve"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>train</span><span><i style="background:var(--c-b)"></i>test</span></div></div>
+    <div class="card hint"><h3>Что попробовать</h3><ul>
+      <li>Степень 0–1: прямая не описывает волну — <b>недообучение</b> (высокое смещение), обе ошибки большие.</li>
+      <li>Степень 3–5: ошибки на train и test близки и малы — хороший баланс.</li>
+      <li>Степень 12–14: кривая проходит почти через каждую точку, train-ошибка → 0, а test растёт — <b>переобучение</b> (высокая дисперсия).</li>
+      <li>Оставьте степень 14 и увеличьте число точек до 60 — больше данных уменьшает переобучение.</li>
+      <li>Оставьте степень 14 и поднимите λ до 10⁻²–10⁻¹: регуляризация сглаживает кривую, и тестовая ошибка падает с огромных значений до ~0.2 — без смены модели.</li>
+      <li>Нажимайте «Новая выборка» на степени 14: модель сильно меняется от выборки к выборке — это и есть дисперсия.</li>
+    </ul></div>
+  </div>
+</div>
+
+<script src="lab.js"></script>
+<script>
+const truth = x => Math.sin(2.5 * x) * 0.8 + 0.3 * x;     // x ∈ [−1, 1]
+let seed = 3, train = [], test = [];
+
+const deg = Lab.slider("deg", () => refresh(), v => v);
+const lam = Lab.slider("lam", () => refresh(), v => v <= -9 ? "0" : "10^" + v);
+const nPts = Lab.slider("n", () => { generate(); refresh(); }, v => v);
+const noise = Lab.slider("noise", () => { generate(); refresh(); }, v => v.toFixed(2));
+const fitView = Lab.canvas(document.getElementById("fit"), 0.6, drawFit);
+const curveView = Lab.canvas(document.getElementById("curve"), 0.5, drawCurve);
+
+function generate() {
+  const r = Lab.rng(seed);
+  const sample = n => Array.from({ length: n }, () => { const x = r() * 2 - 1; return [x, truth(x) + r.normal() * noise.value]; });
+  train = sample(nPts.value);
+  test = sample(200);
+}
+
+// Полиномы Чебышёва T_k(x): та же модель, что и степени x^k, но хорошо обусловленная система уравнений
+function basis(x, d) {
+  const t = [1, x];
+  for (let k = 2; k <= d; k++) t.push(2 * x * t[k - 1] - t[k - 2]);
+  return t.slice(0, d + 1);
+}
+
+// Ridge: (ΦᵀΦ + λI)·c = Φᵀy, решаем методом Гаусса с выбором главного элемента
+function fit(points, d, lambda) {
+  const m = d + 1, A = Array.from({ length: m }, () => new Array(m + 1).fill(0));
+  points.forEach(([x, y]) => {
+    const f = basis(x, d);
+    for (let i = 0; i < m; i++) { for (let j = 0; j < m; j++) A[i][j] += f[i] * f[j]; A[i][m] += f[i] * y; }
+  });
+  for (let i = 0; i < m; i++) A[i][i] += lambda * points.length + 1e-12;
+  for (let c = 0; c < m; c++) {
+    let p = c; for (let r = c + 1; r < m; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]];
+    const piv = A[c][c] || 1e-12;
+    for (let r = 0; r < m; r++) if (r !== c) {
+      const k = A[r][c] / piv;
+      for (let j = c; j <= m; j++) A[r][j] -= k * A[c][j];
+    }
+  }
+  const coef = A.map((row, i) => row[m] / (row[i] || 1e-12));
+  return x => basis(x, d).reduce((s, v, i) => s + v * coef[i], 0);
+}
+
+const mse = (model, pts) => pts.reduce((s, [x, y]) => s + (model(x) - y) ** 2, 0) / pts.length;
+const lambda = () => lam.value <= -9 ? 0 : 10 ** lam.value;
+
+let model, errs = [];
+function refresh() {
+  model = fit(train, deg.value, lambda());
+  const tr = mse(model, train), te = mse(model, test);
+  const fmt = v => v >= 1000 ? v.toExponential(1).replace("e+", "·10^") : v.toFixed(4);
+  document.getElementById("trainErr").textContent = fmt(tr);
+  document.getElementById("testErr").textContent = fmt(te);
+  const floor = noise.value ** 2;
+  document.getElementById("diag").textContent =
+    tr > floor * 2 + 0.03 && te > floor * 2 + 0.03 ? "недообучение" : te > tr * 2.5 && te > floor * 1.6 ? "переобучение" : "баланс ✓";
+  errs = [];
+  for (let d = 0; d <= 14; d++) { const m = fit(train, d, lambda()); errs.push([mse(m, train), mse(m, test)]); }
+  fitView.redraw(); curveView.redraw();
+}
+
+function drawFit(ctx, w, h) {
+  const sx = Lab.frame(-1, 1, 30, w - 8), sy = Lab.frame(-2, 2, h - 20, 8);
+  ctx.clearRect(0, 0, w, h);
+  Lab.axes(ctx, sx, sy, { xTicks: [-1, -0.5, 0, 0.5, 1], yTicks: [-2, -1, 0, 1, 2] });
+  ctx.save(); ctx.beginPath(); ctx.rect(30, 8, w - 38, h - 28); ctx.clip();
+  test.forEach(([x, y]) => { ctx.globalAlpha = .35; Lab.dot(ctx, sx(x), sy(y), 2.2, Lab.color("muted")); });
+  ctx.globalAlpha = 1;
+  const curve = (f, col, width, dash) => {
+    ctx.strokeStyle = col; ctx.lineWidth = width; ctx.setLineDash(dash || []); ctx.beginPath();
+    for (let i = 0; i <= 400; i++) { const x = -1 + i / 200, y = Math.max(-50, Math.min(50, f(x))); i ? ctx.lineTo(sx(x), sy(y)) : ctx.moveTo(sx(x), sy(y)); }
+    ctx.stroke(); ctx.setLineDash([]);
+  };
+  curve(truth, Lab.color("c-ok"), 2, [6, 5]);
+  curve(model, Lab.color("c-b"), 2.5);
+  train.forEach(([x, y]) => Lab.dot(ctx, sx(x), sy(y), 4.5, Lab.color("c-a"), Lab.color("panel")));
+  ctx.restore();
+}
+
+function drawCurve(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!errs.length) return;
+  // шкала ограничена сверху MSE = 100: взрывающиеся ошибки упираются в верх графика
+  const lg = v => Math.min(2, Math.log10(Math.max(v, 1e-6)));
+  const all = errs.flat().map(lg), lo = Math.max(-6, Math.floor(Math.min(...all))), hi = Math.ceil(Math.max(...all));
+  const sx = Lab.frame(0, 14, 36, w - 10), sy = Lab.frame(lo, Math.max(hi, lo + 1), h - 22, 8);
+  const yt = []; for (let t = lo; t <= hi; t++) yt.push(t);
+  Lab.axes(ctx, sx, sy, { xTicks: [0, 2, 4, 6, 8, 10, 12, 14], yTicks: yt, xLabel: "степень", yLabel: "log₁₀ MSE" });
+  // текущая степень
+  ctx.strokeStyle = Lab.color("axis"); ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(sx(deg.value), 8); ctx.lineTo(sx(deg.value), h - 22); ctx.stroke(); ctx.setLineDash([]);
+  [[0, "c-a"], [1, "c-b"]].forEach(([k, col]) => {
+    ctx.strokeStyle = Lab.color(col); ctx.lineWidth = 2; ctx.beginPath();
+    errs.forEach((e, d) => { const y = sy(lg(e[k])); d ? ctx.lineTo(sx(d), y) : ctx.moveTo(sx(d), y); });
+    ctx.stroke();
+    errs.forEach((e, d) => Lab.dot(ctx, sx(d), sy(lg(e[k])), d === deg.value ? 5 : 2.5, Lab.color(col)));
+  });
+}
+
+document.getElementById("regen").onclick = () => { seed++; generate(); refresh(); };
+generate(); refresh();
+</script>
+</body>
+</html>

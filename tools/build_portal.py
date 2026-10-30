@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CHEATSHEETS = ROOT / "cheatsheets"
 EXERCISES = ROOT / "exercises"
 QUESTIONS = ROOT / "questions"
+INTERACTIVE = ROOT / "interactive"
 TEMPLATE = Path(__file__).resolve().parent / "portal_template.html"
 OUTPUT = ROOT / "index.html"
 
@@ -151,6 +152,31 @@ def parse_questions():
     return questions
 
 
+def parse_demos():
+    """interactive/*.html: темы берутся из <meta name="mlcs-topics" content="linreg knn ...">."""
+    demos = []
+    for page in sorted(INTERACTIVE.glob("*.html")):
+        raw = page.read_text(encoding="utf-8")
+        meta = re.search(r'<meta name="mlcs-topics" content="([^"]*)"', raw)
+        title = re.search(r"<title>(.*?)</title>", raw, re.S)
+        if not meta:
+            print(f"  ⚠ {page.relative_to(ROOT).as_posix()}: нет <meta name=\"mlcs-topics\">, пропущено")
+            continue
+        topics = []
+        for stem in meta.group(1).split():
+            file_name = f"{stem}_cheatsheet.html"
+            if (CHEATSHEETS / file_name).exists():
+                topics.append(file_name)
+            else:
+                print(f"  ⚠ {page.relative_to(ROOT).as_posix()}: нет шпаргалки {file_name}")
+        demos.append({
+            "file": page.name,
+            "title": html.unescape(title.group(1)).split(" — ")[0].strip() if title else page.stem,
+            "topics": topics,
+        })
+    return demos
+
+
 def collect_titles(parts):
     titles = {}
     for line in (ROOT / "README.md").read_text(encoding="utf-8").splitlines():
@@ -187,9 +213,10 @@ def main():
     }
 
     questions = parse_questions()
+    demos = parse_demos()
 
     data = {"parts": parts, "paths": paths, "exercises": exercises, "titles": titles,
-            "quizzes": quizzes, "questions": questions}
+            "quizzes": quizzes, "questions": questions, "demos": demos}
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     page = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
     OUTPUT.write_text(page, encoding="utf-8")
@@ -197,7 +224,8 @@ def main():
     print(f"Готово: {OUTPUT.relative_to(ROOT)}")
     print(f"  тем: {len(titles)}, разделов: {sum(len(p['sections']) for p in parts)}, "
           f"путей: {len(paths)}, упражнений: {len(exercises)}, тестов: {len(quizzes)}, "
-          f"вопросов: {sum(map(len, questions.values()))} к {len(questions)} темам, вне README: {len(orphans)}")
+          f"вопросов: {sum(map(len, questions.values()))} к {len(questions)} темам, "
+          f"интерактивов: {len(demos)}, вне README: {len(orphans)}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="kmeans choosing_clusters_number clustering_metrics">
+<title>k-means — интерактив</title>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 k-means шаг за шагом</h1><a href="../cheatsheets/kmeans_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Алгоритм чередует два шага: <b>назначение</b> — каждая точка относится к ближайшему центроиду,
+    и <b>обновление</b> — центроид переносится в среднее своих точек. Нажимайте «Шаг» и следите, как падает инерция.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="plane"></canvas>
+      <div class="legend"><span>✚ центроиды</span><span>— след перемещения центроида</span><span id="phase" style="color:var(--text)"></span></div>
+    </div>
+    <div class="card controls">
+      <h3>Алгоритм</h3>
+      <div class="ctl"><label for="k">Число кластеров k <output for="k"></output></label><input id="k" type="range" min="1" max="8" step="1" value="4"></div>
+      <div class="ctl"><label>Инициализация</label>
+        <select id="init"><option value="pp">k-means++</option><option value="random">Случайные точки</option><option value="bad">Неудачная (все в одном углу)</option></select></div>
+      <div class="buttons"><button class="primary" id="step">Шаг</button><button id="run">▶ До сходимости</button><button id="restart">Заново</button></div>
+      <h3>Данные</h3>
+      <div class="ctl"><label for="blobs">Истинных групп <output for="blobs"></output></label><input id="blobs" type="range" min="2" max="6" step="1" value="4"></div>
+      <div class="ctl"><label for="spread">Разброс групп <output for="spread"></output></label><input id="spread" type="range" min="0.05" max="0.35" step="0.01" value="0.13"></div>
+      <div class="buttons"><button id="regen">Новые данные</button></div>
+      <h3>Состояние</h3>
+      <div class="stats">
+        <span>Итерация</span><b id="iter"></b>
+        <span>Инерция (сумма квадратов расстояний)</span><b id="inertia"></b>
+        <span>Статус</span><b id="status"></b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Метод локтя: инерция после сходимости от k</h3><canvas id="elbow"></canvas></div>
+    <div class="card hint"><h3>Что попробовать</h3><ul>
+      <li>Пройдите алгоритм по шагам: инерция никогда не растёт — поэтому k-means всегда сходится (но не обязательно к лучшему решению).</li>
+      <li>Выберите «Неудачную» инициализацию — алгоритм может застрять в плохом локальном минимуме. k-means++ почти всегда стартует удачнее.</li>
+      <li>Посмотрите на «локоть»: после истинного числа групп инерция падает уже медленно.</li>
+      <li>Увеличьте разброс групп: кластеры сливаются, и выбрать k становится трудно.</li>
+      <li>k-means делит плоскость прямыми границами между центроидами и плохо работает с вытянутыми или вложенными кластерами.</li>
+    </ul></div>
+  </div>
+</div>
+
+<script src="lab.js"></script>
+<script>
+const PALETTE = ["#2f6fde", "#e8590c", "#1f9d55", "#9c36b5", "#d6336c", "#0c8599", "#f08c00", "#5c7cfa"];
+let pts = [], cents = [], trails = [], labels = [], iter = 0, phase = "assign", done = false, seed = 21, runTimer = null, initSeed = 1;
+
+const k = Lab.slider("k", () => restart(), v => v);
+const blobs = Lab.slider("blobs", () => { generate(); restart(); }, v => v);
+const spread = Lab.slider("spread", () => { generate(); restart(); }, v => v.toFixed(2));
+const plane = Lab.canvas(document.getElementById("plane"), 0.68, draw);
+const elbow = Lab.canvas(document.getElementById("elbow"), 0.42, drawElbow);
+
+function generate() {
+  const r = Lab.rng(seed), centers = [];
+  for (let i = 0; i < blobs.value; i++) centers.push([r() * 1.6 - 0.8, r() * 1.2 - 0.6]);
+  pts = Array.from({ length: 220 }, (_, i) => { const c = centers[i % centers.length]; return [c[0] + r.normal() * spread.value, c[1] + r.normal() * spread.value]; });
+}
+
+const d2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2;
+function initCentroids(kk, how, r) {
+  if (how === "bad") return Array.from({ length: kk }, (_, i) => [-1.05 + i * 0.03, 0.75 - i * 0.02]);
+  if (how === "random") return Array.from({ length: kk }, () => pts[Math.floor(r() * pts.length)].slice());
+  // k-means++: следующий центр выбирается с вероятностью ∝ квадрату расстояния до ближайшего уже выбранного
+  const c = [pts[Math.floor(r() * pts.length)].slice()];
+  while (c.length < kk) {
+    const w = pts.map(p => Math.min(...c.map(q => d2(p, q)))), total = w.reduce((a, b) => a + b, 0);
+    let t = r() * total, i = 0; while (t > w[i] && i < pts.length - 1) { t -= w[i]; i++; }
+    c.push(pts[i].slice());
+  }
+  return c;
+}
+const assign = (c) => pts.map(p => { let best = 0; c.forEach((q, j) => { if (d2(p, q) < d2(p, c[best])) best = j; }); return best; });
+const inertia = (c, lab) => pts.reduce((s, p, i) => s + d2(p, c[lab[i]]), 0);
+function update(c, lab) {
+  return c.map((q, j) => {
+    const mine = pts.filter((_, i) => lab[i] === j);
+    return mine.length ? [mine.reduce((s, p) => s + p[0], 0) / mine.length, mine.reduce((s, p) => s + p[1], 0) / mine.length] : q;
+  });
+}
+
+function restart() {
+  stopRun();
+  cents = initCentroids(k.value, document.getElementById("init").value, Lab.rng(initSeed++));
+  trails = cents.map(c => [c.slice()]);
+  labels = []; iter = 0; phase = "assign"; done = false;
+  show(); elbow.redraw();
+}
+
+function step() {
+  if (done) return;
+  if (phase === "assign") { labels = assign(cents); phase = "update"; }
+  else {
+    const next = update(cents, labels);
+    const moved = next.some((c, j) => d2(c, cents[j]) > 1e-10);
+    cents = next; cents.forEach((c, j) => trails[j].push(c.slice()));
+    iter++; phase = "assign";
+    if (!moved) { done = true; stopRun(); }
+  }
+  show();
+}
+
+function show() {
+  document.getElementById("iter").textContent = iter;
+  document.getElementById("inertia").textContent = labels.length ? inertia(cents, labels).toFixed(3) : "—";
+  document.getElementById("status").textContent = done ? "✅ сошёлся" : "идёт";
+  document.getElementById("phase").textContent = done ? "Готово: центроиды больше не двигаются"
+    : phase === "assign" ? "Следующий шаг: назначение точек" : "Следующий шаг: перенос центроидов";
+  plane.redraw();
+}
+
+function run() { document.getElementById("run").textContent = "⏸ Стоп"; runTimer = setInterval(step, 350); }
+function stopRun() { clearInterval(runTimer); runTimer = null; document.getElementById("run").textContent = "▶ До сходимости"; }
+
+function draw(ctx, w, h) {
+  const sx = Lab.frame(-1.2, 1.2, 0, w), sy = Lab.frame(-0.85, 0.85, h, 0);
+  ctx.clearRect(0, 0, w, h);
+  const dark = document.documentElement.dataset.theme === "dark";
+  pts.forEach((p, i) => {
+    const col = labels.length ? PALETTE[labels[i] % 8] : Lab.color("muted");
+    ctx.globalAlpha = dark ? 0.85 : 0.75; Lab.dot(ctx, sx(p[0]), sy(p[1]), 3.5, col);
+  });
+  ctx.globalAlpha = 1;
+  trails.forEach((tr, j) => {
+    ctx.strokeStyle = PALETTE[j % 8]; ctx.lineWidth = 2; ctx.beginPath();
+    tr.forEach((c, i) => i ? ctx.lineTo(sx(c[0]), sy(c[1])) : ctx.moveTo(sx(c[0]), sy(c[1])));
+    ctx.stroke();
+  });
+  cents.forEach((c, j) => {
+    const x = sx(c[0]), y = sy(c[1]);
+    ctx.lineWidth = 6; ctx.strokeStyle = Lab.color("panel");
+    ctx.beginPath(); ctx.moveTo(x - 9, y); ctx.lineTo(x + 9, y); ctx.moveTo(x, y - 9); ctx.lineTo(x, y + 9); ctx.stroke();
+    ctx.lineWidth = 3; ctx.strokeStyle = PALETTE[j % 8]; ctx.stroke();
+  });
+}
+
+// Инерция после сходимости для k = 1…8 (k-means++, лучшее из 3 запусков)
+function drawElbow(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!pts.length) return;
+  const vals = [];
+  for (let kk = 1; kk <= 8; kk++) {
+    let best = Infinity;
+    for (let s = 0; s < 3; s++) {
+      let c = initCentroids(kk, "pp", Lab.rng(100 + s)), lab;
+      for (let it = 0; it < 50; it++) { lab = assign(c); const n = update(c, lab); if (n.every((q, j) => d2(q, c[j]) < 1e-12)) break; c = n; }
+      best = Math.min(best, inertia(c, assign(c)));
+    }
+    vals.push(best);
+  }
+  const sx = Lab.frame(1, 8, 44, w - 10), sy = Lab.frame(0, vals[0] * 1.05, h - 22, 8);
+  Lab.axes(ctx, sx, sy, { xTicks: [1, 2, 3, 4, 5, 6, 7, 8], yTicks: [0, +(vals[0] / 2).toFixed(1), +vals[0].toFixed(1)], xLabel: "k" });
+  ctx.strokeStyle = Lab.color("c-a"); ctx.lineWidth = 2; ctx.beginPath();
+  vals.forEach((v, i) => i ? ctx.lineTo(sx(i + 1), sy(v)) : ctx.moveTo(sx(1), sy(v)));
+  ctx.stroke();
+  vals.forEach((v, i) => Lab.dot(ctx, sx(i + 1), sy(v), i + 1 === k.value ? 5.5 : 3, Lab.color(i + 1 === k.value ? "c-b" : "c-a")));
+}
+
+document.getElementById("step").onclick = () => { stopRun(); step(); };
+document.getElementById("run").onclick = () => runTimer ? stopRun() : run();
+document.getElementById("restart").onclick = restart;
+document.getElementById("init").onchange = restart;
+document.getElementById("regen").onclick = () => { seed++; generate(); restart(); };
+generate(); restart();
+</script>
+</body>
+</html>

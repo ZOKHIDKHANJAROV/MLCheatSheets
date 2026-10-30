@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="knn">
+<title>k-ближайших соседей — интерактив</title>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 k-ближайших соседей</h1><a href="../cheatsheets/knn_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Фон показывает, какой класс k-NN предскажет в каждой точке плоскости.
+    <b>Наведите курсор</b>, чтобы увидеть k соседей и их голосование; <b>клик</b> добавляет точку выбранного класса.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="plane"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>класс A</span><span><i style="background:var(--c-b)"></i>класс B</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Модель</h3>
+      <div class="ctl"><label for="k">Число соседей k <output for="k"></output></label><input id="k" type="range" min="1" max="31" step="2" value="5"></div>
+      <div class="ctl"><label>Расстояние</label>
+        <select id="metric"><option value="euclid">Евклидово</option><option value="manhattan">Манхэттенское</option></select></div>
+      <div class="ctl"><label><span><input type="checkbox" id="weighted"> голоса с весом 1/расстояние</span></label></div>
+      <h3>Данные</h3>
+      <div class="ctl"><label>Форма классов</label>
+        <select id="shape"><option value="moons">Полумесяцы</option><option value="blobs">Два облака</option><option value="xor">XOR</option></select></div>
+      <div class="ctl"><label for="noise">Шум <output for="noise"></output></label><input id="noise" type="range" min="0" max="0.5" step="0.02" value="0.2"></div>
+      <div class="buttons"><button id="addA">+ точки класса A</button><button id="addB">+ класса B</button><button id="regen">Новые данные</button></div>
+      <h3>Качество</h3>
+      <div class="stats">
+        <span>Accuracy на обучении</span><b id="trainAcc"></b>
+        <span>Leave-one-out accuracy</span><b id="looAcc"></b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Leave-one-out accuracy от k</h3><canvas id="curve"></canvas></div>
+    <div class="card hint"><h3>Что попробовать</h3><ul>
+      <li><b>k = 1</b>: граница «рваная», вокруг каждой шумной точки — свой островок. На обучении accuracy = 100% — это переобучение.</li>
+      <li>Увеличивайте k: граница сглаживается. При очень большом k мелкие детали формы исчезают — недообучение.</li>
+      <li>График внизу показывает честную оценку (leave-one-out) для каждого k — найдите лучший.</li>
+      <li>На данных «XOR» k-NN справляется там, где линейная модель бессильна.</li>
+      <li>Поставьте точку класса B глубоко внутри A при k = 1 и при k = 9 — сравните.</li>
+    </ul></div>
+  </div>
+</div>
+
+<script src="lab.js"></script>
+<script>
+let pts = [], seed = 11, addClass = 0, hover = null, sx, sy;
+
+const k = Lab.slider("k", () => refresh(), v => v);
+const noise = Lab.slider("noise", () => { generate(); refresh(); }, v => v.toFixed(2));
+const plane = Lab.canvas(document.getElementById("plane"), 0.68, draw);
+const curve = Lab.canvas(document.getElementById("curve"), 0.42, drawCurve);
+
+function generate() {
+  const r = Lab.rng(seed), n = 70, shape = document.getElementById("shape").value, s = noise.value;
+  pts = [];
+  for (let i = 0; i < n; i++) {
+    const c = i % 2;
+    let x, y;
+    if (shape === "moons") {
+      const t = Math.PI * r();
+      x = c ? 1 - Math.cos(t) : Math.cos(t); y = c ? 0.5 - Math.sin(t) : Math.sin(t);
+      x = x * 0.45 - 0.2; y = y * 0.55;
+    } else if (shape === "blobs") {
+      x = (c ? 0.35 : -0.35) + r.normal() * 0.25; y = (c ? -0.2 : 0.2) + r.normal() * 0.25;
+    } else {
+      x = r() * 1.8 - 0.9; y = r() * 1.8 - 0.9;
+      pts.push([x + r.normal() * s * 0.4, y + r.normal() * s * 0.4, (x > 0) !== (y > 0) ? 1 : 0]);
+      continue;
+    }
+    pts.push([x + r.normal() * s * 0.5, y + r.normal() * s * 0.5, c]);
+  }
+}
+
+function dist(a, b) {
+  const dx = a[0] - b[0], dy = a[1] - b[1];
+  return document.getElementById("metric").value === "manhattan" ? Math.abs(dx) + Math.abs(dy) : Math.hypot(dx, dy);
+}
+
+// Голосование k ближайших; skip — индекс точки, которую исключаем (для leave-one-out)
+function neighbors(p, kk, skip) {
+  return pts.map((q, i) => [dist(p, q), i]).filter(([, i]) => i !== skip).sort((a, b) => a[0] - b[0]).slice(0, kk);
+}
+function predict(p, kk, skip) {
+  const nb = neighbors(p, kk, skip), weighted = document.getElementById("weighted").checked;
+  let vb = 0, total = 0;
+  nb.forEach(([d, i]) => { const wgt = weighted ? 1 / (d + 1e-6) : 1; total += wgt; if (pts[i][2]) vb += wgt; });
+  return { cls: vb > total / 2 ? 1 : 0, share: total ? vb / total : 0, nb };
+}
+
+let looByK = [];
+function refresh() {
+  if (!pts.length) return;
+  const acc = skip => pts.filter((p, i) => predict(p, k.value, skip ? i : -1).cls === p[2]).length / pts.length;
+  document.getElementById("trainAcc").textContent = (100 * acc(false)).toFixed(1) + "%";
+  document.getElementById("looAcc").textContent = (100 * acc(true)).toFixed(1) + "%";
+  looByK = [];
+  for (let kk = 1; kk <= 31; kk += 2) looByK.push([kk, pts.filter((p, i) => predict(p, kk, i).cls === p[2]).length / pts.length]);
+  plane.redraw(); curve.redraw();
+}
+
+function draw(ctx, w, h) {
+  sx = Lab.frame(-1.2, 1.2, 0, w); sy = Lab.frame(-1, 1, h, 0);
+  ctx.clearRect(0, 0, w, h);
+  // карта решений: клетки 8×8 px
+  const cell = 8, ca = Lab.color("region-a"), cb = Lab.color("region-b");
+  for (let px = 0; px < w; px += cell) for (let py = 0; py < h; py += cell) {
+    const pr = predict([sx.invert(px + cell / 2), sy.invert(py + cell / 2)], k.value, -1);
+    ctx.fillStyle = pr.cls ? cb : ca; ctx.fillRect(px, py, cell, cell);
+  }
+  if (hover) {
+    const pr = predict(hover, k.value, -1);
+    ctx.strokeStyle = Lab.color("text"); ctx.globalAlpha = .45; ctx.lineWidth = 1;
+    pr.nb.forEach(([, i]) => { ctx.beginPath(); ctx.moveTo(sx(hover[0]), sy(hover[1])); ctx.lineTo(sx(pts[i][0]), sy(pts[i][1])); ctx.stroke(); });
+    ctx.globalAlpha = 1;
+    const r = Math.abs(sx(pr.nb[pr.nb.length - 1][0]) - sx(0));
+    if (document.getElementById("metric").value === "euclid") {
+      ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(sx(hover[0]), sy(hover[1]), r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+  pts.forEach(([x, y, c]) => Lab.dot(ctx, sx(x), sy(y), 4.5, Lab.color(c ? "c-b" : "c-a"), Lab.color("panel")));
+  if (hover) {
+    const pr = predict(hover, k.value, -1), nA = pr.nb.filter(([, i]) => !pts[i][2]).length;
+    Lab.dot(ctx, sx(hover[0]), sy(hover[1]), 7, Lab.color(pr.cls ? "c-b" : "c-a"), Lab.color("text"));
+    ctx.fillStyle = Lab.color("text"); ctx.font = "13px system-ui, sans-serif"; ctx.textAlign = "left";
+    ctx.fillText(`A: ${nA}  B: ${pr.nb.length - nA}  →  ${pr.cls ? "B" : "A"}`, sx(hover[0]) + 12, sy(hover[1]) - 10);
+  }
+}
+
+function drawCurve(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!looByK.length) return;
+  const sxc = Lab.frame(1, 31, 40, w - 10), syc = Lab.frame(0.5, 1, h - 22, 8);
+  Lab.axes(ctx, sxc, syc, { xTicks: [1, 5, 11, 21, 31], yTicks: [0.5, 0.6, 0.7, 0.8, 0.9, 1], xLabel: "k" });
+  ctx.strokeStyle = Lab.color("c-a"); ctx.lineWidth = 2; ctx.beginPath();
+  looByK.forEach(([kk, a], i) => i ? ctx.lineTo(sxc(kk), syc(Math.max(.5, a))) : ctx.moveTo(sxc(kk), syc(Math.max(.5, a))));
+  ctx.stroke();
+  looByK.forEach(([kk, a]) => Lab.dot(ctx, sxc(kk), syc(Math.max(.5, a)), kk === k.value ? 5.5 : 2.5, Lab.color(kk === k.value ? "c-b" : "c-a")));
+}
+
+const cv = document.getElementById("plane");
+cv.addEventListener("pointermove", e => { const p = Lab.pointer(cv, e); hover = [sx.invert(p.x), sy.invert(p.y)]; plane.redraw(); });
+cv.addEventListener("pointerleave", () => { hover = null; plane.redraw(); });
+cv.addEventListener("pointerdown", e => { const p = Lab.pointer(cv, e); pts.push([sx.invert(p.x), sy.invert(p.y), addClass]); refresh(); });
+const setAdd = c => { addClass = c; document.getElementById("addA").classList.toggle("primary", !c); document.getElementById("addB").classList.toggle("primary", !!c); };
+document.getElementById("addA").onclick = () => setAdd(0);
+document.getElementById("addB").onclick = () => setAdd(1);
+document.getElementById("regen").onclick = () => { seed++; generate(); refresh(); };
+document.getElementById("shape").onchange = () => { generate(); refresh(); };
+document.getElementById("metric").onchange = refresh;
+document.getElementById("weighted").onchange = refresh;
+setAdd(0); generate(); refresh();
+</script>
+</body>
+</html>

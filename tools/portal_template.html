@@ -245,6 +245,7 @@ function toggleDone(f, value) {
 const DAY = 24 * 3600 * 1000;
 const INTERVALS = [1, 3, 7, 16, 35, 90];
 const questionsOf = f => DATA.questions[f] || [];
+const demosOf = f => DATA.demos.filter(d => d.topics.includes(f));
 
 function reviewOf(f) {
   if (!isDone(f)) return null;
@@ -294,6 +295,7 @@ function rateButtons(f) {
 // #/t/<file>?ctx=<контекст>  просмотр шпаргалки
 // #/q/<строка>               поиск
 // #/r                        повторение
+// #/d/<файл>                 интерактивная демонстрация из interactive/
 function parseHash() {
   const [route, query] = decodeURIComponent(location.hash.slice(1) || "/").split("?ctx=");
   return { parts: route.split("/").filter(Boolean), ctx: query || "" };
@@ -320,9 +322,10 @@ function render() {
   else if (kind === "x") main.innerHTML = viewExercise(+a);
   else if (kind === "q") main.innerHTML = viewSearch(parts.slice(1).join("/"));
   else if (kind === "r") main.innerHTML = viewReview();
+  else if (kind === "d") main.innerHTML = viewDemo(parts.slice(1).join("/"));
   else main.innerHTML = viewHome();
-  if (kind !== "t") main.scrollTop = 0;
-  else forwardFrameKeys(main.querySelector("iframe"));
+  if (kind === "t" || kind === "d") forwardFrameKeys(main.querySelector("iframe"));
+  else main.scrollTop = 0;
   if (kind === "s") setTab("sections", false);
   if (kind === "p") setTab("paths", false);
   if (kind === "x") setTab("exercises", false);
@@ -351,6 +354,7 @@ function topicRow(f, ctx, showWhere) {
   return `<li class="${isDone(f) ? "done" : ""}">
     <input type="checkbox" data-done="${esc(f)}" ${isDone(f) ? "checked" : ""} title="Отметить как изученное">
     <a href="#/t/${encodeURIComponent(f)}${ctx ? "?ctx=" + ctx : ""}">${esc(title(f))}</a>${where}
+    ${demosOf(f).length ? `<a class="badge" href="#/d/${encodeURIComponent(demosOf(f)[0].file)}" title="Интерактивная демонстрация">🎮</a>` : ""}
     ${questionsOf(f).length ? `<span class="badge" title="Есть вопросы для самопроверки">❓${questionsOf(f).length}</span>` : ""}</li>`;
 }
 
@@ -384,6 +388,8 @@ function viewHome() {
       <div class="card"><b>Недавно изучено</b><div class="meta">${recent.length ? recent.map(f => `<a href="#/t/${encodeURIComponent(f)}">${esc(title(f))}</a>`).join("<br>") : "пока ничего — отметьте тему галочкой ✔"}</div></div>
     </div>
 
+    ${demoCards()}
+
     <h2>💡 Как учиться с порталом</h2>
     <div class="card">
       <ol style="margin:0;padding-left:20px">
@@ -402,6 +408,28 @@ function viewHome() {
       </p>
     </div>
     <p class="kbd" style="margin-top:16px">Клавиши: <b>/</b> поиск · <b>←</b> <b>→</b> предыдущая/следующая тема · <b>M</b> отметить изученным · <b>Q</b> вопросы · <b>Esc</b> назад к списку</p>
+  </div>`;
+}
+
+function demoCards() {
+  if (!DATA.demos.length) return "";
+  return `<h2>🎮 Интерактивные демонстрации</h2><div class="cards">${DATA.demos.map(d =>
+    `<a class="card" href="#/d/${encodeURIComponent(d.file)}"><b>${esc(d.title)}</b>
+      <div class="meta">${d.topics.map(t => esc(title(t))).join(" · ")}</div></a>`).join("")}</div>`;
+}
+
+function viewDemo(file) {
+  const d = DATA.demos.find(x => x.file === file);
+  if (!d) return `<div class="page empty">Демонстрация не найдена: ${esc(file)}</div>`;
+  const main = d.topics[0];
+  return `<div class="viewer">
+    <div class="vbar">
+      <a class="btn" href="${main ? "#/t/" + encodeURIComponent(main) : "#/"}" title="К шпаргалке">← 📘 Шпаргалка</a>
+      <div class="title">🎮 ${esc(d.title)} <span class="ctx">· интерактивная демонстрация</span></div>
+      ${d.topics.slice(1).map(t => `<a class="btn" href="#/t/${encodeURIComponent(t)}">📘 ${esc(title(t))}</a>`).join("")}
+      <a class="btn" href="interactive/${encodeURIComponent(file)}" target="_blank" title="Открыть отдельно">↗</a>
+    </div>
+    <div class="vbody"><iframe src="interactive/${encodeURIComponent(file)}" title="${esc(d.title)}"></iframe></div>
   </div>`;
 }
 
@@ -498,6 +526,7 @@ function viewTopic(f, ctx) {
       <a class="btn" href="${c ? c.back : "#/"}" title="К списку (Esc)">☰ Список</a>
       <a class="btn" ${prev ? `href="${link(prev)}" title="${esc(title(prev))} (←)"` : 'style="opacity:.4;pointer-events:none"'} data-nav="prev">← Назад</a>
       <div class="title">${esc(title(f))} ${c ? `<span class="ctx">· ${esc(c.label)} · ${idx + 1}/${c.items.length}</span>` : ""}</div>
+      ${demosOf(f).map(d => `<a class="btn" href="#/d/${encodeURIComponent(d.file)}" title="Интерактивная демонстрация: ${esc(d.title)}">🎮 ${demosOf(f).length > 1 ? esc(d.title) : "Интерактив"}</a>`).join("")}
       <button class="btn" data-qtoggle title="Вопросы для самопроверки (Q)">❓ Вопросы${questionsOf(f).length ? ` (${questionsOf(f).length})` : ""}</button>
       ${ex >= 0 ? `<a class="btn" href="#/x/${ex}">💪 Практика</a>` : ""}
       ${DATA.quizzes[f] ? `<a class="btn" href="cheatsheets/${encodeURIComponent(DATA.quizzes[f])}" target="_blank" title="Проверьте себя">📝 Тест</a>` : ""}

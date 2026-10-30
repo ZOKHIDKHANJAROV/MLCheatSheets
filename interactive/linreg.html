@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="linreg regression_metrics ridge_lasso_elasticnet">
+<title>Линейная регрессия — интерактив</title>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Линейная регрессия и МНК</h1><a href="../cheatsheets/linreg_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Подберите прямую ŷ = w·x + b вручную и сравните с методом наименьших квадратов.
+    <b>Клик</b> — добавить точку, <b>перетаскивание</b> — сдвинуть, <b>правый клик</b> — удалить.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="plot"></canvas>
+      <div class="legend"><span><i style="background:var(--c-b)"></i>ваша прямая</span><span><i style="background:var(--c-ok)"></i>МНК (оптимум)</span><span>▯ квадраты ошибок</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Ваша прямая</h3>
+      <div class="ctl"><label for="w">Наклон w <output for="w"></output></label><input id="w" type="range" min="-3" max="3" step="0.01" value="0.3"></div>
+      <div class="ctl"><label for="b">Сдвиг b <output for="b"></output></label><input id="b" type="range" min="-5" max="10" step="0.05" value="1"></div>
+      <div class="ctl"><label><span><input type="checkbox" id="squares" checked> показать квадраты ошибок</span></label>
+        <label><span><input type="checkbox" id="showOls" checked> показать МНК-прямую</span></label></div>
+      <div class="buttons"><button class="primary" id="snap">Подогнать к МНК</button><button id="outlier">+ выброс</button><button id="regen">Новые данные</button></div>
+      <h3>Метрики</h3>
+      <div class="stats">
+        <span></span><span class="mono" style="text-align:right">ваша / МНК</span>
+        <span>MSE</span><b id="mse"></b>
+        <span>MAE</span><b id="mae"></b>
+        <span>R²</span><b id="r2"></b>
+        <span>МНК: w, b</span><b id="ols"></b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card hint"><h3>Что попробовать</h3><ul>
+      <li>Двигайте w и b, пытаясь уменьшить <b>MSE</b> — это сумма площадей квадратов. Получится ли обогнать МНК?</li>
+      <li>Добавьте <b>выброс</b>: МНК-прямая заметно поворачивается к нему — квадратичная ошибка сильно штрафует большие отклонения.</li>
+      <li>Сравните, как выброс меняет MSE и MAE: какая метрика чувствительнее?</li>
+      <li>Поставьте w = 0 и b = среднему y: это константный прогноз, у него R² = 0.</li>
+    </ul></div>
+    <div class="card hint"><h3>Формулы</h3>
+      <p class="mono">w* = Σ(xᵢ−x̄)(yᵢ−ȳ) / Σ(xᵢ−x̄)²<br>b* = ȳ − w*·x̄<br>MSE = (1/n)·Σ(yᵢ − ŷᵢ)²<br>R² = 1 − Σ(yᵢ−ŷᵢ)² / Σ(yᵢ−ȳ)²</p>
+    </div>
+  </div>
+</div>
+
+<script src="lab.js"></script>
+<script>
+const X0 = 0, X1 = 10, Y0 = -5, Y1 = 12;
+let pts = [], seed = 7, sx, sy, drag = -1;
+
+const w = Lab.slider("w", () => refresh(), v => v.toFixed(2));
+const b = Lab.slider("b", () => refresh(), v => v.toFixed(2));
+const plot = Lab.canvas(document.getElementById("plot"), 0.62, draw);
+
+function generate() {
+  const r = Lab.rng(seed++);
+  const tw = 0.6 + r() * 0.6, tb = r() * 2;
+  pts = Array.from({ length: 14 }, () => { const x = 0.5 + r() * 9; return [x, tw * x + tb + r.normal() * 1.1]; });
+}
+
+function ols() {
+  const n = pts.length;
+  if (n < 2) return [0, n ? pts[0][1] : 0];
+  const mx = pts.reduce((s, p) => s + p[0], 0) / n, my = pts.reduce((s, p) => s + p[1], 0) / n;
+  let num = 0, den = 0;
+  pts.forEach(([x, y]) => { num += (x - mx) * (y - my); den += (x - mx) ** 2; });
+  const ww = den ? num / den : 0;
+  return [ww, my - ww * mx];
+}
+
+function metrics(ww, bb) {
+  const n = pts.length || 1, my = pts.reduce((s, p) => s + p[1], 0) / n;
+  let se = 0, ae = 0, st = 0;
+  pts.forEach(([x, y]) => { const e = y - (ww * x + bb); se += e * e; ae += Math.abs(e); st += (y - my) ** 2; });
+  return { mse: se / n, mae: ae / n, r2: st ? 1 - se / st : 0 };
+}
+
+function refresh() {
+  const [ow, ob] = ols(), m = metrics(w.value, b.value), o = metrics(ow, ob);
+  const pair = (a, c, d) => `${a.toFixed(d)} / ${c.toFixed(d)}`;
+  document.getElementById("mse").textContent = pair(m.mse, o.mse, 3);
+  document.getElementById("mae").textContent = pair(m.mae, o.mae, 3);
+  document.getElementById("r2").textContent = pair(m.r2, o.r2, 3);
+  document.getElementById("ols").textContent = `${ow.toFixed(2)}, ${ob.toFixed(2)}`;
+  plot.redraw();
+}
+
+function line(ctx, ww, bb, col, width, dash) {
+  ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = width; ctx.setLineDash(dash || []);
+  ctx.beginPath(); ctx.moveTo(sx(X0), sy(ww * X0 + bb)); ctx.lineTo(sx(X1), sy(ww * X1 + bb)); ctx.stroke(); ctx.restore();
+}
+
+function draw(ctx, wd, h) {
+  sx = Lab.frame(X0, X1, 36, wd - 10); sy = Lab.frame(Y0, Y1, h - 22, 8);
+  ctx.clearRect(0, 0, wd, h);
+  ctx.save(); ctx.beginPath(); ctx.rect(36, 8, wd - 46, h - 30); ctx.clip();
+  Lab.axes(ctx, sx, sy, { xTicks: [0, 2, 4, 6, 8, 10], yTicks: [-4, 0, 4, 8, 12] });
+
+  // квадраты ошибок для «вашей» прямой: сторона = |остаток| в единицах y
+  if (document.getElementById("squares").checked) {
+    ctx.fillStyle = Lab.color("region-b"); ctx.strokeStyle = Lab.color("c-b"); ctx.lineWidth = 1;
+    pts.forEach(([x, y]) => {
+      const yh = w.value * x + b.value, side = Math.abs(sy(y) - sy(yh));
+      const left = sx(x), top = Math.min(sy(y), sy(yh));
+      ctx.fillRect(left, top, side, side); ctx.globalAlpha = .5; ctx.strokeRect(left, top, side, side); ctx.globalAlpha = 1;
+    });
+  }
+  if (document.getElementById("showOls").checked) { const [ow, ob] = ols(); line(ctx, ow, ob, Lab.color("c-ok"), 2, [6, 5]); }
+  line(ctx, w.value, b.value, Lab.color("c-b"), 2.5);
+  pts.forEach(([x, y]) => {
+    ctx.strokeStyle = Lab.color("c-b"); ctx.globalAlpha = .6; ctx.beginPath();
+    ctx.moveTo(sx(x), sy(y)); ctx.lineTo(sx(x), sy(w.value * x + b.value)); ctx.stroke(); ctx.globalAlpha = 1;
+    Lab.dot(ctx, sx(x), sy(y), 5, Lab.color("c-a"), Lab.color("panel"));
+  });
+  ctx.restore();
+}
+
+const cv = document.getElementById("plot");
+function nearest(p) {
+  let best = -1, bd = 12;
+  pts.forEach(([x, y], i) => { const d = Math.hypot(sx(x) - p.x, sy(y) - p.y); if (d < bd) { bd = d; best = i; } });
+  return best;
+}
+cv.addEventListener("contextmenu", e => e.preventDefault());
+cv.addEventListener("pointerdown", e => {
+  const p = Lab.pointer(cv, e), i = nearest(p);
+  if (e.button === 2) { if (i >= 0) { pts.splice(i, 1); refresh(); } return; }
+  if (i >= 0) drag = i;
+  else { pts.push([sx.invert(p.x), sy.invert(p.y)]); drag = pts.length - 1; refresh(); }
+  cv.setPointerCapture(e.pointerId);
+});
+cv.addEventListener("pointermove", e => {
+  if (drag < 0) return;
+  const p = Lab.pointer(cv, e);
+  pts[drag] = [Math.min(X1, Math.max(X0, sx.invert(p.x))), Math.min(Y1, Math.max(Y0, sy.invert(p.y)))];
+  refresh();
+});
+cv.addEventListener("pointerup", () => { drag = -1; });
+
+document.getElementById("snap").onclick = () => { const [ow, ob] = ols(); w.value = ow; b.value = ob; };
+document.getElementById("outlier").onclick = () => { pts.push([9, -3.5]); refresh(); };
+document.getElementById("regen").onclick = () => { generate(); refresh(); };
+document.getElementById("squares").onchange = refresh;
+document.getElementById("showOls").onchange = refresh;
+generate(); refresh();
+</script>
+</body>
+</html>
