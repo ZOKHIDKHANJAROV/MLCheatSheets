@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="mlp backpropagation vanishing_gradient weight_initialization">
+<title>Песочница нейросети — интерактив</title>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="lab.css">
+<style>
+  .feats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; font-size: 14px; }
+  .feats label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Песочница нейросети (MLP)</h1><a href="../cheatsheets/mlp_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Настоящая нейросеть, обучаемая обратным распространением ошибки прямо в браузере. Выберите входные признаки, число слоёв и нейронов,
+    функцию активации — и нажмите «Обучать». Каждый квадратик в схеме сети показывает, на что реагирует нейрон в разных точках плоскости.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="plane"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>класс 0</span><span><i style="background:var(--c-b)"></i>класс 1</span><span>яркость фона — уверенность сети</span><span>◦ тестовые точки</span></div>
+    </div>
+    <div class="card controls">
+      <div class="buttons"><button class="primary" id="play">▶ Обучать</button><button id="step">+1 эпоха</button><button id="reset">Сброс весов</button></div>
+      <div class="stats" style="margin-bottom:14px">
+        <span>Эпоха</span><b id="ep">0</b>
+        <span>Loss train / test</span><b id="loss"></b>
+        <span>Accuracy test</span><b id="acc"></b>
+      </div>
+      <h3>Архитектура</h3>
+      <div class="ctl"><label for="layers">Скрытых слоёв <output for="layers"></output></label><input id="layers" type="range" min="0" max="4" step="1" value="2"></div>
+      <div class="ctl"><label for="width">Нейронов в слое <output for="width"></output></label><input id="width" type="range" min="1" max="8" step="1" value="4"></div>
+      <div class="ctl"><label>Активация</label><select id="act"><option value="tanh">tanh</option><option value="relu">ReLU</option><option value="sigmoid">sigmoid</option><option value="linear">линейная (без активации)</option></select></div>
+      <h3>Обучение</h3>
+      <div class="ctl"><label for="lr">Learning rate <output for="lr"></output></label><input id="lr" type="range" min="-3" max="0" step="0.1" value="-1.5"></div>
+      <div class="ctl"><label for="l2">L2-регуляризация λ <output for="l2"></output></label><input id="l2" type="range" min="-5" max="-1" step="0.25" value="-5"></div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Схема сети: синие связи — положительные веса, оранжевые — отрицательные</h3><canvas id="net"></canvas></div>
+    <div class="card controls">
+      <h3>Данные</h3>
+      <div class="ctl"><label>Набор</label>
+        <select id="shape"><option value="circles">Круг в кольце</option><option value="xor">XOR</option><option value="moons">Полумесяцы</option><option value="spiral">Спираль</option><option value="blobs">Два облака</option></select></div>
+      <div class="ctl"><label for="noise">Шум <output for="noise"></output></label><input id="noise" type="range" min="0" max="0.5" step="0.02" value="0.1"></div>
+      <div class="buttons"><button id="regen">Новые данные</button></div>
+      <h3>Входные признаки</h3>
+      <div class="feats" id="feats"></div>
+      <h3 style="margin-top:14px">Loss по эпохам</h3><canvas id="curve"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>train</span><span><i style="background:var(--c-b)"></i>test</span></div>
+    </div>
+  </div>
+  <div class="card hint" style="margin-top:16px"><h3>Что попробовать</h3><ul>
+    <li>Круг в кольце, 0 скрытых слоёв (это логистическая регрессия) — прямая не справится. Добавьте признаки x₁² и x₂² — и та же «линейная» модель решит задачу. Это ручной feature engineering.</li>
+    <li>Теперь только x₁, x₂, но 1 скрытый слой из 3–4 нейронов: сеть сама строит нужные признаки — посмотрите на квадратики нейронов.</li>
+    <li>Выберите активацию «линейная»: сколько ни добавляй слоёв, граница остаётся прямой — без нелинейности глубина бесполезна.</li>
+    <li>Спираль: нужны 2–4 слоя по 6–8 нейронов и терпение. Сравните tanh и ReLU.</li>
+    <li>sigmoid + 4 слоя: обучение заметно медленнее — это затухание градиента.</li>
+    <li>Learning rate 1: loss начинает скакать. Маленький шум + большая сеть + много эпох: train-loss падает, а test-loss растёт — включите L2.</li>
+  </ul></div>
+</div>
+
+<script src="lab.js"></script>
+<script>
+// ---------- данные ----------
+const FEATURES = [
+  ["x₁", p => p[0], true], ["x₂", p => p[1], true],
+  ["x₁²", p => p[0] * p[0], false], ["x₂²", p => p[1] * p[1], false],
+  ["x₁·x₂", p => p[0] * p[1], false], ["sin(πx₁)", p => Math.sin(Math.PI * p[0]), false], ["sin(πx₂)", p => Math.sin(Math.PI * p[1]), false],
+];
+const featBox = document.getElementById("feats");
+FEATURES.forEach(([name, , on], i) => {
+  featBox.insertAdjacentHTML("beforeend", `<label><input type="checkbox" data-f="${i}" ${on ? "checked" : ""}> ${name}</label>`);
+});
+const activeFeats = () => [...featBox.querySelectorAll("input:checked")].map(el => +el.dataset.f);
+
+let train = [], test = [], seed = 2;
+function generate() {
+  const r = Lab.rng(seed), shape = document.getElementById("shape").value, s = noise.value;
+  const spiral = n => Array.from({ length: n }, (_, i) => {
+    const c = i % 2, t = 0.25 + 2.6 * Math.PI * r(), rad = t / (2.85 * Math.PI);
+    const ang = t + c * Math.PI;
+    return [rad * Math.cos(ang) + r.normal() * s * 0.25, rad * Math.sin(ang) * 0.95 + r.normal() * s * 0.25, c];
+  });
+  const make = n => shape === "spiral" ? spiral(n) : Lab.dataset(shape, n, s, r);
+  train = make(200); test = make(200);
+}
+
+// ---------- сеть ----------
+const ACT = {
+  tanh: [Math.tanh, y => 1 - y * y],
+  relu: [z => z > 0 ? z : 0, y => y > 0 ? 1 : 0],
+  sigmoid: [z => 1 / (1 + Math.exp(-z)), y => y * (1 - y)],
+  linear: [z => z, () => 1],
+};
+let net = null, epoch = 0, history = [];
+
+function buildNet() {
+  const feats = activeFeats(), sizes = [feats.length];
+  for (let i = 0; i < layers.value; i++) sizes.push(width.value);
+  sizes.push(1);
+  const r = Lab.rng(42 + epoch * 0), act = document.getElementById("act").value;
+  const W = [], B = [];
+  for (let l = 1; l < sizes.length; l++) {
+    // инициализация: He для ReLU, Глоро (Xavier) для остальных
+    const lim = act === "relu" && l < sizes.length - 1 ? Math.sqrt(6 / sizes[l - 1]) : Math.sqrt(6 / (sizes[l - 1] + sizes[l]));
+    W.push(Array.from({ length: sizes[l] }, () => Array.from({ length: sizes[l - 1] }, () => (r() * 2 - 1) * lim)));
+    B.push(new Array(sizes[l]).fill(act === "relu" ? 0.05 : 0));
+  }
+  net = { sizes, W, B, feats, act };
+  epoch = 0; history = [];
+}
+
+const inputOf = p => net.feats.map(i => FEATURES[i][1](p));
+
+// Прямой проход: активации всех слоёв; выход — сигмоида (вероятность класса 1)
+function forward(p) {
+  const [f] = ACT[net.act], A = [inputOf(p)];
+  for (let l = 0; l < net.W.length; l++) {
+    const last = l === net.W.length - 1, prev = A[l];
+    A.push(net.W[l].map((row, j) => {
+      let z = net.B[l][j]; for (let k = 0; k < row.length; k++) z += row[k] * prev[k];
+      return last ? 1 / (1 + Math.exp(-z)) : f(z);
+    }));
+  }
+  return A;
+}
+
+// Одна эпоха мини-батчевого SGD с бинарной кросс-энтропией и L2
+function trainEpoch() {
+  const [, df] = ACT[net.act], eta = 10 ** lr.value, lam = l2.value <= -5 ? 0 : 10 ** l2.value, bs = 10;
+  const r = Lab.rng(epoch + 1), idx = train.map((_, i) => i).sort(() => r() - 0.5);
+  for (let s = 0; s < idx.length; s += bs) {
+    const batch = idx.slice(s, s + bs);
+    const gW = net.W.map(m => m.map(row => row.map(() => 0))), gB = net.B.map(v => v.map(() => 0));
+    batch.forEach(i => {
+      const A = forward(train[i]);
+      let delta = [A[A.length - 1][0] - train[i][2]];                 // dL/dz на выходе: p − y
+      for (let l = net.W.length - 1; l >= 0; l--) {
+        const prev = A[l];
+        delta.forEach((d, j) => { gB[l][j] += d; for (let k = 0; k < prev.length; k++) gW[l][j][k] += d * prev[k]; });
+        if (l > 0) delta = prev.map((a, k) => net.W[l].reduce((s2, row, j) => s2 + row[k] * delta[j], 0) * df(a));
+      }
+    });
+    for (let l = 0; l < net.W.length; l++) {
+      net.W[l].forEach((row, j) => row.forEach((v, k) => { row[k] = v - eta * (gW[l][j][k] / batch.length + lam * v); }));
+      net.B[l].forEach((v, j) => { net.B[l][j] = v - eta * gB[l][j] / batch.length; });
+    }
+  }
+  epoch++;
+  history.push([loss(train), loss(test)]);
+  if (history.length > 400) history.shift();
+}
+
+const predictP = p => { const A = forward(p); return A[A.length - 1][0]; };
+const loss = pts => pts.reduce((s, p) => { const q = Math.min(1 - 1e-7, Math.max(1e-7, predictP(p))); return s - (p[2] ? Math.log(q) : Math.log(1 - q)); }, 0) / pts.length;
+
+// ---------- визуализация ----------
+const plane = Lab.canvas(document.getElementById("plane"), 0.75, drawPlane);
+const netView = Lab.canvas(document.getElementById("net"), 0.6, drawNet);
+const curveView = Lab.canvas(document.getElementById("curve"), 0.5, drawCurve);
+
+function mix(a, b, t) {   // смешение двух цветов #rrggbb → rgb()
+  const pa = a.match(/\w\w/g).map(h => parseInt(h, 16)), pb = b.match(/\w\w/g).map(h => parseInt(h, 16));
+  return `rgb(${pa.map((v, i) => Math.round(v + (pb[i] - v) * t)).join(",")})`;
+}
+
+function drawPlane(ctx, w, h) {
+  const sx = Lab.frame(-1.2, 1.2, 0, w), sy = Lab.frame(-1, 1, h, 0);
+  ctx.clearRect(0, 0, w, h);
+  if (!net) return;
+  const cell = 7, bg = Lab.color("panel"), ca = Lab.color("c-a"), cb = Lab.color("c-b");
+  for (let px = 0; px < w; px += cell) for (let py = 0; py < h; py += cell) {
+    const p = predictP([sx.invert(px + cell / 2), sy.invert(py + cell / 2)]);
+    ctx.fillStyle = mix(bg, p > 0.5 ? cb : ca, Math.min(1, Math.abs(p - 0.5) * 2) * 0.45);
+    ctx.fillRect(px, py, cell, cell);
+  }
+  test.forEach(([x, y, c]) => { ctx.beginPath(); ctx.arc(sx(x), sy(y), 3.5, 0, 7); ctx.strokeStyle = Lab.color(c ? "c-b" : "c-a"); ctx.lineWidth = 1.2; ctx.stroke(); });
+  train.forEach(([x, y, c]) => Lab.dot(ctx, sx(x), sy(y), 3.8, Lab.color(c ? "c-b" : "c-a"), Lab.color("panel")));
+}
+
+function drawNet(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!net) return;
+  const cols = net.sizes.length, box = Math.min(34, (h - 20) / Math.max(...net.sizes) - 6);
+  const colX = c => 30 + c * (w - 60 - box) / Math.max(1, cols - 1);
+  const pos = (c, j) => [colX(c), h / 2 + (j - (net.sizes[c] - 1) / 2) * (box + 8) - box / 2];
+  // сетка 14×14 точек плоскости для миниатюр нейронов
+  const G = 14, samples = [];
+  for (let gy = 0; gy < G; gy++) for (let gx = 0; gx < G; gx++) samples.push(forward([-1.2 + 2.4 * (gx + .5) / G, 1 - 2 * (gy + .5) / G]));
+  const maxW = Math.max(1e-6, ...net.W.flat(2).map(Math.abs));
+  for (let l = 0; l < net.W.length; l++) net.W[l].forEach((row, j) => row.forEach((v, k) => {
+    const [x0, y0] = pos(l, k), [x1, y1] = pos(l + 1, j);
+    ctx.strokeStyle = Lab.color(v > 0 ? "c-a" : "c-b"); ctx.globalAlpha = 0.25 + 0.75 * Math.abs(v) / maxW;
+    ctx.lineWidth = 0.5 + 4 * Math.abs(v) / maxW;
+    ctx.beginPath(); ctx.moveTo(x0 + box, y0 + box / 2); ctx.lineTo(x1, y1 + box / 2); ctx.stroke();
+  }));
+  ctx.globalAlpha = 1;
+  const bg = Lab.color("panel"), ca = Lab.color("c-a"), cb = Lab.color("c-b"), cellPx = box / G;
+  net.sizes.forEach((n, c) => {
+    for (let j = 0; j < n; j++) {
+      const [x, y] = pos(c, j), vals = samples.map(A => A[c][j]);
+      const lo = Math.min(...vals), hi = Math.max(...vals), mid = c === cols - 1 ? 0.5 : (lo + hi) / 2, span = Math.max(1e-6, (hi - lo) / 2);
+      vals.forEach((v, i) => {
+        const t = Math.max(-1, Math.min(1, (v - mid) / (c === cols - 1 ? 0.5 : span)));
+        ctx.fillStyle = mix(bg, t > 0 ? cb : ca, Math.abs(t) * 0.85);
+        ctx.fillRect(x + (i % G) * cellPx, y + Math.floor(i / G) * cellPx, cellPx + .5, cellPx + .5);
+      });
+      ctx.strokeStyle = Lab.color("border"); ctx.lineWidth = 1; ctx.strokeRect(x, y, box, box);
+      if (c === 0) { ctx.fillStyle = Lab.color("muted"); ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "right"; ctx.fillText(FEATURES[net.feats[j]][0], x - 4, y + box / 2 + 4); }
+    }
+  });
+  ctx.fillStyle = Lab.color("muted"); ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "center";
+  net.sizes.forEach((_, c) => ctx.fillText(c === 0 ? "вход" : c === cols - 1 ? "выход" : `слой ${c}`, colX(c) + box / 2, h - 4));
+}
+
+function drawCurve(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!history.length) return;
+  const top = Math.max(0.8, ...history.flat());
+  const cx = Lab.frame(0, Math.max(20, history.length), 32, w - 6), cy = Lab.frame(0, top, h - 20, 6);
+  Lab.axes(ctx, cx, cy, { xTicks: [], yTicks: [0, +(top / 2).toFixed(2), +top.toFixed(2)] });
+  [[0, "c-a"], [1, "c-b"]].forEach(([k, col]) => {
+    ctx.strokeStyle = Lab.color(col); ctx.lineWidth = 2; ctx.beginPath();
+    history.forEach((e, i) => i ? ctx.lineTo(cx(i), cy(e[k])) : ctx.moveTo(cx(0), cy(e[k])));
+    ctx.stroke();
+  });
+}
+
+function show() {
+  const last = history[history.length - 1];
+  document.getElementById("ep").textContent = epoch;
+  document.getElementById("loss").textContent = last ? `${last[0].toFixed(3)} / ${last[1].toFixed(3)}` : "—";
+  document.getElementById("acc").textContent = (100 * test.filter(p => (predictP(p) > 0.5 ? 1 : 0) === p[2]).length / test.length).toFixed(1) + "%";
+  plane.redraw(); netView.redraw(); curveView.redraw();
+}
+
+// ---------- управление ----------
+let running = false;
+function loop() {
+  if (!running) return;
+  for (let i = 0; i < 2; i++) trainEpoch();
+  show();
+  requestAnimationFrame(loop);
+}
+function setRunning(on) { running = on; document.getElementById("play").textContent = on ? "⏸ Пауза" : "▶ Обучать"; if (on) loop(); }
+function rebuild() { buildNet(); show(); }
+
+const layers = Lab.slider("layers", rebuild, v => v);
+const width = Lab.slider("width", rebuild, v => v);
+const lr = Lab.slider("lr", () => {}, v => (10 ** v).toFixed(v < -2 ? 3 : 2));
+const l2 = Lab.slider("l2", () => {}, v => v <= -5 ? "0" : "10^" + v);
+const noise = Lab.slider("noise", () => { generate(); rebuild(); }, v => v.toFixed(2));
+document.getElementById("act").onchange = rebuild;
+featBox.addEventListener("change", () => { if (!activeFeats().length) featBox.querySelector("input").checked = true; rebuild(); });
+document.getElementById("shape").onchange = () => { generate(); rebuild(); };
+document.getElementById("regen").onclick = () => { seed++; generate(); rebuild(); };
+document.getElementById("play").onclick = () => setRunning(!running);
+document.getElementById("step").onclick = () => { setRunning(false); trainEpoch(); show(); };
+document.getElementById("reset").onclick = () => { setRunning(false); rebuild(); };
+generate(); rebuild();
+</script>
+</body>
+</html>

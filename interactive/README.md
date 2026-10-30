@@ -14,6 +14,10 @@
 | [decision_tree.html](decision_tree.html) — разбиения CART на плоскости, правила дерева, accuracy от глубины | деревья решений |
 | [gradient_boosting.html](gradient_boosting.html) — деревья по одному на остатках, learning rate, ранняя остановка | бустинг, XGBoost, LightGBM, CatBoost |
 | [svm.html](svm.html) — зазор, опорные векторы, C, ядра linear/RBF/poly | SVM |
+| [perceptron.html](perceptron.html) — правило обучения по шагам, сходимость и XOR | перцептрон |
+| [mlp_playground.html](mlp_playground.html) — песочница MLP: признаки, слои, активации, backprop, L2, карты нейронов | MLP, backpropagation, затухание градиента |
+| [activation_functions.html](activation_functions.html) — f(x) и f′(x), затухание и взрыв градиента, инициализация He | функции активации |
+| [convolution.html](convolution.html) — ядро 3×3 по шагам, stride, padding, ReLU, max pooling, рисование мышью | основы CNN, пулинг |
 
 ## Как добавить демонстрацию
 

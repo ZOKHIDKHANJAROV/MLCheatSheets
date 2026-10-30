@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="perceptron">
+<title>Перцептрон — интерактив</title>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Обучение перцептрона</h1><a href="../cheatsheets/perceptron_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Перцептрон предсказывает знак w·x + b. Правило обучения: если точка классифицирована неверно,
+    <b>w ← w + η·y·x</b>, <b>b ← b + η·y</b>. Каждое обновление поворачивает и сдвигает границу в сторону ошибочной точки.
+    <b>Клик</b> добавляет точку выбранного класса.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="plane"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>y = −1</span><span><i style="background:var(--c-b)"></i>y = +1</span><span>◯ точка последнего обновления</span><span>┄ граница до обновления</span><span>➝ вектор w</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Обучение</h3>
+      <div class="buttons"><button class="primary" id="step">Шаг (1 обновление)</button><button id="epoch">Эпоха</button><button id="play">▶ Учить</button><button id="reset">Сброс весов</button></div>
+      <div class="ctl"><label for="lr">Learning rate η <output for="lr"></output></label><input id="lr" type="range" min="0.05" max="1" step="0.05" value="0.3"></div>
+      <h3>Данные</h3>
+      <div class="ctl"><label>Набор</label>
+        <select id="shape"><option value="sep">Линейно разделимые</option><option value="blobs">Пересекающиеся облака</option><option value="xor">XOR</option></select></div>
+      <div class="buttons"><button id="addA">+ y = −1</button><button id="addB">+ y = +1</button><button id="regen">Новые данные</button></div>
+      <h3>Состояние</h3>
+      <div class="stats">
+        <span>Эпоха</span><b id="ep"></b>
+        <span>Обновлений весов</span><b id="upd"></b>
+        <span>Ошибок на выборке</span><b id="err"></b>
+        <span>w, b</span><b id="wb" class="mono"></b>
+        <span>Статус</span><b id="status"></b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Ошибок в конце каждой эпохи</h3><canvas id="curve"></canvas></div>
+    <div class="card hint"><h3>Что попробовать</h3><ul>
+      <li>Нажимайте «Шаг»: обведённая точка была ошибкой, пунктир — граница до обновления. Вектор w всегда перпендикулярен границе и смотрит в сторону класса +1.</li>
+      <li>На разделимых данных ошибки дойдут до нуля — это гарантирует <b>теорема сходимости перцептрона</b>.</li>
+      <li>Выберите XOR: ни одна прямая не разделит классы, ошибки никогда не исчезнут, а граница будет бесконечно «метаться». Нужен скрытый слой — см. демонстрацию MLP.</li>
+      <li>На пересекающихся облаках перцептрон тоже не сходится, хотя хорошая граница существует, — поэтому на практике используют логистическую регрессию или SVM.</li>
+      <li>Добавьте точку класса +1 глубоко в чужую область и посмотрите, как одна точка «ломает» сходимость.</li>
+    </ul></div>
+  </div>
+</div>
+
+<script src="lab.js"></script>
+<script>
+let pts = [], w = [0, 0], b = 0, prev = null, last = -1, epoch = 0, updates = 0, cursor = 0, order = [], epochErrs = [], seed = 3, timer = null, addClass = 1, sx, sy;
+
+const lr = Lab.slider("lr", () => {}, v => v.toFixed(2));
+const plane = Lab.canvas(document.getElementById("plane"), 0.68, draw);
+const curve = Lab.canvas(document.getElementById("curve"), 0.42, drawCurve);
+
+function generate() {
+  const r = Lab.rng(seed), shape = document.getElementById("shape").value;
+  if (shape === "sep") {
+    // классы по разные стороны случайной прямой с зазором
+    const ang = r() * Math.PI, nx = Math.cos(ang), ny = Math.sin(ang), off = (r() - 0.5) * 0.4;
+    pts = [];
+    while (pts.length < 50) {
+      const x = r() * 2.2 - 1.1, y = r() * 1.8 - 0.9, d = x * nx + y * ny - off;
+      if (Math.abs(d) > 0.12) pts.push([x, y, d > 0 ? 1 : -1]);
+    }
+  } else {
+    pts = Lab.dataset(shape, 50, 0.15, r).map(p => [p[0], p[1], p[2] ? 1 : -1]);
+  }
+  resetWeights();
+}
+
+function resetWeights() {
+  stop();
+  w = [0, 0]; b = 0; prev = null; last = -1; epoch = 0; updates = 0; cursor = 0; epochErrs = [];
+  newOrder(); show();
+}
+function newOrder() { const r = Lab.rng(epoch + 17); order = pts.map((_, i) => i).sort(() => r() - 0.5); }
+const predict = p => (w[0] * p[0] + w[1] * p[1] + b) >= 0 ? 1 : -1;
+const errors = () => pts.filter(p => predict(p) !== p[2]).length;
+
+// Идём по точкам эпохи, пока не встретим ошибку; обновляем веса по ней. false — если эпоха закончилась без ошибок.
+function stepOnce() {
+  while (cursor < order.length) {
+    const i = order[cursor++], p = pts[i];
+    if (predict(p) !== p[2]) {
+      prev = { w: w.slice(), b };
+      w = [w[0] + lr.value * p[2] * p[0], w[1] + lr.value * p[2] * p[1]];
+      b += lr.value * p[2];
+      last = i; updates++;
+      return true;
+    }
+  }
+  endEpoch();
+  return false;
+}
+function endEpoch() {
+  epoch++; epochErrs.push(errors()); cursor = 0; newOrder();
+  if (epochErrs[epochErrs.length - 1] === 0) stop();
+}
+function runEpoch() { const start = epoch; while (epoch === start) stepOnce(); }
+
+function show() {
+  const e = errors();
+  document.getElementById("ep").textContent = epoch;
+  document.getElementById("upd").textContent = updates;
+  document.getElementById("err").textContent = `${e} из ${pts.length}`;
+  document.getElementById("wb").textContent = `(${w[0].toFixed(2)}, ${w[1].toFixed(2)}), ${b.toFixed(2)}`;
+  document.getElementById("status").textContent = updates === 0 ? "веса нулевые" : e === 0 ? "✅ все точки верно" : epoch >= 50 ? "♾ не сходится" : "учится";
+  plane.redraw(); curve.redraw();
+}
+
+function boundary(ctx, ww, bb, dash) {
+  if (Math.hypot(ww[0], ww[1]) < 1e-9) return;
+  ctx.setLineDash(dash || []); ctx.beginPath();
+  if (Math.abs(ww[1]) > Math.abs(ww[0])) { const y = x => -(ww[0] * x + bb) / ww[1]; ctx.moveTo(sx(-1.3), sy(y(-1.3))); ctx.lineTo(sx(1.3), sy(y(1.3))); }
+  else { const x = y => -(ww[1] * y + bb) / ww[0]; ctx.moveTo(sx(x(-1.1)), sy(-1.1)); ctx.lineTo(sx(x(1.1)), sy(1.1)); }
+  ctx.stroke(); ctx.setLineDash([]);
+}
+
+function draw(ctx, wd, h) {
+  sx = Lab.frame(-1.2, 1.2, 0, wd); sy = Lab.frame(-1, 1, h, 0);
+  ctx.clearRect(0, 0, wd, h);
+  if (Math.hypot(...w) > 1e-9) {
+    const cell = 8;
+    for (let px = 0; px < wd; px += cell) for (let py = 0; py < h; py += cell) {
+      ctx.fillStyle = Lab.color(predict([sx.invert(px + 4), sy.invert(py + 4)]) > 0 ? "region-b" : "region-a");
+      ctx.fillRect(px, py, cell, cell);
+    }
+  }
+  Lab.axes(ctx, sx, sy, { xTicks: [0], yTicks: [0] });
+  if (prev) { ctx.strokeStyle = Lab.color("muted"); ctx.lineWidth = 1.5; boundary(ctx, prev.w, prev.b, [6, 5]); }
+  ctx.strokeStyle = Lab.color("text"); ctx.lineWidth = 2.5; boundary(ctx, w, b);
+  pts.forEach(([x, y, c]) => Lab.dot(ctx, sx(x), sy(y), 4.5, Lab.color(c > 0 ? "c-b" : "c-a"), Lab.color("panel")));
+  if (last >= 0) { ctx.strokeStyle = Lab.color("text"); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx(pts[last][0]), sy(pts[last][1]), 10, 0, 7); ctx.stroke(); }
+  // вектор w из начала координат (нормирован для наглядности)
+  const n = Math.hypot(...w);
+  if (n > 1e-9) {
+    const L = 0.35, ex = sx(w[0] / n * L), ey = sy(w[1] / n * L), ox = sx(0), oy = sy(0);
+    ctx.strokeStyle = Lab.color("c-b"); ctx.fillStyle = Lab.color("c-b"); ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+    const a = Math.atan2(ey - oy, ex - ox);
+    ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex - 10 * Math.cos(a - .4), ey - 10 * Math.sin(a - .4)); ctx.lineTo(ex - 10 * Math.cos(a + .4), ey - 10 * Math.sin(a + .4)); ctx.fill();
+    ctx.font = "bold 13px system-ui, sans-serif"; ctx.fillText("w", ex + 6, ey - 6);
+  }
+}
+
+function drawCurve(ctx, wd, h) {
+  ctx.clearRect(0, 0, wd, h);
+  const n = Math.max(10, epochErrs.length), top = Math.max(5, ...epochErrs);
+  const cx = Lab.frame(0, n, 36, wd - 10), cy = Lab.frame(0, top, h - 22, 8);
+  Lab.axes(ctx, cx, cy, { xTicks: [0, Math.round(n / 2), n], yTicks: [0, Math.round(top / 2), top], xLabel: "эпоха" });
+  ctx.strokeStyle = Lab.color("c-b"); ctx.lineWidth = 2; ctx.beginPath();
+  epochErrs.forEach((e, i) => i ? ctx.lineTo(cx(i + 1), cy(e)) : ctx.moveTo(cx(1), cy(e)));
+  ctx.stroke();
+  epochErrs.forEach((e, i) => Lab.dot(ctx, cx(i + 1), cy(e), 2.5, Lab.color("c-b")));
+}
+
+function play() {
+  document.getElementById("play").textContent = "⏸ Стоп";
+  timer = setInterval(() => { if (epoch >= 200) return stop(); stepOnce(); show(); }, 90);
+}
+function stop() { clearInterval(timer); timer = null; document.getElementById("play").textContent = "▶ Учить"; }
+
+document.getElementById("step").onclick = () => { stop(); if (!stepOnce() && errors()) stepOnce(); show(); };
+document.getElementById("epoch").onclick = () => { stop(); runEpoch(); show(); };
+document.getElementById("play").onclick = () => timer ? stop() : play();
+document.getElementById("reset").onclick = resetWeights;
+document.getElementById("shape").onchange = generate;
+document.getElementById("regen").onclick = () => { seed++; generate(); };
+const cv = document.getElementById("plane");
+cv.addEventListener("pointerdown", e => { const p = Lab.pointer(cv, e); pts.push([sx.invert(p.x), sy.invert(p.y), addClass]); order.push(pts.length - 1); show(); });
+const setAdd = c => { addClass = c; document.getElementById("addA").classList.toggle("primary", c < 0); document.getElementById("addB").classList.toggle("primary", c > 0); };
+document.getElementById("addA").onclick = () => setAdd(-1);
+document.getElementById("addB").onclick = () => setAdd(1);
+setAdd(1); generate();
+</script>
+</body>
+</html>

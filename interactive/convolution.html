@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="cnn_basics pooling_layers cnn_visualization_techniques">
+<title>Свёртка и пулинг — интерактив</title>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="lab.css">
+<style>
+  .maps { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .maps h3 { margin: 2px 4px 6px; }
+  .kernel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 12px; }
+  .kernel input { width: 100%; text-align: center; padding: 6px 2px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); font: 600 14px Consolas, monospace; }
+  .calc { font-family: Consolas, "Courier New", monospace; font-size: 12.5px; line-height: 1.6; overflow-x: auto; }
+  .calc .pos { color: var(--c-a); } .calc .neg { color: var(--c-b); }
+  @media (max-width: 860px) { .maps { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Свёртка, ReLU и max pooling</h1><a href="../cheatsheets/cnn_basics_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Ядро 3×3 скользит по изображению; в каждой позиции значения под ним умножаются на веса ядра и складываются —
+    получается один пиксель карты признаков. <b>Рисуйте мышью</b> на входном изображении (правая кнопка — стирать),
+    <b>наведите курсор</b> на карту признаков, чтобы увидеть вычисление.</p>
+
+  <div class="grid">
+    <div class="card stage">
+      <div class="maps">
+        <div><h3>Вход 28×28 (рисуйте здесь)</h3><canvas id="input"></canvas></div>
+        <div><h3 id="outTitle">Карта признаков</h3><canvas id="output"></canvas></div>
+      </div>
+    </div>
+    <div class="card controls">
+      <h3>Ядро свёртки</h3>
+      <div class="ctl"><select id="preset">
+        <option value="sobelx">Вертикальные границы (Собель x)</option>
+        <option value="sobely">Горизонтальные границы (Собель y)</option>
+        <option value="blur">Размытие (среднее)</option>
+        <option value="sharpen">Повышение резкости</option>
+        <option value="laplace">Лапласиан (все границы)</option>
+        <option value="identity">Тождественное</option>
+        <option value="custom">Своё (правьте числа)</option>
+      </select></div>
+      <div class="kernel" id="kernel"></div>
+      <div class="ctl"><label for="stride">Шаг (stride) <output for="stride"></output></label><input id="stride" type="range" min="1" max="3" step="1" value="1"></div>
+      <div class="ctl"><label for="pad">Дополнение нулями (padding) <output for="pad"></output></label><input id="pad" type="range" min="0" max="2" step="1" value="0"></div>
+      <div class="ctl"><label><span><input type="checkbox" id="relu"> применить ReLU к карте признаков</span></label></div>
+      <h3>Изображение</h3>
+      <div class="ctl"><select id="image"><option value="shapes">Фигуры</option><option value="digit">Цифра 7</option><option value="checker">Шахматная доска</option><option value="blank">Пустое (нарисуйте сами)</option></select></div>
+      <div class="buttons"><button class="primary" id="play">▶ Прогнать ядро</button><button id="clear">Очистить</button></div>
+      <div class="stats"><span>Размер выхода</span><b id="size" class="mono"></b><span>После max pool 2×2</span><b id="psize" class="mono"></b></div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card"><h3>Вычисление в выбранной позиции</h3><div class="calc" id="calc">Наведите курсор на карту признаков.</div></div>
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Max pooling 2×2 (шаг 2)</h3><canvas id="pool"></canvas></div>
+  </div>
+  <div class="card hint" style="margin-top:16px"><h3>Что попробовать</h3><ul>
+    <li>Собель x реагирует на вертикальные края: слева направо светлеет — положительный отклик (синий), темнеет — отрицательный (оранжевый). Нарисуйте вертикальную и горизонтальную линии и сравните с Собелем y.</li>
+    <li>Включите ReLU: отрицательные отклики обнуляются, остаются только «переходы в одну сторону».</li>
+    <li>Размер выхода: ⌊(28 + 2·p − 3) / s⌋ + 1. Без дополнения карта уменьшается до 26×26, при p = 1 остаётся 28×28, при stride 2 — примерно вдвое меньше.</li>
+    <li>Max pooling оставляет сильнейший отклик в каждом блоке 2×2: карта вдвое меньше, но края всё ещё видны — это и есть устойчивость к небольшим сдвигам.</li>
+    <li>Выберите «Своё» и подберите ядро, которое находит диагональные линии.</li>
+    <li>В настоящей CNN веса ядер не задаются вручную — сеть <b>учит</b> их, и в первых слоях часто получаются как раз детекторы краёв.</li>
+  </ul></div>
+</div>
+
+<script src="lab.js"></script>
+<script>
+const N = 28;
+const PRESETS = {
+  sobelx: [-1, 0, 1, -2, 0, 2, -1, 0, 1], sobely: [-1, -2, -1, 0, 0, 0, 1, 2, 1],
+  blur: [1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9], sharpen: [0, -1, 0, -1, 5, -1, 0, -1, 0],
+  laplace: [0, 1, 0, 1, -4, 1, 0, 1, 0], identity: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+};
+let img = new Float32Array(N * N), K = PRESETS.sobelx.slice(), out = { w: 0, h: 0, v: [] }, cursor = null, timer = null;
+
+const stride = Lab.slider("stride", () => compute(), v => v);
+const pad = Lab.slider("pad", () => compute(), v => v);
+const inView = Lab.canvas(document.getElementById("input"), 1, drawInput);
+const outView = Lab.canvas(document.getElementById("output"), 1, drawOutput);
+const poolView = Lab.canvas(document.getElementById("pool"), 0.5, drawPool);
+
+// ---------- изображения ----------
+function makeImage(kind) {
+  img.fill(0);
+  const set = (x, y, v = 1) => { if (x >= 0 && y >= 0 && x < N && y < N) img[y * N + x] = Math.max(img[y * N + x], v); };
+  if (kind === "shapes") {
+    for (let y = 4; y < 13; y++) for (let x = 3; x < 12; x++) set(x, y);                                     // квадрат
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (Math.hypot(x - 19.5, y - 19.5) < 5.5) set(x, y, 0.8);   // круг
+    for (let t = 0; t < 12; t++) set(4 + t, 26 - t), set(5 + t, 26 - t);                                         // диагональ
+  } else if (kind === "digit") {
+    for (let x = 6; x < 22; x++) for (let y = 5; y < 8; y++) set(x, y);
+    for (let t = 0; t < 18; t++) { const x = Math.round(20 - t * 0.55); for (let k = 0; k < 3; k++) set(x + k - 1, 8 + t); }
+    for (let x = 11; x < 19; x++) set(x, 15), set(x, 16);
+  } else if (kind === "checker") {
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (((x >> 2) + (y >> 2)) % 2) set(x, y);
+  }
+  compute();
+}
+
+// ---------- свёртка ----------
+function compute() {
+  const p = pad.value, s = stride.value;
+  const ow = Math.floor((N + 2 * p - 3) / s) + 1;
+  const px = (x, y) => x < 0 || y < 0 || x >= N || y >= N ? 0 : img[y * N + x];
+  const relu = document.getElementById("relu").checked;
+  out = { w: ow, h: ow, v: new Float32Array(ow * ow) };
+  for (let oy = 0; oy < ow; oy++) for (let ox = 0; ox < ow; ox++) {
+    let sum = 0;
+    for (let ky = 0; ky < 3; ky++) for (let kx = 0; kx < 3; kx++) sum += px(ox * s - p + kx, oy * s - p + ky) * K[ky * 3 + kx];
+    out.v[oy * ow + ox] = relu ? Math.max(0, sum) : sum;
+  }
+  const pw = Math.floor(ow / 2);
+  document.getElementById("size").textContent = `${ow}×${ow}`;
+  document.getElementById("psize").textContent = `${pw}×${pw}`;
+  document.getElementById("outTitle").textContent = `Карта признаков ${ow}×${ow}${relu ? " (после ReLU)" : ""}`;
+  if (cursor && (cursor[0] >= ow || cursor[1] >= ow)) cursor = null;
+  renderCalc(); inView.redraw(); outView.redraw(); poolView.redraw();
+}
+
+function renderCalc() {
+  const el = document.getElementById("calc");
+  if (!cursor) { el.textContent = "Наведите курсор на карту признаков или нажмите «Прогнать ядро»."; return; }
+  const [ox, oy] = cursor, p = pad.value, s = stride.value, terms = [];
+  let sum = 0;
+  for (let ky = 0; ky < 3; ky++) for (let kx = 0; kx < 3; kx++) {
+    const x = ox * s - p + kx, y = oy * s - p + ky, v = x < 0 || y < 0 || x >= N || y >= N ? 0 : img[y * N + x];
+    sum += v * K[ky * 3 + kx];
+    const k = K[ky * 3 + kx];
+    if (k !== 0) terms.push(`${v.toFixed(1)}·${k < 0 ? "(−" + fmtK(-k) + ")" : fmtK(k)}`);
+  }
+  const relu = document.getElementById("relu").checked, res = relu ? Math.max(0, sum) : sum;
+  el.innerHTML = `Позиция выхода (${ox}, ${oy}) ← окно входа x ${ox * s - p}…${ox * s - p + 2}, y ${oy * s - p}…${oy * s - p + 2}<br>` +
+    `Σ = ${terms.join(" + ") || "0"}<br>= <b class="${sum >= 0 ? "pos" : "neg"}">${sum.toFixed(3)}</b>` +
+    (relu ? ` → ReLU → <b>${res.toFixed(3)}</b>` : "");
+}
+const fmtK = v => Math.abs(v - 1 / 9) < 1e-6 ? "⅑" : String(+v.toFixed(2));
+
+// ---------- рисование ----------
+const mixHex = (a, b, t) => { const pa = a.match(/\w\w/g).map(h => parseInt(h, 16)), pb = b.match(/\w\w/g).map(h => parseInt(h, 16)); return `rgb(${pa.map((v, i) => Math.round(v + (pb[i] - v) * t)).join(",")})`; };
+
+function drawInput(ctx, w) {
+  const c = w / N, bg = Lab.color("panel"), fg = Lab.color("text");
+  ctx.clearRect(0, 0, w, w);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { ctx.fillStyle = mixHex(bg, fg, img[y * N + x]); ctx.fillRect(x * c, y * c, c + .5, c + .5); }
+  ctx.strokeStyle = Lab.color("grid"); ctx.lineWidth = .5;
+  for (let i = 0; i <= N; i++) { ctx.beginPath(); ctx.moveTo(i * c, 0); ctx.lineTo(i * c, w); ctx.moveTo(0, i * c); ctx.lineTo(w, i * c); ctx.stroke(); }
+  if (cursor) {
+    const s = stride.value, p = pad.value, x0 = cursor[0] * s - p, y0 = cursor[1] * s - p;
+    ctx.fillStyle = Lab.color("region-b"); ctx.fillRect(x0 * c, y0 * c, 3 * c, 3 * c);
+    ctx.strokeStyle = Lab.color("c-b"); ctx.lineWidth = 2.5; ctx.strokeRect(x0 * c, y0 * c, 3 * c, 3 * c);
+    ctx.fillStyle = Lab.color("c-b"); ctx.font = `${Math.max(8, c * 0.42)}px Consolas, monospace`; ctx.textAlign = "center";
+    for (let ky = 0; ky < 3; ky++) for (let kx = 0; kx < 3; kx++) ctx.fillText(fmtK(K[ky * 3 + kx]), (x0 + kx + .5) * c, (y0 + ky + .5) * c + c * 0.15);
+  }
+}
+
+function drawMap(ctx, w, h, vals, side, mark) {
+  const c = Math.min(w, h) / side, ox0 = (w - c * side) / 2, bg = Lab.color("panel"), ca = Lab.color("c-a"), cb = Lab.color("c-b");
+  const maxAbs = Math.max(1e-6, ...Array.from(vals).map(Math.abs));
+  ctx.clearRect(0, 0, w, h);
+  for (let y = 0; y < side; y++) for (let x = 0; x < side; x++) {
+    const v = vals[y * side + x] / maxAbs;
+    ctx.fillStyle = mixHex(bg, v >= 0 ? ca : cb, Math.min(1, Math.abs(v)));
+    ctx.fillRect(ox0 + x * c, y * c, c + .5, c + .5);
+  }
+  if (mark) { ctx.strokeStyle = Lab.color("text"); ctx.lineWidth = 2; ctx.strokeRect(ox0 + mark[0] * c, mark[1] * c, c, c); }
+  return { c, ox0 };
+}
+let outGeom = { c: 1, ox0: 0 };
+function drawOutput(ctx, w, h) { outGeom = drawMap(ctx, w, h, out.v, out.w, cursor); }
+function drawPool(ctx, w, h) {
+  const pw = Math.floor(out.w / 2), pv = new Float32Array(pw * pw);
+  for (let y = 0; y < pw; y++) for (let x = 0; x < pw; x++) {
+    let m = -Infinity; for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) m = Math.max(m, out.v[(2 * y + dy) * out.w + 2 * x + dx]);
+    pv[y * pw + x] = m;
+  }
+  if (pw > 0) drawMap(ctx, w, h, pv, pw, cursor ? [cursor[0] >> 1, cursor[1] >> 1] : null);
+  else ctx.clearRect(0, 0, w, h);
+}
+
+// ---------- ядро ----------
+const kernelBox = document.getElementById("kernel");
+for (let i = 0; i < 9; i++) kernelBox.insertAdjacentHTML("beforeend", `<input type="number" step="0.5" data-k="${i}">`);
+function showKernel() { kernelBox.querySelectorAll("input").forEach((el, i) => { el.value = +K[i].toFixed(3); }); }
+kernelBox.addEventListener("input", e => { K[+e.target.dataset.k] = parseFloat(e.target.value) || 0; document.getElementById("preset").value = "custom"; compute(); });
+document.getElementById("preset").onchange = e => { if (PRESETS[e.target.value]) { K = PRESETS[e.target.value].slice(); showKernel(); compute(); } };
+
+// ---------- рисование мышью на входе ----------
+const inCv = document.getElementById("input");
+let painting = 0;
+inCv.addEventListener("contextmenu", e => e.preventDefault());
+function paint(e) {
+  const p = Lab.pointer(inCv, e), c = inCv.clientWidth / N, x = Math.floor(p.x / c), y = Math.floor(p.y / c);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= N || yy >= N) continue;
+    const v = dx === 0 && dy === 0 ? 1 : 0.5;
+    img[yy * N + xx] = painting > 0 ? Math.max(img[yy * N + xx], v) : 0;
+  }
+  compute();
+}
+inCv.addEventListener("pointerdown", e => { painting = e.button === 2 ? -1 : 1; inCv.setPointerCapture(e.pointerId); paint(e); });
+inCv.addEventListener("pointermove", e => { if (painting) paint(e); });
+inCv.addEventListener("pointerup", () => { painting = 0; });
+
+// ---------- выбор позиции на карте признаков ----------
+const outCv = document.getElementById("output");
+outCv.addEventListener("pointermove", e => {
+  const p = Lab.pointer(outCv, e), x = Math.floor((p.x - outGeom.ox0) / outGeom.c), y = Math.floor(p.y / outGeom.c);
+  if (x >= 0 && y >= 0 && x < out.w && y < out.h) { stop(); cursor = [x, y]; renderCalc(); inView.redraw(); outView.redraw(); poolView.redraw(); }
+});
+
+function stop() { clearInterval(timer); timer = null; document.getElementById("play").textContent = "▶ Прогнать ядро"; }
+document.getElementById("play").onclick = () => {
+  if (timer) return stop();
+  document.getElementById("play").textContent = "⏸ Стоп";
+  let i = 0;
+  timer = setInterval(() => {
+    if (i >= out.w * out.h) return stop();
+    cursor = [i % out.w, Math.floor(i / out.w)]; i++;
+    renderCalc(); inView.redraw(); outView.redraw(); poolView.redraw();
+  }, 40);
+};
+document.getElementById("relu").onchange = compute;
+document.getElementById("image").onchange = e => makeImage(e.target.value);
+document.getElementById("clear").onclick = () => { document.getElementById("image").value = "blank"; makeImage("blank"); };
+showKernel(); makeImage("shapes");
+</script>
+</body>
+</html>
