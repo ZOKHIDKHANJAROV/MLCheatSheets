@@ -18,6 +18,10 @@
 | [mlp_playground.html](mlp_playground.html) — песочница MLP: признаки, слои, активации, backprop, L2, карты нейронов | MLP, backpropagation, затухание градиента |
 | [activation_functions.html](activation_functions.html) — f(x) и f′(x), затухание и взрыв градиента, инициализация He | функции активации |
 | [convolution.html](convolution.html) — ядро 3×3 по шагам, stride, padding, ReLU, max pooling, рисование мышью | основы CNN, пулинг |
+| [pca.html](pca.html) — главные компоненты облака точек, дисперсия вдоль любого направления, стандартизация | PCA, снижение размерности |
+| [rl_gridworld.html](rl_gridworld.html) — Q-learning против SARSA на «обрыве», карта ценностей, value iteration | основы RL, Q-learning, SARSA, DP |
+| [attention.html](attention.html) — тепловая карта softmax(QKᵀ/√d), масштабирование, каузальная маска, головы, позиции | self-attention, трансформеры |
+| [dropout_batchnorm.html](dropout_batchnorm.html) — переобучение с dropout и без; активации по слоям с BatchNorm и без | dropout, BatchNorm, инициализация |
 
 ## Как добавить демонстрацию
 

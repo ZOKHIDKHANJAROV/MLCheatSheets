@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="self_attention attention_mechanism multi_head_attention transformers positional_encoding">
+<title>Механизм внимания — интерактив</title>
+<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="lab.css?v=2">
+<style>
+  #sentence { width: 100%; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; }
+  .tokens { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 4px 10px; }
+  .tok { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); cursor: pointer; font-size: 14px; background: var(--panel); color: var(--text); }
+  .tok.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+</style>
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Scaled dot-product attention</h1><a href="../cheatsheets/self_attention_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Каждый токен смотрит на все токены: веса = softmax(Q·Kᵀ / √d). Тепловая карта — матрица весов (строка — кто смотрит, столбец — на кого).
+    <b>Нажмите на токен</b>, чтобы увидеть, куда направлено его внимание. Векторы здесь — простые признаки слов (без обучения), поэтому смотрите на <b>механику</b>: масштабирование, маску, головы.</p>
+
+  <div class="grid">
+    <div class="card stage">
+      <div class="tokens" id="tokens"></div>
+      <canvas id="heat"></canvas>
+    </div>
+    <div class="card controls">
+      <h3>Предложение</h3>
+      <div class="ctl"><input id="sentence" value="кошка села на тёплый ковёр потому что она устала"></div>
+      <h3>Механизм</h3>
+      <div class="ctl"><label for="head">Голова внимания <output for="head"></output></label><input id="head" type="range" min="1" max="4" step="1" value="1"></div>
+      <div class="ctl"><label for="d">Размерность d_k <output for="d"></output></label><input id="d" type="range" min="2" max="64" step="2" value="16"></div>
+      <div class="ctl"><label><span><input type="checkbox" id="scale" checked> делить на √d_k</span></label></div>
+      <div class="ctl"><label><span><input type="checkbox" id="causal"> каузальная маска (как в GPT)</span></label></div>
+      <div class="ctl"><label><span><input type="checkbox" id="pos" checked> позиционное кодирование</span></label></div>
+      <h3>Выбранный токен</h3>
+      <div class="stats">
+        <span>Энтропия весов (насколько «размазано»)</span><b id="entropy">—</b>
+        <span>Максимальный вес</span><b id="maxw">—</b>
+        <span>Смотрит больше всего на</span><b id="argmax">—</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hint" style="margin-top:16px"><h3>Что попробовать</h3><ul>
+    <li><b>Выключите деление на √d_k</b> и увеличьте d_k до 64: скалярные произведения растут, softmax становится почти one-hot — каждый токен смотрит на один-единственный токен, а градиенты почти нулевые. Деление на √d_k возвращает плавные веса.</li>
+    <li><b>Каузальная маска</b>: верхний треугольник матрицы обнуляется — токен видит только себя и предыдущие. Первый токен всегда смотрит только на себя.</li>
+    <li><b>Головы</b> используют разные проекции W_Q, W_K — у каждой своя картина внимания. Multi-head attention объединяет все их.</li>
+    <li><b>Выключите позиционное кодирование</b> и повторите слово дважды: одинаковые слова получат одинаковые строки весов — без позиций внимание не различает порядок.</li>
+    <li>Каждая строка матрицы в сумме даёт 1 — это распределение вероятностей.</li>
+  </ul></div>
+</div>
+
+<script src="lab.js?v=2"></script>
+<script>
+let tokens = [], selected = 0, A = [];
+const head = Lab.slider("head", () => refresh(), v => v);
+const dk = Lab.slider("d", () => refresh(), v => v);
+const heat = Lab.canvas(document.getElementById("heat"), 0.8, draw);
+
+// Детерминированный «эмбеддинг» слова: признаки из хэша букв (общие буквы → похожие векторы)
+const D_MODEL = 32;
+function embed(word, pos) {
+  const v = new Array(D_MODEL).fill(0);
+  const w = word.toLowerCase();
+  for (let i = 0; i < w.length; i++) {
+    const r = Lab.rng(w.charCodeAt(i) * 131 + (i === 0 ? 7 : 0));
+    for (let j = 0; j < D_MODEL; j++) v[j] += r.normal() / Math.sqrt(w.length);
+  }
+  if (document.getElementById("pos").checked)
+    for (let j = 0; j < D_MODEL; j++) v[j] += 0.8 * (j % 2 ? Math.cos(pos / 10000 ** ((j - 1) / D_MODEL)) : Math.sin(pos / 10000 ** (j / D_MODEL)));
+  return v;
+}
+// Проекции W_Q, W_K для каждой головы — свои случайные матрицы D_MODEL × d_k
+function proj(seed, d) {
+  const r = Lab.rng(seed);
+  return Array.from({ length: D_MODEL }, () => Array.from({ length: d }, () => r.normal() / Math.sqrt(D_MODEL) * 1.6));
+}
+const matmul = (X, Wm) => X.map(row => Wm[0].map((_, j) => row.reduce((s, x, k) => s + x * Wm[k][j], 0)));
+
+function refresh() {
+  tokens = document.getElementById("sentence").value.trim().split(/\s+/).filter(Boolean).slice(0, 12);
+  if (!tokens.length) tokens = ["…"];
+  selected = Math.min(selected, tokens.length - 1);
+  const d = dk.value, X = tokens.map((t, i) => embed(t, i));
+  const Q = matmul(X, proj(100 + head.value, d)), K = matmul(X, proj(200 + head.value, d));
+  const scale = document.getElementById("scale").checked ? Math.sqrt(d) : 1, causal = document.getElementById("causal").checked;
+  A = Q.map((q, i) => {
+    const s = K.map((k, j) => (causal && j > i) ? -Infinity : q.reduce((acc, x, m) => acc + x * k[m], 0) / scale);
+    const mx = Math.max(...s), e = s.map(x => Math.exp(x - mx)), sum = e.reduce((a, b) => a + b, 0);
+    return e.map(x => x / sum);
+  });
+  const row = A[selected], H = -row.reduce((s, p) => s + (p > 0 ? p * Math.log2(p) : 0), 0);
+  document.getElementById("entropy").textContent = `${H.toFixed(2)} бит (макс. ${Math.log2(causal ? selected + 1 : tokens.length).toFixed(2)})`;
+  document.getElementById("maxw").textContent = Math.max(...row).toFixed(3);
+  document.getElementById("argmax").textContent = `«${tokens[row.indexOf(Math.max(...row))]}»`;
+  document.getElementById("tokens").innerHTML = tokens.map((t, i) => `<span class="tok ${i === selected ? "on" : ""}" data-i="${i}">${t.replace(/[<&]/g, "")}</span>`).join("");
+  heat.redraw();
+}
+
+function mixHex(a, b, t) { const pa = a.match(/\w\w/g).map(v => parseInt(v, 16)), pb = b.match(/\w\w/g).map(v => parseInt(v, 16)); return `rgb(${pa.map((v, i) => Math.round(v + (pb[i] - v) * t)).join(",")})`; }
+
+function draw(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  const n = tokens.length; if (!n || !A.length) return;
+  const left = 90, top = 70, cell = Math.min((w - left - 10) / n, (h - top - 10) / n);
+  ctx.font = "12px system-ui, sans-serif"; ctx.fillStyle = Lab.color("text");
+  tokens.forEach((t, i) => {
+    ctx.textAlign = "right"; ctx.fillStyle = Lab.color(i === selected ? "accent" : "text");
+    ctx.fillText(t.slice(0, 11), left - 6, top + (i + .6) * cell);
+    ctx.save(); ctx.translate(left + (i + .55) * cell, top - 6); ctx.rotate(-Math.PI / 4); ctx.textAlign = "left"; ctx.fillStyle = Lab.color("text"); ctx.fillText(t.slice(0, 11), 0, 0); ctx.restore();
+  });
+  const bg = Lab.color("panel"), hot = Lab.color("accent");
+  A.forEach((row, i) => row.forEach((p, j) => {
+    ctx.fillStyle = mixHex(bg, hot, Math.sqrt(p));
+    ctx.fillRect(left + j * cell + 1, top + i * cell + 1, cell - 2, cell - 2);
+    if (cell > 34) { ctx.fillStyle = p > 0.35 ? "#fff" : Lab.color("muted"); ctx.textAlign = "center"; ctx.fillText(p < 0.005 ? "0" : p.toFixed(2), left + (j + .5) * cell, top + (i + .6) * cell); }
+  }));
+  ctx.strokeStyle = Lab.color("text"); ctx.lineWidth = 2; ctx.strokeRect(left + 1, top + selected * cell + 1, n * cell - 2, cell - 2);
+}
+
+document.getElementById("tokens").addEventListener("click", e => { const t = e.target.closest("[data-i]"); if (t) { selected = +t.dataset.i; refresh(); } });
+document.getElementById("heat").addEventListener("pointerdown", e => {
+  const p = Lab.pointer(e.currentTarget, e), n = tokens.length, cell = Math.min((heat.w - 100) / n, (heat.h - 80) / n), i = Math.floor((p.y - 70) / cell);
+  if (i >= 0 && i < n) { selected = i; refresh(); }
+});
+["scale", "causal", "pos"].forEach(id => document.getElementById(id).onchange = refresh);
+document.getElementById("sentence").addEventListener("input", refresh);
+refresh();
+</script>
+</body>
+</html>

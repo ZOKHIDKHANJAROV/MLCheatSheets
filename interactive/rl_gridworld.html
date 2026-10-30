@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="q_learning_sarsa reinforcement_learning_basics classical_rl_tabular dynamic_programming_rl markov_decision_processes td_learning">
+<title>Q-learning и SARSA — интерактив</title>
+<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="lab.css?v=2">
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Q-learning и SARSA на «обрыве»</h1><a href="../cheatsheets/q_learning_sarsa_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Агент учится дойти от старта <b>S</b> до цели <b>G</b>. Каждый шаг стоит −1, падение с обрыва (красные клетки) — −100 и возврат на старт.
+    Цвет клетки — ценность max Q(s, a), стрелка — текущая жадная политика, линия — путь в последнем эпизоде.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="grid"></canvas>
+      <div class="legend"><span><i style="background:var(--c-ok)"></i>высокая ценность</span><span><i style="background:var(--c-bad)"></i>низкая / обрыв</span><span>➝ жадное действие</span><span>— путь последнего эпизода</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Алгоритм</h3>
+      <div class="ctl"><select id="algo"><option value="q">Q-learning (off-policy)</option><option value="sarsa">SARSA (on-policy)</option></select></div>
+      <div class="ctl"><label for="eps">ε — доля случайных действий <output for="eps"></output></label><input id="eps" type="range" min="0" max="0.5" step="0.01" value="0.1"></div>
+      <div class="ctl"><label for="alpha">α — скорость обучения <output for="alpha"></output></label><input id="alpha" type="range" min="0.05" max="1" step="0.05" value="0.5"></div>
+      <div class="ctl"><label for="gamma">γ — дисконт <output for="gamma"></output></label><input id="gamma" type="range" min="0.5" max="1" step="0.01" value="1"></div>
+      <div class="buttons">
+        <button class="primary" id="ep1">+1 эпизод</button><button id="ep100">+100</button><button id="play">▶ Учить</button><button id="reset">Сброс</button>
+      </div>
+      <div class="buttons"><button id="vi">Value iteration (точное решение)</button></div>
+      <h3>Состояние</h3>
+      <div class="stats">
+        <span>Эпизодов</span><b id="eps_n">0</b>
+        <span>Награда за последний эпизод</span><b id="ret">—</b>
+        <span>Средняя за последние 50</span><b id="avg">—</b>
+        <span>Жадный путь: шагов / падает?</span><b id="greedy">—</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Награда за эпизод (скользящее среднее по 20)</h3><canvas id="curve"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>Q-learning</span><span><i style="background:var(--c-b)"></i>SARSA</span><span>(последний запуск каждого алгоритма)</span></div></div>
+    <div class="card hint"><h3>Что попробовать</h3><ul>
+      <li>Q-learning, 300 эпизодов: жадная политика ведёт <b>вдоль самого края обрыва</b> — кратчайший путь. Но во время обучения агент с ε = 0.1 иногда падает, и средняя награда ниже.</li>
+      <li>SARSA, 300 эпизодов: путь идёт <b>подальше от обрыва</b>. SARSA учитывает, что сам агент иногда делает случайные шаги, — и выбирает безопасный маршрут. Сравните кривые наград.</li>
+      <li>Поставьте ε = 0: обе стратегии сходятся к кратчайшему пути — разница именно в исследовании.</li>
+      <li>«Value iteration» решает задачу точно по модели среды (динамическое программирование) — сравните с тем, что выучили алгоритмы без модели.</li>
+      <li>γ = 0.5: агент «близорук» — далёкая цель почти не влияет на ценность стартовых клеток.</li>
+    </ul></div>
+  </div>
+</div>
+
+<script src="lab.js?v=2"></script>
+<script>
+const W = 12, H = 4, START = [0, 3], GOAL = [11, 3];
+const isCliff = (x, y) => y === 3 && x > 0 && x < 11;
+const ACTIONS = [[0, -1], [1, 0], [0, 1], [-1, 0]];      // вверх, вправо, вниз, влево
+let Q, episodes, history = { q: [], sarsa: [] }, lastPath = [], rng = Lab.rng(1), timer = null, viMode = false;
+
+const eps = Lab.slider("eps", () => {}, v => v.toFixed(2));
+const alpha = Lab.slider("alpha", () => {}, v => v.toFixed(2));
+const gamma = Lab.slider("gamma", () => {}, v => v.toFixed(2));
+const gridView = Lab.canvas(document.getElementById("grid"), 0.4, drawGrid);
+const curveView = Lab.canvas(document.getElementById("curve"), 0.45, drawCurve);
+const algo = () => document.getElementById("algo").value;
+
+function reset() {
+  Q = Array.from({ length: W * H }, () => [0, 0, 0, 0]);
+  episodes = 0; lastPath = []; history[algo()] = []; rng = Lab.rng(1); viMode = false;
+  show();
+}
+
+function step(s, a) {
+  const [x, y] = s, nx = Math.max(0, Math.min(W - 1, x + ACTIONS[a][0])), ny = Math.max(0, Math.min(H - 1, y + ACTIONS[a][1]));
+  if (isCliff(nx, ny)) return { s: START.slice(), r: -100, done: false, fell: true };
+  return { s: [nx, ny], r: -1, done: nx === GOAL[0] && ny === GOAL[1] };
+}
+const idx = s => s[1] * W + s[0];
+const greedy = s => { const q = Q[idx(s)], m = Math.max(...q); const best = q.map((v, i) => v === m ? i : -1).filter(i => i >= 0); return best[Math.floor(rng() * best.length)]; };
+const policy = s => rng() < eps.value ? Math.floor(rng() * 4) : greedy(s);
+
+// Один эпизод TD-обучения; Q-learning смотрит на max Q(s′), SARSA — на Q(s′, a′) действия, которое реально будет выбрано
+function runEpisode() {
+  let s = START.slice(), a = policy(s), total = 0, path = [s];
+  for (let t = 0; t < 500; t++) {
+    const res = step(s, a); total += res.r; path.push(res.s);
+    const a2 = policy(res.s);
+    const target = res.done ? res.r : res.r + gamma.value * (algo() === "q" ? Math.max(...Q[idx(res.s)]) : Q[idx(res.s)][a2]);
+    Q[idx(s)][a] += alpha.value * (target - Q[idx(s)][a]);
+    s = res.s; a = a2;
+    if (res.done) break;
+  }
+  episodes++; lastPath = path; viMode = false;
+  history[algo()].push(total);
+}
+
+// Динамическое программирование: точные ценности по известной модели среды
+function valueIteration() {
+  Q = Array.from({ length: W * H }, () => [0, 0, 0, 0]);
+  for (let it = 0; it < 500; it++) {
+    let delta = 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if ((x === GOAL[0] && y === GOAL[1]) || isCliff(x, y)) continue;
+      for (let a = 0; a < 4; a++) {
+        const res = step([x, y], a);
+        const v = res.r + (res.done ? 0 : gamma.value * Math.max(...Q[idx(res.s)]));
+        delta = Math.max(delta, Math.abs(v - Q[idx([x, y])][a])); Q[idx([x, y])][a] = v;
+      }
+    }
+    if (delta < 1e-6) break;
+  }
+  viMode = true; lastPath = greedyPath().path;
+}
+
+function greedyPath() {
+  let s = START.slice(); const path = [s], seen = new Set(); let fell = false;
+  for (let t = 0; t < 60; t++) {
+    const q = Q[idx(s)], a = q.indexOf(Math.max(...q)), res = step(s, a);
+    if (res.fell) { fell = true; break; }
+    s = res.s; path.push(s);
+    if (res.done || seen.has(idx(s))) break; seen.add(idx(s));
+  }
+  return { path, fell, reached: s[0] === GOAL[0] && s[1] === GOAL[1] };
+}
+
+function show() {
+  const h = history[algo()], last50 = h.slice(-50);
+  document.getElementById("eps_n").textContent = viMode ? "— (DP)" : episodes;
+  document.getElementById("ret").textContent = h.length && !viMode ? h[h.length - 1] : "—";
+  document.getElementById("avg").textContent = last50.length ? (last50.reduce((a, b) => a + b, 0) / last50.length).toFixed(1) : "—";
+  const g = greedyPath();
+  document.getElementById("greedy").textContent = g.reached ? `${g.path.length - 1} / нет` : g.fell ? "— / падает" : "не доходит";
+  gridView.redraw(); curveView.redraw();
+}
+
+function mixHex(a, b, t) { const pa = a.match(/\w\w/g).map(v => parseInt(v, 16)), pb = b.match(/\w\w/g).map(v => parseInt(v, 16)); return `rgb(${pa.map((v, i) => Math.round(v + (pb[i] - v) * t)).join(",")})`; }
+
+function drawGrid(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!Q) return;
+  const c = Math.min(w / W, h / H), ox = (w - c * W) / 2, oy = (h - c * H) / 2;
+  const vals = Q.map(q => Math.max(...q)), lo = Math.min(...vals), hi = Math.max(...vals);
+  const bg = Lab.color("panel"), good = Lab.color("c-ok"), bad = Lab.color("c-bad");
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const px = ox + x * c, py = oy + y * c, v = vals[idx([x, y])];
+    if (isCliff(x, y)) ctx.fillStyle = mixHex(bg, bad, 0.75);
+    else { const t = hi > lo ? (v - lo) / (hi - lo) : 0.5; ctx.fillStyle = t > 0.5 ? mixHex(bg, good, (t - 0.5) * 1.4) : mixHex(bg, bad, (0.5 - t) * 0.9); }
+    ctx.fillRect(px + 1, py + 1, c - 2, c - 2);
+    ctx.fillStyle = Lab.color("text"); ctx.font = `${Math.round(c * 0.2)}px system-ui, sans-serif`; ctx.textAlign = "center";
+    if (x === START[0] && y === START[1]) { ctx.font = `bold ${Math.round(c * 0.35)}px system-ui`; ctx.fillText("S", px + c / 2, py + c * 0.62); continue; }
+    if (x === GOAL[0] && y === GOAL[1]) { ctx.font = `bold ${Math.round(c * 0.35)}px system-ui`; ctx.fillText("G", px + c / 2, py + c * 0.62); continue; }
+    if (isCliff(x, y)) continue;
+    if (episodes || viMode) {
+      const q = Q[idx([x, y])], a = q.indexOf(Math.max(...q)), [dx, dy] = ACTIONS[a], cx = px + c / 2, cy = py + c / 2, L = c * 0.28;
+      ctx.strokeStyle = Lab.color("text"); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(cx - dx * L, cy - dy * L); ctx.lineTo(cx + dx * L, cy + dy * L); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx + dx * L, cy + dy * L); ctx.lineTo(cx + dx * L * 0.45 - dy * L * 0.45, cy + dy * L * 0.45 + dx * L * 0.45); ctx.lineTo(cx + dx * L * 0.45 + dy * L * 0.45, cy + dy * L * 0.45 - dx * L * 0.45); ctx.fillStyle = Lab.color("text"); ctx.fill();
+      ctx.fillStyle = Lab.color("muted"); ctx.fillText(Math.round(vals[idx([x, y])]), px + c / 2, py + c - 4);
+    }
+  }
+  if (lastPath.length > 1) {
+    ctx.strokeStyle = Lab.color(algo() === "q" && !viMode ? "c-a" : "c-b"); ctx.lineWidth = 3; ctx.globalAlpha = 0.8; ctx.beginPath();
+    lastPath.slice(-80).forEach(([x, y], i) => { const px = ox + (x + .5) * c, py = oy + (y + .5) * c; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+    ctx.stroke(); ctx.globalAlpha = 1;
+  }
+}
+
+function drawCurve(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  const smooth = arr => arr.map((_, i) => { const s = arr.slice(Math.max(0, i - 19), i + 1); return s.reduce((a, b) => a + b, 0) / s.length; });
+  const n = Math.max(50, history.q.length, history.sarsa.length);
+  const cx = Lab.frame(0, n, 46, w - 10), cy = Lab.frame(-120, 0, h - 22, 8);
+  Lab.axes(ctx, cx, cy, { xTicks: [0, Math.round(n / 2), n], yTicks: [-120, -80, -40, 0], xLabel: "эпизод" });
+  [["q", "c-a"], ["sarsa", "c-b"]].forEach(([k, col]) => {
+    const s = smooth(history[k]); if (!s.length) return;
+    ctx.strokeStyle = Lab.color(col); ctx.lineWidth = 2; ctx.beginPath();
+    s.forEach((v, i) => { const y = cy(Math.max(-120, v)); i ? ctx.lineTo(cx(i), y) : ctx.moveTo(cx(0), y); });
+    ctx.stroke();
+  });
+}
+
+function stop() { clearInterval(timer); timer = null; document.getElementById("play").textContent = "▶ Учить"; }
+document.getElementById("ep1").onclick = () => { stop(); runEpisode(); show(); };
+document.getElementById("ep100").onclick = () => { stop(); for (let i = 0; i < 100; i++) runEpisode(); show(); };
+document.getElementById("play").onclick = () => {
+  if (timer) return stop();
+  document.getElementById("play").textContent = "⏸ Стоп";
+  timer = setInterval(() => { for (let i = 0; i < 3; i++) runEpisode(); show(); if (episodes >= 1000) stop(); }, 60);
+};
+document.getElementById("reset").onclick = () => { stop(); reset(); };
+document.getElementById("algo").onchange = () => { stop(); reset(); };
+document.getElementById("vi").onclick = () => { stop(); valueIteration(); show(); };
+reset();
+</script>
+</body>
+</html>

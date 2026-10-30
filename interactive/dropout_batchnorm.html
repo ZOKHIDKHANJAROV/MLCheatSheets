@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="dropout_regularization batch_normalization weight_initialization">
+<title>Dropout и BatchNorm — интерактив</title>
+<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="lab.css?v=2">
+<style>.maps2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .maps2 h3 { margin: 2px 4px 6px; } @media (max-width: 860px) { .maps2 { grid-template-columns: 1fr; } }</style>
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Dropout и Batch Normalization</h1><a href="../cheatsheets/dropout_regularization_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead"><b>Часть 1.</b> Две одинаковые сети (2 → 32 → 32 → 1) учатся на маленькой шумной выборке. Слева — без регуляризации, справа — с dropout.
+    Сравните границы решений и ошибку на тесте. <b>Часть 2</b> ниже — что делает BatchNorm с активациями в глубокой сети.</p>
+
+  <div class="grid">
+    <div class="card stage">
+      <div class="maps2">
+        <div><h3>Без dropout</h3><canvas id="m0"></canvas></div>
+        <div><h3 id="m1title">С dropout</h3><canvas id="m1"></canvas></div>
+      </div>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>класс 0</span><span><i style="background:var(--c-b)"></i>класс 1</span><span>● обучающие (40 точек)</span><span>◦ тестовые</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Часть 1: dropout</h3>
+      <div class="ctl"><label for="p">Вероятность отключения нейрона p <output for="p"></output></label><input id="p" type="range" min="0.05" max="0.5" step="0.05" value="0.1"></div>
+      <div class="ctl"><label for="noise">Шум в данных <output for="noise"></output></label><input id="noise" type="range" min="0.1" max="0.6" step="0.05" value="0.35"></div>
+      <div class="buttons"><button class="primary" id="play">▶ Обучать</button><button id="reset">Сброс</button><button id="regen">Новые данные</button></div>
+      <div class="stats">
+        <span>Эпоха</span><b id="ep">0</b>
+        <span>Loss train: без / с dropout</span><b id="tr">—</b>
+        <span>Loss test: без / с dropout</span><b id="te">—</b>
+        <span>Accuracy test: без / с</span><b id="acc">—</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="card stage" style="margin-top:16px"><h3 style="margin:4px 6px 6px">Loss на тесте по эпохам</h3><canvas id="curve"></canvas>
+    <div class="legend"><span><i style="background:var(--c-bad)"></i>без dropout: test</span><span><i style="background:var(--c-ok)"></i>с dropout: test</span><span>тонкие линии — train</span></div></div>
+
+  <h2 style="margin:26px 0 6px">Часть 2: BatchNorm и распределения активаций</h2>
+  <div class="grid">
+    <div class="card stage"><canvas id="bn"></canvas>
+      <div class="legend"><span>каждая строка — гистограмма активаций слоя 1…10 на батче из 256 примеров</span></div></div>
+    <div class="card controls">
+      <div class="ctl"><label>Активация</label><select id="act"><option value="tanh">tanh</option><option value="sigmoid">sigmoid</option><option value="relu">ReLU</option></select></div>
+      <div class="ctl"><label for="ws">Масштаб весов s (W ~ N(0, s²/n)) <output for="ws"></output></label><input id="ws" type="range" min="0.2" max="3" step="0.05" value="3"></div>
+      <div class="ctl"><label><span><input type="checkbox" id="bnOn"> BatchNorm перед активацией</span></label></div>
+      <div class="stats"><span>Std активаций: слой 1 → 10</span><b id="stds" class="mono">—</b></div>
+      <div class="hint"><ul>
+        <li>tanh, s = 3: гистограммы прижаты к краям ±1 — <b>насыщение</b> (std ≈ 0.84 при максимуме 1), производная tanh там ≈ 0, градиенты почти не проходят.</li>
+        <li>s = 1 и меньше: разброс активаций тает слой за слоем (std 0.63 → 0.21 к 10-му слою при s = 1) — сигнал <b>затухает</b>.</li>
+        <li>Включите BatchNorm: пред-активации каждого слоя нормализуются по батчу (среднее 0, std 1) — распределения одинаковые во всех слоях при любом s.</li>
+        <li>Поэтому с BatchNorm сети менее чувствительны к инициализации и терпят больший learning rate.</li>
+      </ul></div>
+    </div>
+  </div>
+  <div class="card hint" style="margin-top:16px"><h3>Что попробовать в части 1</h3><ul>
+    <li>Обучайте 1000–1500 эпох: сеть без регуляризации <b>запоминает</b> выборку (train-loss → 0), «обводит» шумные точки, а test-loss после минимума растёт примерно с 0.2 до 0.5. С dropout p = 0.1 граница остаётся гладкой, а test-loss — около 0.2.</li>
+    <li>Поднимите p до 0.3 и выше: для такой маленькой сети это уже слишком сильная регуляризация — она недообучается (train- и test-loss застревают около 0.34). Силу dropout подбирают, как и любой гиперпараметр.</li>
+    <li>На тесте dropout выключается, а при обучении выходы оставшихся нейронов делятся на (1 − p) — «inverted dropout», поэтому масштаб активаций при обучении и инференсе совпадает.</li>
+  </ul></div>
+</div>
+
+<script src="lab.js?v=2"></script>
+<script>
+// ---------------- часть 1: две сети, одна с dropout ----------------
+let train = [], test = [], nets = [], epoch = 0, hist = [], seed = 3, running = false;
+const p = Lab.slider("p", () => { document.getElementById("m1title").textContent = `С dropout (p = ${p.value.toFixed(2)})`; }, v => v.toFixed(2));
+const noise = Lab.slider("noise", () => { generate(); resetNets(); }, v => v.toFixed(2));
+
+function generate() {
+  const r = Lab.rng(seed);
+  train = Lab.dataset("moons", 40, noise.value, r);
+  test = Lab.dataset("moons", 400, noise.value, r);
+}
+
+function makeNet(s) {
+  const r = Lab.rng(s), sizes = [2, 32, 32, 1];
+  const W = [], B = [];
+  for (let l = 1; l < sizes.length; l++) {
+    const lim = Math.sqrt(6 / (sizes[l - 1] + sizes[l]));
+    W.push(Array.from({ length: sizes[l] }, () => Array.from({ length: sizes[l - 1] }, () => (r() * 2 - 1) * lim)));
+    B.push(new Array(sizes[l]).fill(0));
+  }
+  return { W, B, vW: W.map(m => m.map(row => row.map(() => 0))), vB: B.map(v => v.map(() => 0)), rng: Lab.rng(s + 99) };
+}
+function resetNets() { nets = [makeNet(7), makeNet(7)]; epoch = 0; hist = []; show(); }
+
+// Прямой проход; drop > 0 — inverted dropout на скрытых слоях
+function forward(net, x, drop) {
+  const A = [x], masks = [];
+  for (let l = 0; l < net.W.length; l++) {
+    const last = l === net.W.length - 1, prev = A[l];
+    let out = net.W[l].map((row, j) => { let z = net.B[l][j]; for (let k = 0; k < row.length; k++) z += row[k] * prev[k]; return last ? 1 / (1 + Math.exp(-z)) : Math.tanh(z); });
+    if (!last && drop > 0) { const m = out.map(() => net.rng() >= drop ? 1 / (1 - drop) : 0); out = out.map((v, j) => v * m[j]); masks.push(m); }
+    else masks.push(null);
+    A.push(out);
+  }
+  return { A, masks };
+}
+const predict = (net, x) => forward(net, x, 0).A[3][0];
+const loss = (net, pts) => pts.reduce((s, q) => { const y = Math.min(1 - 1e-7, Math.max(1e-7, predict(net, q))); return s - (q[2] ? Math.log(y) : Math.log(1 - y)); }, 0) / pts.length;
+
+function trainEpoch(net, drop) {
+  const lr = 0.05, mom = 0.9;
+  const gW = net.W.map(m => m.map(row => row.map(() => 0))), gB = net.B.map(v => v.map(() => 0));
+  train.forEach(q => {
+    const { A, masks } = forward(net, [q[0], q[1]], drop);
+    let delta = [A[3][0] - q[2]];
+    for (let l = net.W.length - 1; l >= 0; l--) {
+      const prev = A[l];
+      delta.forEach((d, j) => { gB[l][j] += d; for (let k = 0; k < prev.length; k++) gW[l][j][k] += d * prev[k]; });
+      if (l > 0) {
+        const m = masks[l - 1];
+        // производная tanh по выходу без маски: 1 − tanh²; маска dropout умножает градиент так же, как активацию
+        delta = prev.map((a, k) => { if (m && m[k] === 0) return 0; const raw = m ? a / m[k] : a; return net.W[l].reduce((s2, row, j) => s2 + row[k] * delta[j], 0) * (1 - raw * raw) * (m ? m[k] : 1); });
+      }
+    }
+  });
+  for (let l = 0; l < net.W.length; l++) {
+    net.W[l].forEach((row, j) => row.forEach((v, k) => { net.vW[l][j][k] = mom * net.vW[l][j][k] - lr * gW[l][j][k] / train.length; row[k] = v + net.vW[l][j][k]; }));
+    net.B[l].forEach((v, j) => { net.vB[l][j] = mom * net.vB[l][j] - lr * gB[l][j] / train.length; net.B[l][j] = v + net.vB[l][j]; });
+  }
+}
+
+const views = [0, 1].map(i => Lab.canvas(document.getElementById("m" + i), 0.8, (ctx, w, h) => drawMap(ctx, w, h, nets[i])));
+const curveView = Lab.canvas(document.getElementById("curve"), 0.25, drawCurve);
+
+function mixHex(a, b, t) { const pa = a.match(/\w\w/g).map(v => parseInt(v, 16)), pb = b.match(/\w\w/g).map(v => parseInt(v, 16)); return `rgb(${pa.map((v, i) => Math.round(v + (pb[i] - v) * t)).join(",")})`; }
+function drawMap(ctx, w, h, net) {
+  ctx.clearRect(0, 0, w, h);
+  if (!net) return;
+  const sx = Lab.frame(-1.2, 1.2, 0, w), sy = Lab.frame(-1, 1, h, 0), cell = 8, bg = Lab.color("panel"), ca = Lab.color("c-a"), cb = Lab.color("c-b");
+  for (let px = 0; px < w; px += cell) for (let py = 0; py < h; py += cell) {
+    const y = predict(net, [sx.invert(px + 4), sy.invert(py + 4)]);
+    ctx.fillStyle = mixHex(bg, y > .5 ? cb : ca, Math.min(1, Math.abs(y - .5) * 2) * .5); ctx.fillRect(px, py, cell, cell);
+  }
+  test.forEach(([x, y, c]) => { ctx.beginPath(); ctx.arc(sx(x), sy(y), 2.5, 0, 7); ctx.strokeStyle = Lab.color(c ? "c-b" : "c-a"); ctx.globalAlpha = .5; ctx.stroke(); ctx.globalAlpha = 1; });
+  train.forEach(([x, y, c]) => Lab.dot(ctx, sx(x), sy(y), 4.5, Lab.color(c ? "c-b" : "c-a"), Lab.color("panel")));
+}
+function drawCurve(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!hist.length) return;
+  const top = Math.min(2, Math.max(0.8, ...hist.flat())), n = Math.max(100, hist.length);
+  const cx = Lab.frame(0, n, 40, w - 10), cy = Lab.frame(0, top, h - 22, 8);
+  Lab.axes(ctx, cx, cy, { xTicks: [0, Math.round(n / 2), n], yTicks: [0, +(top / 2).toFixed(2), +top.toFixed(2)], xLabel: "эпоха" });
+  [[0, "c-bad", 1], [1, "c-ok", 1], [2, "c-bad", 0], [3, "c-ok", 0]].forEach(([k, col, thick]) => {
+    ctx.strokeStyle = Lab.color(col); ctx.lineWidth = thick ? 2.5 : 1; ctx.globalAlpha = thick ? 1 : .6; ctx.beginPath();
+    hist.forEach((e, i) => { const y = cy(Math.min(top, e[k])); i ? ctx.lineTo(cx(i), y) : ctx.moveTo(cx(0), y); });
+    ctx.stroke(); ctx.globalAlpha = 1;
+  });
+}
+function show() {
+  if (nets.length) {
+    const acc = net => (100 * test.filter(q => (predict(net, q) > .5 ? 1 : 0) === q[2]).length / test.length).toFixed(1);
+    const last = hist[hist.length - 1];
+    document.getElementById("ep").textContent = epoch;
+    document.getElementById("tr").textContent = last ? `${last[2].toFixed(3)} / ${last[3].toFixed(3)}` : "—";
+    document.getElementById("te").textContent = last ? `${last[0].toFixed(3)} / ${last[1].toFixed(3)}` : "—";
+    document.getElementById("acc").textContent = `${acc(nets[0])}% / ${acc(nets[1])}%`;
+  }
+  views.forEach(v => v.redraw()); curveView.redraw();
+}
+function stepEpochs(k) {
+  for (let i = 0; i < k; i++) {
+    trainEpoch(nets[0], 0); trainEpoch(nets[1], p.value); epoch++;
+    hist.push([loss(nets[0], test), loss(nets[1], test), loss(nets[0], train), loss(nets[1], train)]);
+  }
+}
+function loop() { if (!running) return; stepEpochs(5); show(); if (epoch >= 1500) setRunning(false); requestAnimationFrame(loop); }
+function setRunning(on) { running = on; document.getElementById("play").textContent = on ? "⏸ Пауза" : "▶ Обучать"; if (on) loop(); }
+document.getElementById("play").onclick = () => setRunning(!running);
+document.getElementById("reset").onclick = () => { setRunning(false); resetNets(); };
+document.getElementById("regen").onclick = () => { setRunning(false); seed++; generate(); resetNets(); };
+generate(); resetNets();
+
+// ---------------- часть 2: BatchNorm в глубокой сети ----------------
+const ws = Lab.slider("ws", () => bnView.redraw(), v => v.toFixed(2));
+const bnView = Lab.canvas(document.getElementById("bn"), 0.75, drawBN);
+const ACTF = { tanh: Math.tanh, sigmoid: z => 1 / (1 + Math.exp(-z)), relu: z => Math.max(0, z) };
+
+function drawBN(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  const L = 10, n = 64, batch = 256, r = Lab.rng(11), f = ACTF[document.getElementById("act").value], bn = document.getElementById("bnOn").checked;
+  let X = Array.from({ length: batch }, () => Array.from({ length: n }, () => r.normal()));
+  const layers = [];
+  for (let l = 0; l < L; l++) {
+    const Wm = Array.from({ length: n }, () => Array.from({ length: n }, () => r.normal() * ws.value / Math.sqrt(n)));
+    let Z = X.map(x => Wm.map(row => row.reduce((s, wv, k) => s + wv * x[k], 0)));
+    if (bn) {   // нормализация каждого нейрона по батчу: среднее 0, дисперсия 1 (γ = 1, β = 0)
+      for (let j = 0; j < n; j++) {
+        let m = 0, v = 0; for (let b = 0; b < batch; b++) m += Z[b][j]; m /= batch;
+        for (let b = 0; b < batch; b++) v += (Z[b][j] - m) ** 2; v /= batch;
+        for (let b = 0; b < batch; b++) Z[b][j] = (Z[b][j] - m) / Math.sqrt(v + 1e-5);
+      }
+    }
+    X = Z.map(z => z.map(f));
+    layers.push(X.flat());
+  }
+  const act = document.getElementById("act").value, lo = act === "tanh" ? -1 : 0, hi = act === "relu" ? 3 : 1, bins = 40;
+  const rowH = (h - 24) / L, left = 64, right = w - 10, bg = Lab.color("panel");
+  ctx.font = "11px system-ui, sans-serif";
+  const stds = [];
+  layers.forEach((vals, l) => {
+    const counts = new Array(bins).fill(0);
+    vals.forEach(v => { const b = Math.floor((Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * (bins - 1e-9)); counts[b]++; });
+    const mx = Math.max(...counts), mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    stds.push(Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length));
+    const y0 = 8 + l * rowH, bw = (right - left) / bins;
+    ctx.fillStyle = Lab.color("muted"); ctx.textAlign = "right"; ctx.fillText("слой " + (l + 1), left - 8, y0 + rowH * .6);
+    counts.forEach((c, i) => { const bh = (rowH - 4) * c / mx; ctx.fillStyle = Lab.color("accent"); ctx.fillRect(left + i * bw, y0 + rowH - 2 - bh, bw - 1, bh); });
+  });
+  ctx.fillStyle = Lab.color("muted"); ctx.textAlign = "left"; ctx.fillText(String(lo), left, h - 6); ctx.textAlign = "right"; ctx.fillText(String(hi) + (act === "relu" ? "+" : ""), right, h - 6);
+  document.getElementById("stds").textContent = stds.map(s => s.toFixed(2)).join(" ");
+}
+document.getElementById("act").onchange = () => bnView.redraw();
+document.getElementById("bnOn").onchange = () => bnView.redraw();
+p.value = p.value;
+</script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="pca pca_method dimensionality_reduction svd">
+<title>Метод главных компонент — интерактив</title>
+<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="lab.css?v=2">
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Метод главных компонент (PCA)</h1><a href="../cheatsheets/pca_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">PCA ищет направление, вдоль которого данные разбросаны сильнее всего (PC1), затем перпендикулярное ему (PC2).
+    Покрутите <b>своё направление</b> и убедитесь: дисперсия проекций максимальна ровно вдоль PC1 — это собственный вектор ковариационной матрицы.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="plane"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>точки</span><span><i style="background:var(--c-b)"></i>PC1</span><span><i style="background:var(--c-ok)"></i>PC2</span><span>┄ ваше направление и проекции на него</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Данные</h3>
+      <div class="ctl"><label for="corr">Корреляция признаков <output for="corr"></output></label><input id="corr" type="range" min="-0.95" max="0.95" step="0.05" value="0.75"></div>
+      <div class="ctl"><label for="ratio">Масштаб x₂ относительно x₁ <output for="ratio"></output></label><input id="ratio" type="range" min="0.2" max="3" step="0.1" value="1"></div>
+      <div class="ctl"><label><span><input type="checkbox" id="standardize"> стандартизировать признаки перед PCA</span></label></div>
+      <div class="buttons"><button id="regen">Новые данные</button></div>
+      <h3>Своё направление</h3>
+      <div class="ctl"><label for="angle">Угол <output for="angle"></output></label><input id="angle" type="range" min="0" max="180" step="1" value="10"></div>
+      <div class="ctl"><label><span><input type="checkbox" id="showProj" checked> показать проекции точек</span></label></div>
+      <h3>Результат</h3>
+      <div class="stats">
+        <span>Дисперсия вдоль вашего направления</span><b id="varDir"></b>
+        <span>λ₁ (вдоль PC1)</span><b id="l1"></b>
+        <span>λ₂ (вдоль PC2)</span><b id="l2"></b>
+        <span>Доля объяснённой дисперсии PC1</span><b id="evr"></b>
+        <span>Угол PC1</span><b id="pcAngle"></b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Дисперсия проекций в зависимости от угла направления</h3><canvas id="curve"></canvas>
+      <div class="legend"><span>● ваше направление</span><span><i style="background:var(--c-b)"></i>максимум = λ₁ (PC1)</span><span><i style="background:var(--c-ok)"></i>минимум = λ₂ (PC2)</span></div></div>
+    <div class="card hint"><h3>Что попробовать</h3><ul>
+      <li>Двигайте угол: проекции (пунктир) то растягиваются вдоль линии, то сжимаются. Максимум кривой внизу — ровно угол PC1.</li>
+      <li>Корреляция 0.9: почти вся дисперсия вдоль одной оси — PC1 объясняет &gt;90%, второй признак почти не нужен. Это и есть сжатие размерности.</li>
+      <li>Корреляция 0 и одинаковый масштаб: λ₁ ≈ λ₂, направление PC1 почти случайно — PCA ничего не даёт.</li>
+      <li>Поставьте масштаб x₂ = 3 при корреляции 0: PC1 «прилипает» к оси x₂ просто потому, что у неё больше единицы измерения. Включите стандартизацию — PC1 перестанет зависеть от масштаба.</li>
+      <li>Сумма λ₁ + λ₂ всегда равна сумме дисперсий исходных признаков: PCA только поворачивает оси, ничего не теряя.</li>
+    </ul></div>
+  </div>
+</div>
+
+<script src="lab.js?v=2"></script>
+<script>
+let raw = [], pts = [], seed = 4, pca = null;
+const corr = Lab.slider("corr", () => { generate(); refresh(); }, v => v.toFixed(2));
+const ratio = Lab.slider("ratio", () => { generate(); refresh(); }, v => v.toFixed(1));
+const angle = Lab.slider("angle", () => refresh(), v => v + "°");
+const plane = Lab.canvas(document.getElementById("plane"), 0.75, draw);
+const curve = Lab.canvas(document.getElementById("curve"), 0.45, drawCurve);
+
+function generate() {
+  const r = Lab.rng(seed), rho = corr.value;
+  raw = Array.from({ length: 120 }, () => {
+    const a = r.normal(), b = r.normal();
+    return [a, (rho * a + Math.sqrt(1 - rho * rho) * b) * ratio.value];
+  });
+}
+
+// Ковариационная матрица 2×2 и её собственные векторы (аналитически)
+function analyse(points) {
+  const n = points.length, mx = points.reduce((s, p) => s + p[0], 0) / n, my = points.reduce((s, p) => s + p[1], 0) / n;
+  let sxx = 0, syy = 0, sxy = 0;
+  points.forEach(([x, y]) => { sxx += (x - mx) ** 2; syy += (y - my) ** 2; sxy += (x - mx) * (y - my); });
+  sxx /= n - 1; syy /= n - 1; sxy /= n - 1;
+  const tr = sxx + syy, det = sxx * syy - sxy * sxy, disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
+  const l1 = tr / 2 + disc, l2 = tr / 2 - disc;
+  const th = 0.5 * Math.atan2(2 * sxy, sxx - syy);     // угол PC1
+  return { mean: [mx, my], cov: [sxx, sxy, syy], l1, l2, th };
+}
+const varAlong = (a, cov) => cov[0] * Math.cos(a) ** 2 + 2 * cov[1] * Math.sin(a) * Math.cos(a) + cov[2] * Math.sin(a) ** 2;
+
+function refresh() {
+  pts = raw;
+  if (document.getElementById("standardize").checked) {
+    const m = analyse(raw), sx = Math.sqrt(m.cov[0]), sy = Math.sqrt(m.cov[2]);
+    pts = raw.map(([x, y]) => [(x - m.mean[0]) / sx, (y - m.mean[1]) / sy]);
+  }
+  pca = analyse(pts);
+  const a = angle.value * Math.PI / 180, deg = ((pca.th * 180 / Math.PI) + 180) % 180;
+  document.getElementById("varDir").textContent = varAlong(a, pca.cov).toFixed(3);
+  document.getElementById("l1").textContent = pca.l1.toFixed(3);
+  document.getElementById("l2").textContent = pca.l2.toFixed(3);
+  document.getElementById("evr").textContent = (100 * pca.l1 / (pca.l1 + pca.l2)).toFixed(1) + "%";
+  document.getElementById("pcAngle").textContent = deg.toFixed(0) + "°";
+  plane.redraw(); curve.redraw();
+}
+
+function arrow(ctx, x0, y0, x1, y1, col, w) {
+  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = w;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  const a = Math.atan2(y1 - y0, x1 - x0);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 - 11 * Math.cos(a - .4), y1 - 11 * Math.sin(a - .4)); ctx.lineTo(x1 - 11 * Math.cos(a + .4), y1 - 11 * Math.sin(a + .4)); ctx.fill();
+}
+
+function draw(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!pca) return;
+  const lim = Math.max(3.2, ...pts.map(p => Math.max(Math.abs(p[0] - pca.mean[0]), Math.abs(p[1] - pca.mean[1])))) * 1.05;
+  const asp = w / h, sx = Lab.frame(pca.mean[0] - lim * asp, pca.mean[0] + lim * asp, 0, w), sy = Lab.frame(pca.mean[1] - lim, pca.mean[1] + lim, h, 0);
+  Lab.axes(ctx, sx, sy, { xTicks: [-4, -2, 0, 2, 4].map(v => +(v).toFixed(0)), yTicks: [-2, 0, 2] });
+  const [mx, my] = pca.mean, a = angle.value * Math.PI / 180, ux = Math.cos(a), uy = Math.sin(a);
+  // своё направление и проекции точек на него
+  ctx.strokeStyle = Lab.color("text"); ctx.setLineDash([6, 5]); ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(sx(mx - ux * lim * 3), sy(my - uy * lim * 3)); ctx.lineTo(sx(mx + ux * lim * 3), sy(my + uy * lim * 3)); ctx.stroke(); ctx.setLineDash([]);
+  const showProj = document.getElementById("showProj").checked;
+  pts.forEach(([x, y]) => {
+    const t = (x - mx) * ux + (y - my) * uy, px = mx + t * ux, py = my + t * uy;
+    if (showProj) { ctx.strokeStyle = Lab.color("muted"); ctx.globalAlpha = .35; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(sx(x), sy(y)); ctx.lineTo(sx(px), sy(py)); ctx.stroke(); ctx.globalAlpha = 1; Lab.dot(ctx, sx(px), sy(py), 2, Lab.color("text")); }
+    Lab.dot(ctx, sx(x), sy(y), 3.5, Lab.color("c-a"));
+  });
+  // главные компоненты: длина = 2·√λ
+  const pc = [[Math.cos(pca.th), Math.sin(pca.th), pca.l1, "c-b"], [-Math.sin(pca.th), Math.cos(pca.th), pca.l2, "c-ok"]];
+  pc.forEach(([vx, vy, l, col]) => { const L = 2 * Math.sqrt(l); arrow(ctx, sx(mx), sy(my), sx(mx + vx * L), sy(my + vy * L), Lab.color(col), 3); });
+  ctx.fillStyle = Lab.color("text"); ctx.font = "bold 13px system-ui, sans-serif";
+  pc.forEach(([vx, vy, l], i) => { const L = 2 * Math.sqrt(l) + 0.25; ctx.fillText("PC" + (i + 1), sx(mx + vx * L), sy(my + vy * L)); });
+}
+
+function drawCurve(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!pca) return;
+  const top = pca.l1 * 1.15, cx = Lab.frame(0, 180, 40, w - 10), cy = Lab.frame(0, top, h - 22, 8);
+  Lab.axes(ctx, cx, cy, { xTicks: [0, 45, 90, 135, 180], yTicks: [0, +(top / 2).toFixed(1), +top.toFixed(1)], xLabel: "угол, °", yLabel: "дисперсия" });
+  ctx.strokeStyle = Lab.color("c-a"); ctx.lineWidth = 2; ctx.beginPath();
+  for (let d = 0; d <= 180; d++) { const v = varAlong(d * Math.PI / 180, pca.cov); d ? ctx.lineTo(cx(d), cy(v)) : ctx.moveTo(cx(0), cy(v)); }
+  ctx.stroke();
+  const d1 = ((pca.th * 180 / Math.PI) + 180) % 180, d2 = (d1 + 90) % 180;
+  [[d1, pca.l1, "c-b"], [d2, pca.l2, "c-ok"]].forEach(([d, l, col]) => {
+    ctx.strokeStyle = Lab.color(col); ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(cx(d), cy(0)); ctx.lineTo(cx(d), cy(l)); ctx.stroke(); ctx.setLineDash([]);
+    Lab.dot(ctx, cx(d), cy(l), 4, Lab.color(col));
+  });
+  Lab.dot(ctx, cx(angle.value), cy(varAlong(angle.value * Math.PI / 180, pca.cov)), 6, Lab.color("text"), Lab.color("panel"));
+}
+
+document.getElementById("standardize").onchange = refresh;
+document.getElementById("showProj").onchange = refresh;
+document.getElementById("regen").onclick = () => { seed++; generate(); refresh(); };
+generate(); refresh();
+</script>
+</body>
+</html>
