@@ -23,6 +23,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 
 
+class PortalHandler(http.server.SimpleHTTPRequestHandler):
+    def end_headers(self):
+        # Браузер перепроверяет файлы при каждом открытии — после обновления шпаргалок не нужен Ctrl+F5
+        self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
+
+    def log_message(self, *args):
+        pass  # без лога каждого запроса
+
+
 def portal_is_stale():
     index = ROOT / "index.html"
     if not index.exists():
@@ -41,8 +51,7 @@ def main():
     if portal_is_stale():
         subprocess.run([sys.executable, str(ROOT / "tools" / "build_portal.py")], check=True)
 
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(ROOT))
-    handler.log_message = lambda *a: None  # без лога каждого запроса
+    handler = functools.partial(PortalHandler, directory=str(ROOT))
     server = http.server.ThreadingHTTPServer(("127.0.0.1", args.port), handler)
     url = f"http://localhost:{args.port}/index.html"
     print(f"Портал открыт: {url}\nОстановить: Ctrl+C")

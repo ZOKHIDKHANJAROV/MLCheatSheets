@@ -1,0 +1,132 @@
+/*
+  Тёмная тема для шпаргалок (cheatsheets/*.html) и других страниц проекта.
+  Включается атрибутом data-theme="dark" на <html>, который ставит assets/theme.js.
+  Только для экрана: при печати шпаргалки остаются светлыми.
+*/
+@media screen {
+  html[data-theme="dark"] {
+    --t-bg: #12161c;
+    --t-panel: #1b2129;
+    --t-panel-2: #212833;
+    --t-text: #e1e7ee;
+    --t-muted: #98a6b8;
+    --t-accent: #79a8ff;
+    --t-border: #2c3542;
+    --t-code: #242d39;
+    --t-good: #163024;
+    --t-good-line: #3fb37a;
+    --t-bad: #361d22;
+    --t-bad-line: #ff6b6b;
+    --t-note: #2e2814;
+    --t-note-line: #e2b33c;
+    color-scheme: dark;
+  }
+
+  html[data-theme="dark"] body {
+    background: var(--t-bg) !important;
+    color: var(--t-text) !important;
+  }
+
+  html[data-theme="dark"] .block,
+  html[data-theme="dark"] .header,
+  html[data-theme="dark"] .results,
+  html[data-theme="dark"] .question {
+    background: var(--t-panel) !important;
+    color: var(--t-text) !important;
+    box-shadow: none !important;
+    border-color: var(--t-border) !important;
+  }
+
+  html[data-theme="dark"] h1,
+  html[data-theme="dark"] h2,
+  html[data-theme="dark"] h3,
+  html[data-theme="dark"] h4 {
+    color: var(--t-accent) !important;
+    border-color: var(--t-border) !important;
+  }
+  html[data-theme="dark"] .good h3,
+  html[data-theme="dark"] .bad h3 { color: var(--t-text) !important; }
+
+  html[data-theme="dark"] .subtitle,
+  html[data-theme="dark"] small { color: var(--t-muted) !important; }
+
+  html[data-theme="dark"] a { color: var(--t-accent) !important; }
+
+  html[data-theme="dark"] code,
+  html[data-theme="dark"] pre {
+    background-color: var(--t-code) !important;
+    color: #d6deeb !important;
+  }
+  html[data-theme="dark"] pre code { background: none !important; }
+
+  html[data-theme="dark"] table { color: var(--t-text) !important; }
+  html[data-theme="dark"] th {
+    background-color: #20304a !important;
+    color: var(--t-text) !important;
+    border-color: var(--t-border) !important;
+  }
+  html[data-theme="dark"] td { border-color: var(--t-border) !important; }
+  html[data-theme="dark"] tr,
+  html[data-theme="dark"] td { background-color: transparent !important; }
+  html[data-theme="dark"] tr:nth-child(even) { background-color: var(--t-panel-2) !important; }
+
+  html[data-theme="dark"] .good {
+    background-color: var(--t-good) !important;
+    border-left-color: var(--t-good-line) !important;
+  }
+  html[data-theme="dark"] .bad {
+    background-color: var(--t-bad) !important;
+    border-left-color: var(--t-bad-line) !important;
+  }
+
+  html[data-theme="dark"] blockquote,
+  html[data-theme="dark"] .formula,
+  html[data-theme="dark"] .instructions {
+    background: var(--t-panel-2) !important;
+    color: var(--t-text) !important;
+  }
+  html[data-theme="dark"] .formula[style*="border-left"],
+  html[data-theme="dark"] .formula { border-left-color: var(--t-note-line) !important; }
+
+  /* Элементы с жёстко заданным светлым фоном прямо в атрибуте style */
+  html[data-theme="dark"] [style*="background: #f"],
+  html[data-theme="dark"] [style*="background:#f"],
+  html[data-theme="dark"] [style*="background-color: #f"],
+  html[data-theme="dark"] [style*="background-color:#f"],
+  html[data-theme="dark"] [style*="background: #e"],
+  html[data-theme="dark"] [style*="background-color: #e"],
+  html[data-theme="dark"] [style*="background: white"],
+  html[data-theme="dark"] [style*="background:white"] {
+    background: var(--t-panel-2) !important;
+    color: var(--t-text) !important;
+  }
+
+  /* Графики matplotlib нарисованы на белом фоне — оставляем подложку, чуть приглушаем яркость */
+  html[data-theme="dark"] img {
+    filter: brightness(0.9);
+    border-radius: 4px;
+  }
+
+  /* Тесты (<тема>_test.html) */
+  html[data-theme="dark"] .option {
+    background-color: var(--t-panel-2) !important;
+    color: var(--t-text) !important;
+    border-color: var(--t-border) !important;
+  }
+  html[data-theme="dark"] .option:hover { background-color: #2a3442 !important; }
+  html[data-theme="dark"] .feedback.correct,
+  html[data-theme="dark"] .correct {
+    background-color: var(--t-good) !important;
+    color: #9be3bd !important;
+    border-color: var(--t-good-line) !important;
+  }
+  html[data-theme="dark"] .feedback.incorrect,
+  html[data-theme="dark"] .incorrect {
+    background-color: var(--t-bad) !important;
+    color: #ffb3b3 !important;
+    border-color: var(--t-bad-line) !important;
+  }
+
+  html[data-theme="dark"] hr { border-color: var(--t-border) !important; }
+  html[data-theme="dark"] ::selection { background: #2f4d7a; }
+}

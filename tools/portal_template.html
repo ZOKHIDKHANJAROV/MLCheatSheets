@@ -5,20 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ML Cheatsheets — учебный портал</title>
 <!-- Файл index.html собирается скриптом tools/build_portal.py из этого шаблона. Не редактируйте index.html вручную. -->
+<script src="assets/theme.js"></script>
 <style>
   :root {
     --bg: #f6f8fb; --panel: #ffffff; --text: #1f2933; --muted: #66768a;
     --border: #dde3ea; --accent: #2f6fde; --accent-soft: #e6effd;
     --done: #1f9d55; --done-soft: #e3f6eb; --warn: #c27c0e;
     --shadow: 0 1px 3px rgba(20, 30, 50, .08);
+    --frame-bg: #fafcff;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #12161c; --panel: #1b2129; --text: #e4e9ef; --muted: #93a1b3;
-      --border: #2c3540; --accent: #6ea2ff; --accent-soft: #1f2d45;
-      --done: #4cc884; --done-soft: #183225; --warn: #e2a84b;
-      --shadow: none;
-    }
+  /* Тёмная тема: атрибут ставит assets/theme.js (режим «авто» следует настройке системы) */
+  :root[data-theme="dark"] {
+    --bg: #12161c; --panel: #1b2129; --text: #e4e9ef; --muted: #93a1b3;
+    --border: #2c3540; --accent: #6ea2ff; --accent-soft: #1f2d45;
+    --done: #4cc884; --done-soft: #183225; --warn: #e2a84b;
+    --shadow: none;
+    --frame-bg: #12161c;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -110,9 +113,8 @@
   .lvl.beginner { background: var(--done-soft); color: var(--done); }
   .lvl.intermediate { background: #fdf3dc; color: var(--warn); }
   .lvl.advanced { background: #fde4e4; color: #c0392b; }
-  @media (prefers-color-scheme: dark) {
-    .lvl.intermediate { background: #3a2f15; } .lvl.advanced { background: #3d1d1d; color: #ff8a80; }
-  }
+  :root[data-theme="dark"] .lvl.intermediate { background: #3a2f15; }
+  :root[data-theme="dark"] .lvl.advanced { background: #3d1d1d; color: #ff8a80; }
   .note { color: var(--muted); font-size: 13px; margin: 0 0 6px; }
 
   .viewer { display: flex; flex-direction: column; height: 100%; }
@@ -122,7 +124,7 @@
   }
   .vbar .title { flex: 1; min-width: 160px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .vbar .ctx { color: var(--muted); font-weight: 400; font-size: 13px; }
-  .viewer iframe { flex: 1; border: 0; width: 100%; min-width: 0; background: #fff; }
+  .viewer iframe { flex: 1; border: 0; width: 100%; min-width: 0; background: var(--frame-bg); }
   .vbody { flex: 1; display: flex; min-height: 0; }
   .qpanel { display: none; width: 400px; flex: none; overflow-y: auto; padding: 14px 16px 30px;
     background: var(--bg); border-left: 1px solid var(--border); }
@@ -177,6 +179,7 @@
   <a class="brand" href="#/">🎓 ML Cheatsheets <span>· портал</span></a>
   <div class="search"><input id="search" type="search" placeholder="Поиск по 400+ темам…  ( / )" autocomplete="off"></div>
   <a class="btn" href="#/r" id="reviewBtn" title="Интервальное повторение">🔁 <span id="dueCount"></span></a>
+  <button class="btn" id="themeBtn" data-theme-toggle title="Тема оформления"></button>
   <div class="overall" title="Общий прогресс">
     <div class="bar"><span id="overallBar"></span></div><span id="overallText"></span>
   </div>
@@ -331,6 +334,7 @@ function render() {
 function forwardFrameKeys(frame) {
   if (!frame) return;
   frame.addEventListener("load", () => {
+    window.mlcsTheme.notifyFrames();   // шпаргалка получает текущую тему портала
     try {
       frame.contentDocument.addEventListener("keydown", ev => {
         if (["ArrowLeft", "ArrowRight", "Escape", "m", "M", "ь", "Ь", "q", "Q", "й", "Й", "/"].includes(ev.key) && !ev.ctrlKey && !ev.altKey) {
@@ -614,7 +618,17 @@ function renderNav() {
   if (active) active.scrollIntoView({ block: "nearest" });
 }
 
+const THEME_LABELS = { auto: ["🌓", "Тема: как в системе"], light: ["☀️", "Тема: светлая"], dark: ["🌙", "Тема: тёмная"] };
+function renderThemeButton() {
+  const [icon, label] = THEME_LABELS[window.mlcsTheme.get()];
+  const btn = document.getElementById("themeBtn");
+  btn.textContent = icon;
+  btn.title = `${label} (нажмите, чтобы сменить)`;
+  btn.setAttribute("aria-label", label);
+}
+
 function refreshChrome() {
+  renderThemeButton();
   const p = progress(allTopics);
   document.getElementById("overallBar").style.width = p.pct + "%";
   document.getElementById("overallText").textContent = `${p.n} / ${p.total} изучено`;
@@ -638,9 +652,15 @@ function rerenderKeepScroll() {
 
 // ---------- события ----------
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-tab],[data-toggle],[data-ex],[data-copy],[data-action],[data-tab-link],[data-qtoggle],[data-rate],#menuBtn");
+  const t = e.target.closest("[data-tab],[data-toggle],[data-ex],[data-copy],[data-action],[data-tab-link],[data-qtoggle],[data-rate],[data-theme-toggle],#menuBtn");
   if (!t) return;
   if (t.id === "menuBtn") { document.body.classList.toggle("menu-open"); return; }
+  if (t.hasAttribute("data-theme-toggle")) {
+    const order = ["auto", "light", "dark"];
+    window.mlcsTheme.set(order[(order.indexOf(window.mlcsTheme.get()) + 1) % order.length]);
+    renderThemeButton();
+    return;
+  }
   if (t.dataset.tab) setTab(t.dataset.tab);
   if (t.dataset.tabLink) { e.preventDefault(); setTab(t.dataset.tabLink); document.body.classList.add("menu-open"); }
   if (t.dataset.toggle) { toggleDone(t.dataset.toggle); rerenderKeepScroll(); }
