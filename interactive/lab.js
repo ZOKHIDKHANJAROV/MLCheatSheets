@@ -111,5 +111,28 @@
     return { x: ev.clientX - r.left, y: ev.clientY - r.top };
   }
 
-  window.Lab = { canvas, color, onTheme, scale, frame, slider, rng, axes, dot, pointer };
+  // Двумерные наборы для классификации: точки [x, y, класс 0/1] в области x ∈ [−1.2, 1.2], y ∈ [−1, 1].
+  function dataset(shape, n, noise, r) {
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      let c = i % 2, x, y;
+      if (shape === "moons") {
+        const t = Math.PI * r();
+        x = (c ? 1 - Math.cos(t) : Math.cos(t)) * 0.5 - 0.25;
+        y = (c ? 0.5 - Math.sin(t) : Math.sin(t)) * 0.7 - 0.1;
+      } else if (shape === "circles") {
+        const t = 2 * Math.PI * r(), rad = c ? 0.3 : 0.75;
+        x = Math.cos(t) * rad; y = Math.sin(t) * rad * 0.95;
+      } else if (shape === "xor") {
+        x = r() * 1.9 - 0.95; y = r() * 1.7 - 0.85;
+        c = (x > 0) !== (y > 0) ? 1 : 0;
+      } else {   // blobs
+        x = (c ? 0.35 : -0.35) + r.normal() * 0.28; y = (c ? -0.2 : 0.2) + r.normal() * 0.28;
+      }
+      pts.push([x + r.normal() * noise * 0.5, y + r.normal() * noise * 0.5, c]);
+    }
+    return pts;
+  }
+
+  window.Lab = { canvas, color, onTheme, scale, frame, slider, rng, axes, dot, pointer, dataset };
 })();

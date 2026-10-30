@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="boosting gradient_boosting_regression gradient_boosting_hyperparameters xgboost lightgbm catboost">
+<title>Градиентный бустинг — интерактив</title>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Градиентный бустинг: дерево за деревом</h1><a href="../cheatsheets/boosting_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Ансамбль начинается с константы (среднего y). Каждое новое неглубокое дерево обучается на <b>остатках</b>
+    текущего ансамбля и добавляется с весом learning rate: F<sub>m</sub>(x) = F<sub>m−1</sub>(x) + η·h<sub>m</sub>(x).
+    Добавляйте деревья по одному и следите, как модель приближается к данным.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="fit"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>обучающие точки</span><span><i style="background:var(--c-b)"></i>F<sub>m</sub> — ансамбль</span><span><i style="background:var(--muted)"></i>F<sub>m−1</sub></span><span><i style="background:var(--c-ok)"></i>истинная зависимость</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Ансамбль</h3>
+      <div class="ctl"><label for="m">Число деревьев m <output for="m"></output></label><input id="m" type="range" min="0" max="300" step="1" value="0"></div>
+      <div class="buttons"><button class="primary" id="add">+1 дерево</button><button id="play">▶ Добавлять</button><button id="zero">Сброс</button></div>
+      <h3>Гиперпараметры</h3>
+      <div class="ctl"><label for="lr">learning_rate η <output for="lr"></output></label><input id="lr" type="range" min="-2" max="0" step="0.05" value="-0.7"></div>
+      <div class="ctl"><label for="depth">max_depth деревьев <output for="depth"></output></label><input id="depth" type="range" min="1" max="5" step="1" value="2"></div>
+      <div class="ctl"><label for="sub">subsample <output for="sub"></output></label><input id="sub" type="range" min="0.3" max="1" step="0.05" value="1"></div>
+      <div class="ctl"><label for="noise">Шум в данных <output for="noise"></output></label><input id="noise" type="range" min="0" max="1.2" step="0.05" value="0.5"></div>
+      <div class="buttons"><button id="regen">Новые данные</button></div>
+      <h3>Ошибки (MSE)</h3>
+      <div class="stats">
+        <span>Train</span><b id="trainErr"></b>
+        <span>Test</span><b id="testErr"></b>
+        <span>Лучшее m по тесту</span><b id="best"></b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px" id="resTitle">Остатки и очередное дерево</h3><canvas id="resid"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>остатки y − F<sub>m−1</sub></span><span><i style="background:var(--c-b)"></i>дерево h<sub>m</sub>, обученное на них</span></div></div>
+    <div class="card stage"><h3 style="margin:4px 6px 6px">MSE от числа деревьев (лог. шкала)</h3><canvas id="curve"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>train</span><span><i style="background:var(--c-b)"></i>test</span><span>│ лучшее m (ранняя остановка)</span></div></div>
+  </div>
+  <div class="card hint" style="margin-top:16px"><h3>Что попробовать</h3><ul>
+    <li>Нажимайте «+1 дерево» с самого начала: первое дерево ловит грубую форму, следующие — всё более мелкие детали остатков.</li>
+    <li>Поставьте η = 1 и max_depth = 4: ансамбль быстро подгоняет данные, а test-ошибка после минимума <b>растёт</b> — бустинг переобучается при увеличении числа деревьев (в отличие от случайного леса).</li>
+    <li>Уменьшите η до 0.05: деревьев нужно гораздо больше, но минимум test-ошибки обычно ниже, а кривая — пологая. Это причина брать маленький learning rate и подбирать число деревьев ранней остановкой.</li>
+    <li>max_depth = 1 (пни): каждое дерево добавляет одну «ступеньку».</li>
+    <li>subsample &lt; 1 (стохастический бустинг): каждое дерево видит случайную часть данных — это ещё один способ регуляризации.</li>
+  </ul></div>
+</div>
+
+<script src="lab.js"></script>
+<script>
+const X0 = 0, X1 = 10;
+const truth = x => 1.6 * Math.sin(x) + 0.35 * x + 0.6 * Math.sin(3 * x);
+let train = [], test = [], seed = 9, trees = [], trainF = [], testF = [], errors = [], timer = null;
+
+const m = Lab.slider("m", () => show(), v => v);
+const lr = Lab.slider("lr", () => rebuild(), v => (10 ** v).toFixed(2));
+const depth = Lab.slider("depth", () => rebuild(), v => v);
+const sub = Lab.slider("sub", () => rebuild(), v => v.toFixed(2));
+const noise = Lab.slider("noise", () => { generate(); rebuild(); }, v => v.toFixed(2));
+const fitView = Lab.canvas(document.getElementById("fit"), 0.58, drawFit);
+const residView = Lab.canvas(document.getElementById("resid"), 0.55, drawResid);
+const curveView = Lab.canvas(document.getElementById("curve"), 0.55, drawCurve);
+
+function generate() {
+  const r = Lab.rng(seed);
+  const sample = n => Array.from({ length: n }, () => { const x = X0 + r() * (X1 - X0); return [x, truth(x) + r.normal() * noise.value]; });
+  train = sample(60).sort((a, b) => a[0] - b[0]);
+  test = sample(400);
+}
+
+// Регрессионное дерево по одному признаку: минимизация суммы квадратов, листья — средние остатков
+function fitTree(xs, rs, d) {
+  const idx = xs.map((_, i) => i).sort((a, b) => xs[a] - xs[b]);
+  function node(ids, level) {
+    const mean = ids.reduce((s, i) => s + rs[i], 0) / ids.length;
+    if (level >= d || ids.length < 4) return { v: mean };
+    let best = null, ls = 0, lq = 0;
+    const ts = ids.reduce((s, i) => s + rs[i], 0), tq = ids.reduce((s, i) => s + rs[i] ** 2, 0);
+    for (let k = 0; k < ids.length - 1; k++) {
+      ls += rs[ids[k]]; lq += rs[ids[k]] ** 2;
+      const nl = k + 1, nr = ids.length - nl;
+      if (nl < 2 || nr < 2 || xs[ids[k]] === xs[ids[k + 1]]) continue;
+      const sse = (lq - ls * ls / nl) + ((tq - lq) - (ts - ls) ** 2 / nr);
+      if (!best || sse < best.sse) best = { sse, k };
+    }
+    if (!best) return { v: mean };
+    const thr = (xs[ids[best.k]] + xs[ids[best.k + 1]]) / 2;
+    return { thr, left: node(ids.slice(0, best.k + 1), level + 1), right: node(ids.slice(best.k + 1), level + 1) };
+  }
+  const root = node(idx, 0);
+  return x => { let n = root; while (n.left) n = x <= n.thr ? n.left : n.right; return n.v; };
+}
+
+const mse = (F, pts) => pts.reduce((s, [, y], i) => s + (y - F[i]) ** 2, 0) / pts.length;
+
+// Строим сразу все 300 деревьев: двигать ползунок m можно без пересчёта
+function rebuild() {
+  const eta = 10 ** lr.value, r = Lab.rng(1000 + seed), M = 300;
+  const f0 = train.reduce((s, p) => s + p[1], 0) / train.length;
+  let F = train.map(() => f0), G = test.map(() => f0);
+  trees = []; trainF = [F.slice()]; testF = [G.slice()]; errors = [[mse(F, train), mse(G, test)]];
+  for (let k = 0; k < M; k++) {
+    const ids = train.map((_, i) => i).filter(() => sub.value >= 1 || r() < sub.value);
+    const h = fitTree(ids.map(i => train[i][0]), ids.map(i => train[i][1] - F[i]), depth.value);
+    trees.push(h);
+    F = F.map((v, i) => v + eta * h(train[i][0]));
+    G = G.map((v, i) => v + eta * h(test[i][0]));
+    trainF.push(F); testF.push(G);
+    errors.push([mse(F, train), mse(G, test)]);
+  }
+  trees.f0 = f0;
+  show();
+}
+
+// Предсказание ансамбля из первых k деревьев в произвольной точке
+const ensemble = (k, x) => { let v = trees.f0; const eta = 10 ** lr.value; for (let i = 0; i < k; i++) v += eta * trees[i](x); return v; };
+
+function show() {
+  const k = m.value, [tr, te] = errors[k];
+  document.getElementById("trainErr").textContent = tr.toFixed(3);
+  document.getElementById("testErr").textContent = te.toFixed(3);
+  let best = 0; errors.forEach((e, i) => { if (e[1] < errors[best][1]) best = i; });
+  document.getElementById("best").textContent = `${best} (MSE ${errors[best][1].toFixed(3)})`;
+  document.getElementById("resTitle").textContent = k ? `Дерево №${k} обучается на остатках ансамбля из ${k - 1}` : "Пока только константа F₀ = среднее y";
+  fitView.redraw(); residView.redraw(); curveView.redraw();
+}
+
+function curve(ctx, sx, sy, f, col, width, dash) {
+  ctx.strokeStyle = col; ctx.lineWidth = width; ctx.setLineDash(dash || []); ctx.beginPath();
+  for (let i = 0; i <= 500; i++) { const x = X0 + (X1 - X0) * i / 500; i ? ctx.lineTo(sx(x), sy(f(x))) : ctx.moveTo(sx(x), sy(f(x))); }
+  ctx.stroke(); ctx.setLineDash([]);
+}
+
+function drawFit(ctx, w, h) {
+  const sx = Lab.frame(X0, X1, 30, w - 8), sy = Lab.frame(-3, 6, h - 20, 8);
+  ctx.clearRect(0, 0, w, h);
+  Lab.axes(ctx, sx, sy, { xTicks: [0, 2, 4, 6, 8, 10], yTicks: [-2, 0, 2, 4, 6] });
+  if (!trees.length) return;
+  curve(ctx, sx, sy, truth, Lab.color("c-ok"), 2, [6, 5]);
+  if (m.value > 0) { ctx.globalAlpha = .55; curve(ctx, sx, sy, x => ensemble(m.value - 1, x), Lab.color("muted"), 1.5); ctx.globalAlpha = 1; }
+  curve(ctx, sx, sy, x => ensemble(m.value, x), Lab.color("c-b"), 2.5);
+  train.forEach(([x, y]) => Lab.dot(ctx, sx(x), sy(y), 4, Lab.color("c-a"), Lab.color("panel")));
+}
+
+function drawResid(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!trees.length) return;
+  const k = m.value, prev = trainF[Math.max(0, k - 1)];
+  const res = train.map(([x, y], i) => [x, y - prev[i]]);
+  const lim = Math.max(1, ...res.map(r => Math.abs(r[1]))) * 1.1;
+  const sx = Lab.frame(X0, X1, 34, w - 8), sy = Lab.frame(-lim, lim, h - 20, 8);
+  Lab.axes(ctx, sx, sy, { xTicks: [0, 5, 10], yTicks: [+(-lim * .9).toFixed(1), 0, +(lim * .9).toFixed(1)] });
+  res.forEach(([x, r]) => Lab.dot(ctx, sx(x), sy(r), 3.5, Lab.color("c-a")));
+  if (k > 0) curve(ctx, sx, sy, trees[k - 1], Lab.color("c-b"), 2.5);
+}
+
+function drawCurve(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!errors.length) return;
+  const lg = v => Math.log10(Math.max(v, 1e-4));
+  const vals = errors.flat().map(lg), lo = Math.floor(Math.min(...vals) * 2) / 2, hi = Math.ceil(Math.max(...vals) * 2) / 2;
+  const sx = Lab.frame(0, 300, 40, w - 8), sy = Lab.frame(lo, hi, h - 22, 8);
+  const yt = []; for (let t = lo; t <= hi + 1e-9; t += 0.5) yt.push(+t.toFixed(1));
+  Lab.axes(ctx, sx, sy, { xTicks: [0, 100, 200, 300], yTicks: yt, xLabel: "деревьев", yLabel: "log₁₀ MSE" });
+  let best = 0; errors.forEach((e, i) => { if (e[1] < errors[best][1]) best = i; });
+  ctx.strokeStyle = Lab.color("c-ok"); ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(sx(best), 8); ctx.lineTo(sx(best), h - 22); ctx.stroke(); ctx.setLineDash([]);
+  [[0, "c-a"], [1, "c-b"]].forEach(([kk, col]) => {
+    ctx.strokeStyle = Lab.color(col); ctx.lineWidth = 2; ctx.beginPath();
+    errors.forEach((e, i) => i ? ctx.lineTo(sx(i), sy(lg(e[kk]))) : ctx.moveTo(sx(0), sy(lg(e[kk]))));
+    ctx.stroke();
+    Lab.dot(ctx, sx(m.value), sy(lg(errors[m.value][kk])), 5, Lab.color(col), Lab.color("panel"));
+  });
+}
+
+function stop() { clearInterval(timer); timer = null; document.getElementById("play").textContent = "▶ Добавлять"; }
+document.getElementById("add").onclick = () => { stop(); m.value = Math.min(300, m.value + 1); };
+document.getElementById("play").onclick = () => {
+  if (timer) return stop();
+  document.getElementById("play").textContent = "⏸ Стоп";
+  timer = setInterval(() => { if (m.value >= 300) stop(); else m.value = m.value + 1; }, 120);
+};
+document.getElementById("zero").onclick = () => { stop(); m.value = 0; };
+document.getElementById("regen").onclick = () => { seed++; generate(); rebuild(); };
+generate(); rebuild();
+</script>
+</body>
+</html>

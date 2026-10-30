@@ -11,6 +11,9 @@
 | [knn.html](knn.html) — карта решений, соседи под курсором, leave-one-out от k | k-NN |
 | [roc_threshold.html](roc_threshold.html) — порог, матрица ошибок, precision/recall, ROC-кривая | ROC-AUC, матрица ошибок, метрики классификации |
 | [kmeans.html](kmeans.html) — шаги назначения и обновления, инициализация, метод локтя | k-means, выбор числа кластеров |
+| [decision_tree.html](decision_tree.html) — разбиения CART на плоскости, правила дерева, accuracy от глубины | деревья решений |
+| [gradient_boosting.html](gradient_boosting.html) — деревья по одному на остатках, learning rate, ранняя остановка | бустинг, XGBoost, LightGBM, CatBoost |
+| [svm.html](svm.html) — зазор, опорные векторы, C, ядра linear/RBF/poly | SVM |
 
 ## Как добавить демонстрацию
 

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="svm one_class_svm">
+<title>SVM — интерактив</title>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Метод опорных векторов (SVM)</h1><a href="../cheatsheets/svm_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">SVM ищет разделяющую границу (сплошная линия) с максимальным <b>зазором</b> до классов (пунктир: f(x) = ±1).
+    Границу определяют только <b>опорные векторы</b> — обведённые точки. <b>Клик</b> добавляет точку выбранного класса, <b>правый клик</b> удаляет ближайшую.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="plane"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>класс −1</span><span><i style="background:var(--c-b)"></i>класс +1</span><span>◯ опорные векторы</span><span>— граница, ┄ зазор</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Модель</h3>
+      <div class="ctl"><label>Ядро</label>
+        <select id="kernel"><option value="linear">Линейное</option><option value="rbf">RBF (гауссово)</option><option value="poly">Полиномиальное (степень 3)</option></select></div>
+      <div class="ctl"><label for="C">C — штраф за нарушения <output for="C"></output></label><input id="C" type="range" min="-2" max="3" step="0.1" value="0"></div>
+      <div class="ctl" id="gammaCtl"><label for="gamma">γ (RBF) — «радиус» влияния точки <output for="gamma"></output></label><input id="gamma" type="range" min="-1" max="2.3" step="0.1" value="0.5"></div>
+      <h3>Данные</h3>
+      <div class="ctl"><label>Форма классов</label>
+        <select id="shape"><option value="blobs">Два облака</option><option value="moons">Полумесяцы</option><option value="circles">Круг в кольце</option><option value="xor">XOR</option></select></div>
+      <div class="ctl"><label for="noise">Шум <output for="noise"></output></label><input id="noise" type="range" min="0" max="0.5" step="0.02" value="0.1"></div>
+      <div class="buttons"><button id="addA">+ класс −1</button><button id="addB">+ класс +1</button><button id="regen">Новые данные</button></div>
+      <h3>Результат</h3>
+      <div class="stats">
+        <span>Опорных векторов</span><b id="nsv"></b>
+        <span>Accuracy на обучении</span><b id="trainAcc"></b>
+        <span>Accuracy на тесте</span><b id="testAcc"></b>
+        <span id="marginLabel">Ширина зазора 2/‖w‖</span><b id="margin"></b>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hint" style="margin-top:16px"><h3>Что попробовать</h3><ul>
+    <li>Линейное ядро, «два облака»: двигайте <b>C</b>. Маленькое C — широкий зазор, допускаются нарушения, много опорных векторов. Большое C — узкий зазор, модель старается не ошибиться ни на одной точке.</li>
+    <li>Перетащите (удалите и добавьте) точку, которая <b>не</b> обведена: граница не изменится. Сдвиньте опорный вектор — граница сдвинется.</li>
+    <li>«Круг в кольце» линейным ядром не разделить. Переключитесь на RBF — это «трюк с ядром»: линейное разделение в неявном пространстве высокой размерности.</li>
+    <li>RBF: большое γ — каждая точка влияет только на маленькую окрестность, граница обтягивает точки (переобучение). Маленькое γ — граница почти линейная.</li>
+    <li>RBF с большими C и γ одновременно — классическое переобучение: сравните accuracy на обучении и на тесте.</li>
+  </ul></div>
+</div>
+
+<script src="lab.js"></script>
+<script>
+let train = [], test = [], seed = 31, model = null, addClass = 1, sx, sy, retrainTimer = null;
+
+const C = Lab.slider("C", () => schedule(), v => (10 ** v).toFixed(v < 0 ? 2 : 1));
+const gamma = Lab.slider("gamma", () => schedule(), v => (10 ** v).toFixed(v < 0 ? 2 : 1));
+const noise = Lab.slider("noise", () => { generate(); schedule(); }, v => v.toFixed(2));
+const plane = Lab.canvas(document.getElementById("plane"), 0.68, draw);
+
+function generate() {
+  const r = Lab.rng(seed), shape = document.getElementById("shape").value;
+  const toPm = p => [p[0], p[1], p[2] ? 1 : -1];
+  train = Lab.dataset(shape, 80, noise.value, r).map(toPm);
+  test = Lab.dataset(shape, 400, noise.value, r).map(toPm);
+}
+
+function kernelFn() {
+  const kind = document.getElementById("kernel").value, g = 10 ** gamma.value;
+  if (kind === "rbf") return (a, b) => Math.exp(-g * ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2));
+  if (kind === "poly") return (a, b) => (1 + 2 * (a[0] * b[0] + a[1] * b[1])) ** 3;
+  return (a, b) => a[0] * b[0] + a[1] * b[1];
+}
+
+// Упрощённый SMO (Platt): двойственная задача SVM с ограничениями 0 ≤ αᵢ ≤ C
+function trainSvm(pts, Cval, K) {
+  const n = pts.length, y = pts.map(p => p[2]), r = Lab.rng(7);
+  const G = pts.map(a => pts.map(b => K(a, b)));
+  const alpha = new Array(n).fill(0); let b = 0;
+  const f = i => { let s = b; for (let k = 0; k < n; k++) if (alpha[k]) s += alpha[k] * y[k] * G[k][i]; return s; };
+  const tol = 1e-3; let passes = 0, iter = 0;
+  while (passes < 8 && iter < 3000) {
+    let changed = 0; iter++;
+    for (let i = 0; i < n; i++) {
+      const Ei = f(i) - y[i];
+      if (!((y[i] * Ei < -tol && alpha[i] < Cval) || (y[i] * Ei > tol && alpha[i] > 0))) continue;
+      let j = Math.floor(r() * (n - 1)); if (j >= i) j++;
+      const Ej = f(j) - y[j], ai = alpha[i], aj = alpha[j];
+      const L = y[i] !== y[j] ? Math.max(0, aj - ai) : Math.max(0, ai + aj - Cval);
+      const H = y[i] !== y[j] ? Math.min(Cval, Cval + aj - ai) : Math.min(Cval, ai + aj);
+      if (L >= H) continue;
+      const eta = 2 * G[i][j] - G[i][i] - G[j][j];
+      if (eta >= 0) continue;
+      let ajNew = Math.min(H, Math.max(L, aj - y[j] * (Ei - Ej) / eta));
+      if (Math.abs(ajNew - aj) < 1e-6) continue;
+      const aiNew = ai + y[i] * y[j] * (aj - ajNew);
+      const b1 = b - Ei - y[i] * (aiNew - ai) * G[i][i] - y[j] * (ajNew - aj) * G[i][j];
+      const b2 = b - Ej - y[i] * (aiNew - ai) * G[i][j] - y[j] * (ajNew - aj) * G[j][j];
+      b = aiNew > 0 && aiNew < Cval ? b1 : ajNew > 0 && ajNew < Cval ? b2 : (b1 + b2) / 2;
+      alpha[i] = aiNew; alpha[j] = ajNew; changed++;
+    }
+    passes = changed ? 0 : passes + 1;
+  }
+  // Смещение b уточняем точно: при фиксированных α оптимальное b минимизирует сумму hinge-потерь,
+  // а минимум кусочно-линейной функции лежит в одной из точек yᵢ − g(xᵢ). Упрощённый SMO этого не гарантирует,
+  // когда все αᵢ упираются в C (маленькое C).
+  const g0 = pts.map((_, i) => f(i) - b);
+  const hinge = bb => g0.reduce((s, g, i) => s + Math.max(0, 1 - y[i] * (g + bb)), 0);
+  // Если минимум достигается на целом отрезке (все точки внутри зазора), берём его середину — как libsvm
+  const cands = g0.map((g, i) => [y[i] - g, hinge(y[i] - g)]);
+  const minH = Math.min(...cands.map(c => c[1]));
+  const opt = cands.filter(c => c[1] <= minH + 1e-9 * (1 + Math.abs(minH))).map(c => c[0]);
+  b = (Math.min(...opt) + Math.max(...opt)) / 2;
+  const sv = pts.map((p, i) => ({ p, a: alpha[i], y: y[i] })).filter(s => s.a > 1e-6);
+  const decision = x => sv.reduce((s, v) => s + v.a * v.y * K(v.p, x), b);
+  // для линейного ядра веса w = Σ αᵢ yᵢ xᵢ
+  const w = [sv.reduce((s, v) => s + v.a * v.y * v.p[0], 0), sv.reduce((s, v) => s + v.a * v.y * v.p[1], 0)];
+  return { sv, decision, w, C: Cval };
+}
+
+function schedule() { clearTimeout(retrainTimer); retrainTimer = setTimeout(retrain, 30); }
+function retrain() {
+  if (train.length < 2 || new Set(train.map(p => p[2])).size < 2) { model = null; plane.redraw(); return; }
+  const kind = document.getElementById("kernel").value;
+  document.getElementById("gammaCtl").style.opacity = kind === "rbf" ? 1 : .4;
+  model = trainSvm(train, 10 ** C.value, kernelFn());
+  const acc = pts => pts.filter(p => Math.sign(model.decision(p)) === p[2]).length / pts.length;
+  document.getElementById("nsv").textContent = `${model.sv.length} из ${train.length}`;
+  document.getElementById("trainAcc").textContent = (100 * acc(train)).toFixed(1) + "%";
+  document.getElementById("testAcc").textContent = (100 * acc(test)).toFixed(1) + "%";
+  const linear = kind === "linear";
+  document.getElementById("margin").textContent = linear ? (2 / Math.hypot(...model.w)).toFixed(3) : "—";
+  document.getElementById("marginLabel").style.opacity = linear ? 1 : .4;
+  plane.redraw();
+}
+
+// Изолинии f(x) = level методом marching squares по сетке значений
+function contour(ctx, grid, cols, rows, cell, level) {
+  const at = (i, j) => grid[j * cols + i] - level;
+  const lerp = (a, b) => a / (a - b);
+  ctx.beginPath();
+  for (let j = 0; j < rows - 1; j++) for (let i = 0; i < cols - 1; i++) {
+    const v = [at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)];
+    const p = [];
+    const edges = [[0, 1, (t) => [i + t, j]], [1, 2, (t) => [i + 1, j + t]], [3, 2, (t) => [i + t, j + 1]], [0, 3, (t) => [i, j + t]]];
+    edges.forEach(([a, b, pos]) => { if ((v[a] > 0) !== (v[b] > 0)) p.push(pos(lerp(v[a], v[b]))); });
+    for (let k = 0; k + 1 < p.length; k += 2) { ctx.moveTo(p[k][0] * cell, p[k][1] * cell); ctx.lineTo(p[k + 1][0] * cell, p[k + 1][1] * cell); }
+  }
+  ctx.stroke();
+}
+
+function draw(ctx, w, h) {
+  sx = Lab.frame(-1.2, 1.2, 0, w); sy = Lab.frame(-1, 1, h, 0);
+  ctx.clearRect(0, 0, w, h);
+  if (model) {
+    const cell = 6, cols = Math.ceil(w / cell) + 1, rows = Math.ceil(h / cell) + 1, grid = new Float64Array(cols * rows);
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) grid[j * cols + i] = model.decision([sx.invert(i * cell), sy.invert(j * cell)]);
+    const ca = Lab.color("region-a"), cb = Lab.color("region-b");
+    for (let j = 0; j < rows - 1; j++) for (let i = 0; i < cols - 1; i++) {
+      const v = grid[j * cols + i];
+      ctx.fillStyle = v > 0 ? cb : ca; ctx.globalAlpha = Math.min(1, 0.45 + Math.abs(v) * 0.55);
+      ctx.fillRect(i * cell, j * cell, cell, cell);
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = Lab.color("text"); ctx.lineWidth = 2.2; contour(ctx, grid, cols, rows, cell, 0);
+    ctx.lineWidth = 1.3; ctx.setLineDash([5, 5]); contour(ctx, grid, cols, rows, cell, 1); contour(ctx, grid, cols, rows, cell, -1); ctx.setLineDash([]);
+  }
+  train.forEach(p => Lab.dot(ctx, sx(p[0]), sy(p[1]), 4.5, Lab.color(p[2] > 0 ? "c-b" : "c-a"), Lab.color("panel")));
+  if (model) model.sv.forEach(s => {
+    ctx.beginPath(); ctx.arc(sx(s.p[0]), sy(s.p[1]), 8.5, 0, Math.PI * 2);
+    ctx.strokeStyle = Lab.color("text"); ctx.lineWidth = s.a >= model.C - 1e-6 ? 1 : 2;   // тонкий круг — нарушитель зазора (α = C)
+    ctx.setLineDash(s.a >= model.C - 1e-6 ? [2, 2] : []); ctx.stroke(); ctx.setLineDash([]);
+  });
+}
+
+const cv = document.getElementById("plane");
+cv.addEventListener("contextmenu", e => e.preventDefault());
+cv.addEventListener("pointerdown", e => {
+  const p = Lab.pointer(cv, e), x = sx.invert(p.x), y = sy.invert(p.y);
+  if (e.button === 2) {
+    let best = -1, bd = Infinity;
+    train.forEach((q, i) => { const d = Math.hypot(sx(q[0]) - p.x, sy(q[1]) - p.y); if (d < bd) { bd = d; best = i; } });
+    if (best >= 0 && bd < 20) train.splice(best, 1);
+  } else train.push([x, y, addClass]);
+  schedule();
+});
+const setAdd = c => { addClass = c; document.getElementById("addA").classList.toggle("primary", c < 0); document.getElementById("addB").classList.toggle("primary", c > 0); };
+document.getElementById("addA").onclick = () => setAdd(-1);
+document.getElementById("addB").onclick = () => setAdd(1);
+document.getElementById("kernel").onchange = schedule;
+document.getElementById("shape").onchange = () => { generate(); schedule(); };
+document.getElementById("regen").onclick = () => { seed++; generate(); schedule(); };
+setAdd(1); generate(); retrain();
+</script>
+</body>
+</html>

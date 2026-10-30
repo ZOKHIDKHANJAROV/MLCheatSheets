@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="decision_trees decision_trees_regression tree_visualization">
+<title>Дерево решений — интерактив</title>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="lab.css">
+<style>
+  .tree { font-family: Consolas, "Courier New", monospace; font-size: 12.5px; line-height: 1.55; max-height: 420px; overflow: auto; }
+  .tree div { white-space: nowrap; border-radius: 4px; padding: 0 4px; }
+  .tree .leaf { color: var(--muted); }
+  .tree .on { background: var(--region-a); color: var(--text); font-weight: 600; }
+  .tree .ca { color: var(--c-a); } .tree .cb { color: var(--c-b); }
+</style>
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Дерево решений</h1><a href="../cheatsheets/decision_trees_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Дерево делит плоскость прямыми, параллельными осям: в каждом узле выбирается признак и порог,
+    сильнее всего уменьшающие неоднородность (Джини или энтропию). <b>Наведите курсор</b> на область — справа подсветится путь к её листу.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="plane"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>класс A</span><span><i style="background:var(--c-b)"></i>класс B</span><span>яркость области — чистота листа</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Гиперпараметры</h3>
+      <div class="ctl"><label for="depth">max_depth <output for="depth"></output></label><input id="depth" type="range" min="1" max="12" step="1" value="3"></div>
+      <div class="ctl"><label for="leaf">min_samples_leaf <output for="leaf"></output></label><input id="leaf" type="range" min="1" max="30" step="1" value="1"></div>
+      <div class="ctl"><label>Критерий</label><select id="crit"><option value="gini">Джини</option><option value="entropy">Энтропия</option></select></div>
+      <h3>Данные</h3>
+      <div class="ctl"><label>Форма классов</label>
+        <select id="shape"><option value="moons">Полумесяцы</option><option value="xor">XOR</option><option value="circles">Круг в кольце</option><option value="blobs">Два облака</option></select></div>
+      <div class="ctl"><label for="noise">Шум <output for="noise"></output></label><input id="noise" type="range" min="0" max="0.6" step="0.02" value="0.36"></div>
+      <div class="buttons"><button id="regen">Новые данные</button></div>
+      <h3>Качество</h3>
+      <div class="stats">
+        <span>Accuracy на обучении</span><b id="trainAcc"></b>
+        <span>Accuracy на тесте</span><b id="testAcc"></b>
+        <span>Листьев / глубина</span><b id="size"></b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card"><h3>Правила дерева</h3><div class="tree" id="tree"></div></div>
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Accuracy от max_depth</h3><canvas id="curve"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>train</span><span><i style="background:var(--c-b)"></i>test</span></div></div>
+  </div>
+  <div class="card hint" style="margin-top:16px"><h3>Что попробовать</h3><ul>
+    <li>max_depth = 1 — это «пень»: одна прямая.</li>
+    <li>XOR в принципе делится двумя разбиениями, но дерево строится <b>жадно</b>: первое разбиение на XOR почти не уменьшает Джини, порог выбирается «наугад», и глубины 2 не хватает — нужна 4. Посмотрите на правила дерева.</li>
+    <li>Увеличивайте глубину: train-accuracy растёт до 100%, а на тесте после некоторой глубины начинает падать — переобучение. На графике справа это видно сразу.</li>
+    <li>При большой глубине поднимите min_samples_leaf до 10–15: мелкие «островки» вокруг шумных точек исчезают.</li>
+    <li>На «круге в кольце» границы получаются ступенчатыми: дерево приближает окружность прямоугольниками.</li>
+    <li>Нажимайте «Новые данные» при глубине 10: дерево сильно меняется от выборки к выборке — высокая дисперсия. Это лечат случайный лес и бустинг.</li>
+  </ul></div>
+</div>
+
+<script src="lab.js"></script>
+<script>
+let train = [], test = [], tree = null, seed = 5, hoverLeaf = null, sx, sy, nodeId = 0;
+
+const depth = Lab.slider("depth", () => refresh(), v => v);
+const leaf = Lab.slider("leaf", () => refresh(), v => v);
+const noise = Lab.slider("noise", () => { generate(); refresh(); }, v => v.toFixed(2));
+const plane = Lab.canvas(document.getElementById("plane"), 0.68, draw);
+const curve = Lab.canvas(document.getElementById("curve"), 0.6, drawCurve);
+
+function generate() {
+  const r = Lab.rng(seed), shape = document.getElementById("shape").value;
+  train = Lab.dataset(shape, 140, noise.value, r);
+  test = Lab.dataset(shape, 500, noise.value, r);
+}
+
+// ---------- CART для двух классов ----------
+const impurity = (c0, c1, crit) => {
+  const n = c0 + c1; if (!n) return 0;
+  const p0 = c0 / n, p1 = c1 / n;
+  return crit === "gini" ? 1 - p0 * p0 - p1 * p1 : -[p0, p1].reduce((s, p) => s + (p > 0 ? p * Math.log2(p) : 0), 0);
+};
+
+function build(pts, d, maxDepth, minLeaf, crit) {
+  const c1 = pts.filter(p => p[2]).length, c0 = pts.length - c1;
+  const node = { id: nodeId++, n: pts.length, c0, c1, pred: c1 > c0 ? 1 : 0, imp: impurity(c0, c1, crit), depth: d };
+  if (d >= maxDepth || pts.length < 2 * minLeaf || c0 === 0 || c1 === 0) return node;
+  let best = null;
+  for (const f of [0, 1]) {
+    const s = pts.slice().sort((a, b) => a[f] - b[f]);
+    let l0 = 0, l1 = 0;
+    for (let i = 0; i < s.length - 1; i++) {
+      s[i][2] ? l1++ : l0++;
+      if (s[i][f] === s[i + 1][f] || i + 1 < minLeaf || s.length - i - 1 < minLeaf) continue;
+      const nl = i + 1, nr = s.length - nl;
+      const score = (nl * impurity(l0, l1, crit) + nr * impurity(c0 - l0, c1 - l1, crit)) / s.length;
+      if (!best || score < best.score) best = { score, f, thr: (s[i][f] + s[i + 1][f]) / 2 };
+    }
+  }
+  if (!best || node.imp - best.score < 1e-9) return node;
+  node.f = best.f; node.thr = best.thr;
+  node.left = build(pts.filter(p => p[best.f] <= best.thr), d + 1, maxDepth, minLeaf, crit);
+  node.right = build(pts.filter(p => p[best.f] > best.thr), d + 1, maxDepth, minLeaf, crit);
+  return node;
+}
+const fitTree = (maxDepth) => { nodeId = 0; return build(train, 0, maxDepth, leaf.value, document.getElementById("crit").value); };
+const leafOf = (node, p) => node.left ? leafOf(p[node.f] <= node.thr ? node.left : node.right, p) : node;
+const accuracy = (t, pts) => pts.filter(p => leafOf(t, p).pred === p[2]).length / pts.length;
+const stats = (node) => node.left ? (s => ({ leaves: s[0].leaves + s[1].leaves, depth: 1 + Math.max(s[0].depth, s[1].depth) }))([stats(node.left), stats(node.right)]) : { leaves: 1, depth: 0 };
+
+let curveData = [];
+function refresh() {
+  tree = fitTree(depth.value);
+  document.getElementById("trainAcc").textContent = (100 * accuracy(tree, train)).toFixed(1) + "%";
+  document.getElementById("testAcc").textContent = (100 * accuracy(tree, test)).toFixed(1) + "%";
+  const s = stats(tree);
+  document.getElementById("size").textContent = `${s.leaves} / ${s.depth}`;
+  curveData = [];
+  for (let d = 1; d <= 12; d++) { const t = fitTree(d); curveData.push([accuracy(t, train), accuracy(t, test)]); }
+  tree = fitTree(depth.value);   // id узлов должны соответствовать текущему дереву
+  renderRules(); plane.redraw(); curve.redraw();
+}
+
+// ---------- правила дерева текстом ----------
+const FEAT = ["x₁", "x₂"];
+function renderRules() {
+  const lines = [];
+  const crit = document.getElementById("crit").value === "gini" ? "gini" : "H";
+  (function walk(node, indent, prefix) {
+    const pad = "&nbsp;".repeat(indent * 3);
+    if (node.left) {
+      lines.push(`<div data-id="${node.id}">${pad}${prefix}${FEAT[node.f]} ≤ ${node.thr.toFixed(2)} <span class="leaf">(n=${node.n}, ${crit}=${node.imp.toFixed(2)})</span></div>`);
+      walk(node.left, indent + 1, "да → ");
+      walk(node.right, indent + 1, "нет → ");
+    } else {
+      const cls = node.pred ? "B" : "A";
+      lines.push(`<div class="leaf" data-id="${node.id}">${pad}${prefix}<span class="${node.pred ? "cb" : "ca"}">класс ${cls}</span> (${node.pred ? node.c1 : node.c0}/${node.n})</div>`);
+    }
+  })(tree, 0, "");
+  document.getElementById("tree").innerHTML = lines.join("");
+}
+function highlightPath(p) {
+  const ids = new Set();
+  if (p) { let node = tree; while (node) { ids.add(node.id); node = node.left ? (p[node.f] <= node.thr ? node.left : node.right) : null; } }
+  document.querySelectorAll("#tree div").forEach(el => el.classList.toggle("on", ids.has(+el.dataset.id)));
+  const on = document.querySelector("#tree .leaf.on"); if (on) on.scrollIntoView({ block: "nearest" });
+}
+
+// ---------- рисование ----------
+function draw(ctx, w, h) {
+  sx = Lab.frame(-1.2, 1.2, 0, w); sy = Lab.frame(-1, 1, h, 0);
+  ctx.clearRect(0, 0, w, h);
+  if (!tree) return;
+  (function regions(node, x0, x1, y0, y1) {
+    if (node.left) {
+      if (node.f === 0) { regions(node.left, x0, Math.min(x1, node.thr), y0, y1); regions(node.right, Math.max(x0, node.thr), x1, y0, y1); }
+      else { regions(node.left, x0, x1, y0, Math.min(y1, node.thr)); regions(node.right, x0, x1, Math.max(y0, node.thr), y1); }
+      return;
+    }
+    const purity = Math.max(node.c0, node.c1) / node.n;
+    ctx.fillStyle = Lab.color(node.pred ? "region-b" : "region-a");
+    ctx.globalAlpha = 0.4 + 1.6 * (purity - 0.5);
+    ctx.fillRect(sx(x0), sy(y1), sx(x1) - sx(x0), sy(y0) - sy(y1));
+    if (hoverLeaf === node) { ctx.globalAlpha = 1; ctx.strokeStyle = Lab.color("text"); ctx.lineWidth = 2; ctx.strokeRect(sx(x0) + 1, sy(y1) + 1, sx(x1) - sx(x0) - 2, sy(y0) - sy(y1) - 2); }
+    ctx.globalAlpha = 1;
+  })(tree, -1.2, 1.2, -1, 1);
+  // линии разбиений: чем ближе к корню, тем толще
+  (function splits(node, x0, x1, y0, y1) {
+    if (!node.left) return;
+    ctx.strokeStyle = Lab.color("text"); ctx.globalAlpha = 0.55; ctx.lineWidth = Math.max(0.8, 3 - node.depth * 0.5);
+    ctx.beginPath();
+    if (node.f === 0) { ctx.moveTo(sx(node.thr), sy(y0)); ctx.lineTo(sx(node.thr), sy(y1)); }
+    else { ctx.moveTo(sx(x0), sy(node.thr)); ctx.lineTo(sx(x1), sy(node.thr)); }
+    ctx.stroke(); ctx.globalAlpha = 1;
+    if (node.f === 0) { splits(node.left, x0, node.thr, y0, y1); splits(node.right, node.thr, x1, y0, y1); }
+    else { splits(node.left, x0, x1, y0, node.thr); splits(node.right, x0, x1, node.thr, y1); }
+  })(tree, -1.2, 1.2, -1, 1);
+  train.forEach(([x, y, c]) => Lab.dot(ctx, sx(x), sy(y), 4, Lab.color(c ? "c-b" : "c-a"), Lab.color("panel")));
+}
+
+function drawCurve(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!curveData.length) return;
+  const cx = Lab.frame(1, 12, 40, w - 10), cy = Lab.frame(0.5, 1, h - 22, 8);
+  Lab.axes(ctx, cx, cy, { xTicks: [1, 3, 5, 7, 9, 12], yTicks: [0.5, 0.6, 0.7, 0.8, 0.9, 1], xLabel: "max_depth" });
+  [[0, "c-a"], [1, "c-b"]].forEach(([k, col]) => {
+    ctx.strokeStyle = Lab.color(col); ctx.lineWidth = 2; ctx.beginPath();
+    curveData.forEach((v, i) => i ? ctx.lineTo(cx(i + 1), cy(Math.max(.5, v[k]))) : ctx.moveTo(cx(1), cy(Math.max(.5, v[k]))));
+    ctx.stroke();
+    curveData.forEach((v, i) => Lab.dot(ctx, cx(i + 1), cy(Math.max(.5, v[k])), i + 1 === depth.value ? 5 : 2.5, Lab.color(col)));
+  });
+}
+
+const cv = document.getElementById("plane");
+cv.addEventListener("pointermove", e => {
+  const p = Lab.pointer(cv, e), pt = [sx.invert(p.x), sy.invert(p.y)];
+  hoverLeaf = leafOf(tree, pt); highlightPath(pt); plane.redraw();
+});
+cv.addEventListener("pointerleave", () => { hoverLeaf = null; highlightPath(null); plane.redraw(); });
+document.getElementById("crit").onchange = refresh;
+document.getElementById("shape").onchange = () => { generate(); refresh(); };
+document.getElementById("regen").onclick = () => { seed++; generate(); refresh(); };
+generate(); refresh();
+</script>
+</body>
+</html>
