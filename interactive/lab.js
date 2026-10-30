@@ -135,4 +135,15 @@
   }
 
   window.Lab = { canvas, color, onTheme, scale, frame, slider, rng, axes, dot, pointer, dataset };
+
+  // Внутри портала ссылки на шпаргалки открываем в самом портале (#/t/…), а не внутри фрейма демонстрации.
+  // При открытии через file:// доступ к родителю запрещён — тогда ссылки работают как обычно.
+  let portal = null;
+  try { if (window.parent !== window && window.parent.mlcsPortal) portal = window.parent.mlcsPortal; } catch (e) { /* другой origin */ }
+  if (portal) {
+    document.addEventListener("click", e => {
+      const a = e.target.closest('a[href*="cheatsheets/"]');
+      if (a && portal.open(a.getAttribute("href").split("/").pop())) e.preventDefault();
+    });
+  }
 })();

@@ -1,8 +1,20 @@
 /*
-  Тёмная тема для шпаргалок (cheatsheets/*.html) и других страниц проекта.
-  Включается атрибутом data-theme="dark" на <html>, который ставит assets/theme.js.
-  Только для экрана: при печати шпаргалки остаются светлыми.
+  Общие стили поверх шаблона шпаргалок (cheatsheets/*.html):
+  1. Адаптивность для телефонов.
+  2. Тёмная тема — включается атрибутом data-theme="dark" на <html>, который ставит assets/theme.js.
+  Только для экрана: при печати шпаргалки остаются как были.
 */
+
+/* Шаблон задаёт body { min-width: 900px } — на телефоне страницу приходилось листать вбок */
+@media screen and (max-width: 899px) {
+  body { min-width: 0 !important; }
+  img, svg, canvas, video { max-width: 100% !important; height: auto; }
+  table { display: block; overflow-x: auto; max-width: 100%; }
+  /* длинные строки кода переносятся, а не растягивают страницу */
+  pre { max-width: 100%; overflow-x: auto; }
+  pre, pre code { white-space: pre-wrap !important; }
+  code { overflow-wrap: anywhere; }
+}
 @media screen {
   html[data-theme="dark"] {
     --t-bg: #12161c;

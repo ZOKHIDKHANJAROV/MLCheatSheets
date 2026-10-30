@@ -197,6 +197,8 @@
 <script>
 const DATA = /*__DATA__*/null;
 const STORE_KEY = "mlcs-progress-v1";
+// Для страниц во фрейме (интерактивы): открыть шпаргалку в самом портале
+window.mlcsPortal = { open: f => { if (!DATA.titles[f]) return false; location.hash = "#/t/" + encodeURIComponent(f); return true; } };
 
 // ---------- состояние и прогресс ----------
 function loadState() {
@@ -562,6 +564,8 @@ function viewExercise(i) {
     <h2>✅ Самопроверка</h2>
     <p class="note">Сохраните свой результат в <code>my_answer.csv</code> в папке упражнения и выполните в корне репозитория:</p>
     <div class="cmd"><code>python tools/check_exercise.py ${esc(dir)}</code><button class="btn" data-copy="python tools/check_exercise.py ${esc(dir)}">Копировать</button></div>
+    ${e.files.includes("exercise.ipynb") ? `<p class="note">Или решайте в Jupyter: в тетрадке <code>exercise.ipynb</code> уже есть загрузка данных и ячейка автопроверки.</p>
+    <div class="cmd"><code>jupyter notebook ${esc(dir)}/exercise.ipynb</code><button class="btn" data-copy="jupyter notebook ${esc(dir)}/exercise.ipynb">Копировать</button></div>` : ""}
     <h2>📝 Задание</h2>
     <div class="md">${markdown(e.task)}</div>
   </div>`;

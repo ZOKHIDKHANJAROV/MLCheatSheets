@@ -53,6 +53,8 @@ python start.py
 python tools/check_exercise.py exercises/scaling_normalization
 ```
 
+Или решайте в Jupyter: в каждой папке упражнения есть тетрадка `exercise.ipynb` с условием, загрузкой данных и ячейкой автопроверки.
+
 После изменения README, ROADMAP или упражнений пересоберите портал: `python tools/build_portal.py` (`start.py` делает это автоматически).
 
 ### Для начинающих
