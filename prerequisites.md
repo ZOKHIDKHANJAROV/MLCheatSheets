@@ -70,6 +70,7 @@
 - 3d_computer_vision: cnn_architectures
 - pose_estimation: object_detection
 - neural_style_transfer: transfer_learning_cnn
+- neural_networks_medicine: cnn_architectures, classification_metrics, roc_auc
 
 ## Последовательности, NLP и трансформеры
 

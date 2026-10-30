@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🔥 Нейросети в медицине Cheatsheet — 3 колонки</title>
+  <title>🩺 Нейросети в медицине Cheatsheet — 3 колонки</title>
   <style>
     @media screen {
       body {
@@ -206,204 +206,189 @@
 
 <div class="container">
 
-  <h1>🔥 Нейросети в медицине</h1>
+  <h1>🩺 Нейросети в медицине</h1>
   <div class="subtitle">📅 Январь 2026</div>
 
   <div class="block">
-    <h2>🔷 1. Нейросети в медицине - Основы</h2>
+    <h2>🔷 1. Где применяются</h2>
     <ul>
-      <li><strong>Medical AI</strong>: применение нейросетей для диагностики и лечения</li>
-      <li><strong>Области</strong>: medical imaging, drug discovery, персонализированная медицина</li>
-      <li><strong>Преимущества</strong>: высокая точность, быстрая диагностика, обнаружение паттернов</li>
-      <li><strong>Применение</strong>: рентген, MRI, CT анализ, предсказание болезней</li>
+      <li><strong>Медицинская визуализация</strong>: рентген, КТ, МРТ, УЗИ, маммография, снимки глазного дна</li>
+      <li><strong>Цифровая патология</strong>: гистологические срезы (whole-slide images)</li>
+      <li><strong>Физиологические сигналы</strong>: ЭКГ, ЭЭГ, фотоплетизмография, данные носимых устройств</li>
+      <li><strong>Электронные медкарты (EHR)</strong>: прогноз осложнений, риск повторной госпитализации</li>
+      <li><strong>Клинические тексты</strong>: извлечение диагнозов и препаратов из выписок и протоколов</li>
+      <li><strong>Разработка лекарств</strong>: свойства молекул, белки (см. шпаргалку по биологии)</li>
     </ul>
-    <blockquote>
-      Нейросети уже превосходят врачей в некоторых специфичных задачах диагностики.
-    </blockquote>
-
-    </div>
-<div class="block">
-    <h2>🔷 2. Установка</h2>
-    <pre><code># Установка Нейросети в медицине
-pip install torchserve torch-model-archiver torch-workflow-archiver
-
-# Проверка установки
-torchserve --version
-
-# Запуск сервера
-torchserve --start --model-store model_store \
-  --models all
-
-# Остановка
-torchserve --stop</code></pre>
+    <blockquote>Главное отличие от «обычного» ML: цена ошибки — здоровье пациента, а качество модели проверяется не только метриками, но и клиническими исследованиями.</blockquote>
   </div>
 
   <div class="block">
-    <h2>🔷 3. Model Archive (.mar)</h2>
-    <pre><code># Создание .mar файла
-torch-model-archiver --model-name densenet161 \
-  --version 1.0 \
-  --model-file model.py \
-  --serialized-file model.pth \
-  --handler image_classifier \
-  --extra-files index_to_name.json \
-  --export-path model_store
-
-# Структура .mar файла
-# - model.py: определение модели
-# - model.pth: веса
-# - handler: inference logic</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 4. Custom Handler</h2>
-    <pre><code>from ts.torch_handler.base_handler import BaseHandler
-
-class MyHandler(BaseHandler):
-    def __init__(self):
-        super().__init__()
-    
-    def initialize(self, context):
-        self.manifest = context.manifest
-        properties = context.system_properties
-        model_dir = properties.get("model_dir")
-        
-        # Load model
-        self.model = torch.jit.load(
-            os.path.join(model_dir, "model.pt")
-        )
-        self.model.eval()
-    
-    def preprocess(self, data):
-        # Обработка входных данных
-        images = []
-        for row in data:
-            image = row.get("data") or row.get("body")
-            image = Image.open(io.BytesIO(image))
-            image = self.transform(image)
-            images.append(image)
-        return torch.stack(images)
-    
-    def inference(self, data):
-        with torch.no_grad():
-            predictions = self.model(data)
-        return predictions
-    
-    def postprocess(self, data):
-        return data.tolist()</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 5. REST API</h2>
-    <pre><code># Регистрация модели
-curl -X POST "http://localhost:8081/models?url=densenet161.mar"
-
-# Inference
-curl http://localhost:8080/predictions/densenet161 \
-  -T kitten.jpg
-
-# Получение метрик
-curl http://localhost:8082/metrics
-
-# Unregister модели
-curl -X DELETE http://localhost:8081/models/densenet161/1.0</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 6. Конфигурация</h2>
-    <pre><code># config.properties
-inference_address=http://0.0.0.0:8080
-management_address=http://0.0.0.0:8081
-metrics_address=http://0.0.0.0:8082
-
-# Workers и threading
-number_of_netty_threads=32
-job_queue_size=1000
-default_workers_per_model=4
-
-# Batching
-max_batch_delay=100
-max_response_size=65535
-batch_size=8</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 7. Multi-model serving</h2>
-    <ul>
-      <li><strong>Несколько моделей</strong>: одновременное обслуживание</li>
-      <li><strong>Dynamic loading</strong>: загрузка/выгрузка на лету</li>
-      <li><strong>Version management</strong>: несколько версий одной модели</li>
-      <li><strong>Resource allocation</strong>: управление памятью GPU</li>
-    </ul>
-    
-    <pre><code># Register multiple models
-curl -X POST "http://localhost:8081/models?url=model1.mar"
-curl -X POST "http://localhost:8081/models?url=model2.mar"
-
-# List all models
-curl http://localhost:8081/models</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 8. Мониторинг и метрики</h2>
+    <h2>🔷 2. Медицинская визуализация</h2>
     <table>
-      <tr><th>Endpoint</th><th>Описание</th></tr>
-      <tr><td>/metrics</td><td>Prometheus metrics</td></tr>
-      <tr><td>/models</td><td>Список моделей</td></tr>
-      <tr><td>/models/{model}</td><td>Детали модели</td></tr>
-      <tr><td>/ping</td><td>Health check</td></tr>
+      <tr><th>Задача</th><th>Типичные модели</th><th>Пример</th></tr>
+      <tr><td>Классификация</td><td>CNN (ResNet, EfficientNet), ViT</td><td>пневмония на рентгене</td></tr>
+      <tr><td>Сегментация</td><td>U-Net, nnU-Net, 3D U-Net</td><td>контур опухоли на КТ</td></tr>
+      <tr><td>Детекция</td><td>Faster R-CNN, RetinaNet, YOLO</td><td>узлы в лёгких</td></tr>
+      <tr><td>Регистрация</td><td>VoxelMorph</td><td>совмещение снимков до/после</td></tr>
     </table>
-    
-    <pre><code># Prometheus интеграция
-ts_inference_requests_total
-ts_inference_latency_microseconds
-ts_queue_latency_microseconds
-model_metric_mem_usage</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 9. Scaling</h2>
-    <pre><code># Увеличение workers
-curl -X PUT "http://localhost:8081/models/densenet161?min_worker=3&max_worker=6"
-
-# Auto-scaling на основе load
-# Настройка в config.properties
-min_workers=2
-max_workers=10
-
-# Использование с Kubernetes
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: torchserve
-spec:
-  replicas: 3
-  template:
-    spec:
-      containers:
-      - name: torchserve
-        image: pytorch/torchserve:latest
-        ports:
-        - containerPort: 8080
-        - containerPort: 8081</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 10. Оптимизация</h2>
     <ul>
-      <li><strong>TorchScript</strong>: оптимизированное представление</li>
-      <li><strong>ONNX</strong>: экспорт для ускорения</li>
-      <li><strong>Quantization</strong>: INT8 inference</li>
-      <li><strong>GPU batching</strong>: эффективное использование GPU</li>
-      <li><strong>Model compilation</strong>: torch.compile() для ускорения</li>
+      <li><strong>3D-данные</strong>: КТ и МРТ — объёмы, нужны 3D-свёртки или обработка по срезам</li>
+      <li><strong>Предобработка КТ</strong>: окно по единицам Хаунсфилда (HU) под ткань, ресемплинг к одному размеру вокселя</li>
+      <li><strong>Формат DICOM</strong>: метаданные (аппарат, протокол) — и полезный контекст, и источник утечек</li>
     </ul>
-    
-    <pre><code># TorchScript export
-scripted_model = torch.jit.script(model)
-scripted_model.save("model.pt")</code></pre>
+    <pre><code># Сегментация органа с MONAI (PyTorch)
+from monai.networks.nets import UNet
+from monai.losses import DiceLoss
+
+model = UNet(spatial_dims=3, in_channels=1, out_channels=2,
+             channels=(16, 32, 64, 128), strides=(2, 2, 2))
+loss_fn = DiceLoss(to_onehot_y=True, softmax=True)
+
+logits = model(ct_volume)          # (B, 2, D, H, W)
+loss = loss_fn(logits, mask)</code></pre>
   </div>
 
+  <div class="block">
+    <h2>🔷 3. Цифровая патология</h2>
+    <ul>
+      <li><strong>Гигапиксельные изображения</strong>: срез целиком не помещается в GPU — его режут на тайлы 256×256</li>
+      <li><strong>Слабая разметка</strong>: диагноз известен для всего среза, а не для каждого тайла</li>
+      <li><strong>Multiple Instance Learning</strong>: срез = «мешок» тайлов; attention-MIL сам находит важные участки</li>
+      <li><strong>Нормализация окраски</strong>: разные лаборатории красят по-разному — модель должна быть к этому устойчива</li>
+    </ul>
+    <blockquote>Веса внимания в MIL дают «тепловую карту» среза — врач видит, на какие участки опиралась модель.</blockquote>
+  </div>
 
+  <div class="block">
+    <h2>🔷 4. Сигналы: ЭКГ и ЭЭГ</h2>
+    <ul>
+      <li><strong>ЭКГ</strong>: аритмии, фибрилляция предсердий, оценка функции сердца по 12 отведениям</li>
+      <li><strong>ЭЭГ</strong>: эпилептические приступы, стадии сна</li>
+      <li><strong>Модели</strong>: 1D-CNN, ResNet-1D, TCN, трансформеры по временным окнам</li>
+      <li><strong>Сложности</strong>: шум и артефакты движения, разная частота дискретизации у аппаратов</li>
+    </ul>
+    <pre><code>import torch.nn as nn
+
+# 1D-CNN для 12-канальной ЭКГ (10 с × 500 Гц)
+model = nn.Sequential(
+    nn.Conv1d(12, 32, kernel_size=7, padding=3), nn.BatchNorm1d(32), nn.ReLU(),
+    nn.MaxPool1d(2),
+    nn.Conv1d(32, 64, kernel_size=7, padding=3), nn.BatchNorm1d(64), nn.ReLU(),
+    nn.AdaptiveAvgPool1d(1), nn.Flatten(),
+    nn.Linear(64, n_classes),
+)
+logits = model(ecg)               # ecg: (B, 12, 5000)</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 5. Электронные медкарты и прогноз</h2>
+    <ul>
+      <li><strong>Данные</strong>: диагнозы, анализы, назначения — нерегулярные по времени события</li>
+      <li><strong>Пропуски информативны</strong>: анализ не назначили, потому что врач не подозревал проблему</li>
+      <li><strong>Сильный бейзлайн</strong>: градиентный бустинг на агрегированных признаках часто не уступает нейросетям</li>
+      <li><strong>Последовательности</strong>: RNN и трансформеры по истории визитов (например, BEHRT)</li>
+      <li><strong>Анализ выживаемости</strong>: модель Кокса, DeepSurv — учитывают цензурированные наблюдения</li>
+    </ul>
+    <blockquote>Осторожно с признаками «из будущего»: назначенное в конце госпитализации лечение выдаёт исход, который модель должна предсказать.</blockquote>
+  </div>
+
+  <div class="block">
+    <h2>🔷 6. Данные и разметка</h2>
+    <ul>
+      <li><strong>Мало данных</strong>: сотни–тысячи размеченных исследований вместо миллионов</li>
+      <li><strong>Разметка дорогая</strong>: нужны врачи, и они расходятся во мнениях — меряют согласие (каппа Коэна)</li>
+      <li><strong>Метки из отчётов</strong>: автоматически извлечённые из текстов метки шумные</li>
+      <li><strong>Что помогает</strong>: transfer learning, self-supervised предобучение на неразмеченных снимках, аугментации</li>
+      <li><strong>Федеративное обучение</strong>: модель учится в нескольких больницах, данные не покидают их</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 7. Валидация: главные ловушки</h2>
+    <div class="good-vs-bad">
+      <div class="good">
+        <h3>Правильно</h3>
+        <ul>
+          <li>Разбиение <strong>по пациентам</strong>: все снимки пациента — в одной выборке</li>
+          <li><strong>Внешняя валидация</strong> на данных другой больницы и другого оборудования</li>
+          <li>Проверка на <strong>подгруппах</strong>: пол, возраст, этнос, тяжесть</li>
+          <li>Проспективное испытание перед внедрением</li>
+        </ul>
+      </div>
+      <div class="bad">
+        <h3>Ошибки</h3>
+        <ul>
+          <li>Разбиение по снимкам — модель узнаёт пациента, а не болезнь</li>
+          <li><strong>Shortcut learning</strong>: модель находит метку больницы, линейку или тип аппарата вместо патологии</li>
+          <li>Тест на той же больнице, где обучали</li>
+          <li>Выбор порога и модели по тестовой выборке</li>
+        </ul>
+      </div>
+    </div>
+    <blockquote>Известный пример shortcut learning: модель «находила» пневмонию по маркерам переносного рентгеновского аппарата, которым снимают лежачих, более тяжёлых пациентов.</blockquote>
+  </div>
+
+  <div class="block">
+    <h2>🔷 8. Метрики</h2>
+    <table>
+      <tr><th>Метрика</th><th>Смысл</th></tr>
+      <tr><td>Чувствительность (recall)</td><td>доля найденных больных</td></tr>
+      <tr><td>Специфичность</td><td>доля верно названных здоровых</td></tr>
+      <tr><td>PPV (precision)</td><td>доля больных среди положительных ответов — <strong>зависит от распространённости</strong></td></tr>
+      <tr><td>AUROC / AUPRC</td><td>качество ранжирования; при редкой болезни AUPRC информативнее</td></tr>
+      <tr><td>Калибровка, Brier score</td><td>можно ли верить вероятности «риск 20%»</td></tr>
+    </table>
+    <pre><code># Почему PPV падает при редкой болезни
+sens, spec, prevalence = 0.90, 0.95, 0.01
+ppv = sens * prevalence / (sens * prevalence + (1 - spec) * (1 - prevalence))
+print(round(ppv, 3))   # 0.154 — лишь 15% положительных ответов верны</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 9. Интерпретируемость и неопределённость</h2>
+    <ul>
+      <li><strong>Карты значимости</strong> (Grad-CAM): показывают, куда «смотрела» модель, но не доказывают, что рассуждение верное</li>
+      <li><strong>Неопределённость</strong>: ансамбли, MC Dropout — модель сообщает, когда не уверена</li>
+      <li><strong>Отказ от ответа</strong>: неуверенные случаи передаются врачу (selective prediction)</li>
+      <li><strong>Out-of-distribution</strong>: снимок другого типа или органа надо распознать до прогноза</li>
+    </ul>
+    <blockquote>Модель-помощник, которая говорит «не уверена — посмотрите сами», безопаснее модели, всегда выдающей ответ.</blockquote>
+  </div>
+
+  <div class="block">
+    <h2>🔷 10. Приватность, этика и регулирование</h2>
+    <ul>
+      <li><strong>Персональные данные</strong>: деперсонализация (DICOM-теги, лица на 3D-реконструкциях), законы о защите данных (GDPR, HIPAA)</li>
+      <li><strong>Медизделие</strong>: ПО для диагностики регистрируется как медицинское изделие (FDA, CE-маркировка, в России — Росздравнадзор)</li>
+      <li><strong>Справедливость</strong>: качество должно проверяться для всех групп пациентов</li>
+      <li><strong>Стандарты отчётности</strong>: TRIPOD+AI, CONSORT-AI, CLAIM — что описывать в публикации</li>
+      <li><strong>Ответственность</strong>: решение принимает врач; модель — инструмент поддержки</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 11. Внедрение в клинику</h2>
+    <ul>
+      <li><strong>Встраивание в процесс</strong>: результат там, где работает врач (PACS, медкарта), а не в отдельном окне</li>
+      <li><strong>Сдвиг данных</strong>: новый аппарат или протокол меняет распределение — нужен мониторинг качества</li>
+      <li><strong>Обратная связь</strong>: расхождения модели и врача — материал для дообучения</li>
+      <li><strong>Пример</strong>: IDx-DR — первая автономная ИИ-система, одобренная FDA (2018), скрининг диабетической ретинопатии</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 12. Чек-лист проекта</h2>
+    <ul>
+      <li>☐ Клиническая задача и цена ошибок (что хуже — пропуск или ложная тревога?)</li>
+      <li>☐ Разбиение по пациентам, отдельная внешняя выборка</li>
+      <li>☐ Проверка на shortcut-признаки и утечки из будущего</li>
+      <li>☐ Чувствительность, специфичность, PPV при реальной распространённости, калибровка</li>
+      <li>☐ Качество по подгруппам пациентов</li>
+      <li>☐ Неопределённость и сценарий «передать врачу»</li>
+      <li>☐ Деперсонализация данных и регуляторные требования</li>
+      <li>☐ Мониторинг после внедрения</li>
+    </ul>
+  </div>
 
 </div>
 </body>
