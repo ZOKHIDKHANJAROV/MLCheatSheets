@@ -83,3 +83,5 @@ tmp/
 # Ответы учеников на упражнения (проверяются tools/check_exercise.py)
 my_answer.csv
 solution_output.csv
+my_predictions.csv
+solution_predictions.csv

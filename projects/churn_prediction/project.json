@@ -1,0 +1,14 @@
+{
+  "title": "Отток клиентов телеком-оператора",
+  "path": 0,
+  "metric": "roc_auc",
+  "higher_is_better": true,
+  "id": "id",
+  "target": "churn",
+  "prediction": "churn_proba",
+  "thresholds": {
+    "baseline": 0.756,
+    "good": 0.794,
+    "excellent": 0.833
+  }
+}

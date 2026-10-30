@@ -27,6 +27,9 @@
 - **Этап 3 (Путь 1: Полный новичок)**: Упражнения 1-8
 - **Этапы 2, 4–6 (Путь 1)**: Упражнения 9-15 (метрики, регрессия, классификация, деревья, бустинг)
 - **Этапы 1, 3, 5 (Путь 2)**: Упражнения 16-22 (активации, softmax, backprop, MLP, оптимизаторы, свёртка, attention)
+- **Пути 3 и 4**: Упражнения 23-29 (подбор гиперпараметров, SHAP, утечки, дрейф, TF-IDF, сглаживание, Q-learning)
+
+После упражнений пути попробуйте его **мини-проект** — сквозную задачу без готового ответа: [projects/](projects/README.md).
 - **Подготовка данных**: Все упражнения полезны
 - **Feature Engineering**: Упражнения 6.1-6.7
 
@@ -337,6 +340,103 @@
 - [Ответ](exercises/self_attention/answer.csv)
 - [Решение с комментариями](exercises/self_attention/solution.py)
 - [Тетрадка Jupyter](exercises/self_attention/exercise.ipynb)
+
+## Production, NLP, временные ряды и RL
+
+> Упражнения к Путям 3 и 4. Данные и эталоны создаёт `tools/generate_advanced_exercises.py`.
+
+### 23. Подбор глубины дерева кросс-валидацией
+
+**Теория:** [Подбор гиперпараметров](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/hyperparameter_tuning_cheatsheet.html)
+
+**Описание:** Средний MSE по 5 фолдам для max_depth 1–8, U-образная кривая, лучшая глубина.
+
+**Файлы:**
+- [Входные данные](exercises/hyperparameter_tuning/input.csv)
+- [Условие задачи](exercises/hyperparameter_tuning/task.md)
+- [Ответ](exercises/hyperparameter_tuning/answer.csv)
+- [Решение с комментариями](exercises/hyperparameter_tuning/solution.py)
+- [Тетрадка Jupyter](exercises/hyperparameter_tuning/exercise.ipynb)
+
+### 24. Значения Шепли вручную
+
+**Теория:** [SHAP](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/shap_cheatsheet.html)
+
+**Описание:** Перебор подмножеств признаков для модели с взаимодействием, проверка аддитивности.
+
+**Файлы:**
+- [Входные данные](exercises/shap/input.csv)
+- [Фоновая выборка](exercises/shap/background.csv)
+- [Условие задачи](exercises/shap/task.md)
+- [Ответ](exercises/shap/answer.csv)
+- [Решение с комментариями](exercises/shap/solution.py)
+- [Тетрадка Jupyter](exercises/shap/exercise.ipynb)
+
+### 25. Утечка данных: отбор признаков вне пайплайна
+
+**Теория:** [Пайплайны ML](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/ml_pipelines_cheatsheet.html)
+
+**Описание:** На чистом шуме: отбор признаков до CV даёт accuracy 0.85, честный пайплайн — около 0.5.
+
+**Файлы:**
+- [Входные данные](exercises/ml_pipelines/input.csv)
+- [Условие задачи](exercises/ml_pipelines/task.md)
+- [Ответ](exercises/ml_pipelines/answer.csv)
+- [Решение с комментариями](exercises/ml_pipelines/solution.py)
+- [Тетрадка Jupyter](exercises/ml_pipelines/exercise.ipynb)
+
+### 26. Дрейф данных: Population Stability Index
+
+**Теория:** [Дрейф данных](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/concept_drift_cheatsheet.html)
+
+**Описание:** PSI по децилям эталонной выборки для трёх признаков: stable / moderate / drift.
+
+**Файлы:**
+- [Входные данные](exercises/concept_drift/input.csv)
+- [Условие задачи](exercises/concept_drift/task.md)
+- [Ответ](exercises/concept_drift/answer.csv)
+- [Решение с комментариями](exercises/concept_drift/solution.py)
+- [Тетрадка Jupyter](exercises/concept_drift/exercise.ipynb)
+
+### 27. TF-IDF вручную
+
+**Теория:** [TF-IDF](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/tfidf_cheatsheet.html)
+
+**Описание:** Формула sklearn (сглаженный idf, L2-нормировка) на шести коротких документах.
+
+**Файлы:**
+- [Входные данные](exercises/tfidf/input.csv)
+- [Условие задачи](exercises/tfidf/task.md)
+- [Ответ](exercises/tfidf/answer.csv)
+- [Решение с комментариями](exercises/tfidf/solution.py)
+- [Тетрадка Jupyter](exercises/tfidf/exercise.ipynb)
+
+### 28. Экспоненциальное сглаживание: SES и Хольт
+
+**Теория:** [Экспоненциальное сглаживание](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/exponential_smoothing_cheatsheet.html)
+
+**Описание:** Обе модели по формулам, прогнозы на шаг вперёд и на три шага в будущее.
+
+**Файлы:**
+- [Входные данные](exercises/exponential_smoothing/input.csv)
+- [Условие задачи](exercises/exponential_smoothing/task.md)
+- [Ответ](exercises/exponential_smoothing/answer.csv)
+- [Решение с комментариями](exercises/exponential_smoothing/solution.py)
+- [Тетрадка Jupyter](exercises/exponential_smoothing/exercise.ipynb)
+
+### 29. Q-learning и SARSA по записанной траектории
+
+**Теория:** [Q-learning и SARSA](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/q_learning_sarsa_cheatsheet.html)
+
+**Описание:** Обновления двух таблиц Q по одним данным: off-policy против on-policy.
+
+**Файлы:**
+- [Входные данные](exercises/q_learning_sarsa/input.csv)
+- [Условие задачи](exercises/q_learning_sarsa/task.md)
+- [Ответ](exercises/q_learning_sarsa/answer.csv)
+- [Решение с комментариями](exercises/q_learning_sarsa/solution.py)
+- [Тетрадка Jupyter](exercises/q_learning_sarsa/exercise.ipynb)
+
 
 
 

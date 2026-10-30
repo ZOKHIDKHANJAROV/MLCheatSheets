@@ -275,6 +275,37 @@ def check_exercises(run_solutions):
     report(errs, warns, msg)
 
 
+def check_projects(run_solutions):
+    section("Мини-проекты" + ("" if run_solutions else " (без запуска эталонных решений)"))
+    from check_mini_project import evaluate, level
+    errs, ok = [], 0
+    folders = sorted(p.parent for p in (ROOT / "projects").glob("*/project.json"))
+    for folder in folders:
+        missing = [n for n in ["README.md", "train.csv", "test.csv", "answer.csv", "solution.py"] if not (folder / n).exists()]
+        if missing:
+            errs.append(f"{rel(folder)}: нет файлов {missing}")
+            continue
+        if not run_solutions:
+            continue
+        with tempfile.TemporaryDirectory() as tmp:
+            for f in folder.iterdir():
+                if f.is_file() and f.name not in {"my_predictions.csv", "solution_predictions.csv"}:
+                    shutil.copy(f, tmp)
+            run = subprocess.run([sys.executable, "solution.py"], cwd=tmp, capture_output=True, text=True, encoding="utf-8",
+                                 errors="replace", env={**__import__("os").environ, "PYTHONIOENCODING": "utf-8"})
+            pred = Path(tmp) / "solution_predictions.csv"
+            if run.returncode != 0 or not pred.exists():
+                errs.append(f"{rel(folder)}/solution.py падает или не создаёт solution_predictions.csv")
+                continue
+            value, problems = evaluate(folder, pred)
+            cfg = json.loads((folder / "project.json").read_text(encoding="utf-8"))
+            if problems or not level(cfg, value).startswith(("🏆", "✅")):
+                errs.append(f"{rel(folder)}: эталонное решение не дотягивает до «хорошо» ({value}) — пересчитайте пороги")
+            else:
+                ok += 1
+    report(errs, [], f"проектов: {len(folders)}" + (f", эталонных решений на уровне «хорошо» и выше: {ok}" if run_solutions else ", файлы на месте"))
+
+
 def check_portal_fresh():
     section("Портал index.html")
     index = ROOT / "index.html"
@@ -283,7 +314,7 @@ def check_portal_fresh():
         return
     sources = [ROOT / "README.md", ROOT / "ROADMAP.md", ROOT / "tools" / "portal_template.html"]
     sources += list((ROOT / "exercises").rglob("task.md")) + list((ROOT / "questions").glob("*.md"))
-    sources += list((ROOT / "interactive").glob("*.html"))
+    sources += list((ROOT / "interactive").glob("*.html")) + list((ROOT / "projects").glob("*/README.md"))
     newer = [rel(p) for p in sources if p.stat().st_mtime > index.stat().st_mtime]
     warns = [f"index.html старше {len(newer)} исходных файлов (например, {newer[0]}) — пересоберите: python tools/build_portal.py"] if newer else []
     report([], warns, "собран после последних изменений")
@@ -301,6 +332,7 @@ def main():
     check_questions_and_demos()
     check_prerequisites()
     check_exercises(run_solutions=not args.fast)
+    check_projects(run_solutions=not args.fast)
     check_portal_fresh()
     check_portal_data()
 

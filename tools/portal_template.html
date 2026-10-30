@@ -143,6 +143,13 @@
   .btn.bad { border-color: #c0392b; color: #c0392b; }
   .badge { font-size: 11px; color: var(--muted); white-space: nowrap; }
   .card.due { border-color: var(--accent); }
+  .exam-q { font-size: 18px; font-weight: 600; margin: 6px 0 14px; }
+  .exam-ans { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 4px 18px 12px; margin-bottom: 14px; }
+  .grade { display: flex; gap: 8px; flex-wrap: wrap; }
+  .grade .btn { font-size: 15px; padding: 9px 16px; }
+  .src { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 14px; }
+  .src .btn.on, .src .btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .score { font-size: 42px; font-weight: 700; margin: 4px 0; }
   .related { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 6px 12px; font-size: 13px;
     background: var(--panel); border-bottom: 1px solid var(--border); }
   .related .lbl { color: var(--muted); margin-right: 2px; }
@@ -188,6 +195,7 @@
   <button id="menuBtn" class="btn" aria-label="Меню">☰</button>
   <a class="brand" href="#/">🎓 ML Cheatsheets <span>· портал</span></a>
   <div class="search"><input id="search" type="search" placeholder="Поиск по 400+ темам…  ( / )" autocomplete="off"></div>
+  <a class="btn" href="#/e" title="Режим экзамена: случайные вопросы с самооценкой">🎓</a>
   <a class="btn" href="#/r" id="reviewBtn" title="Интервальное повторение">🔁 <span id="dueCount"></span></a>
   <button class="btn" id="themeBtn" data-theme-toggle title="Тема оформления"></button>
   <div class="overall" title="Общий прогресс">
@@ -214,7 +222,7 @@ window.mlcsPortal = { open: f => { if (!DATA.titles[f]) return false; location.h
 
 // ---------- состояние и прогресс ----------
 function loadState() {
-  const empty = { done: {}, exDone: {}, review: {}, notes: {}, last: null, tab: "sections", qOpen: false };
+  const empty = { done: {}, exDone: {}, projDone: {}, review: {}, notes: {}, exams: [], last: null, tab: "sections", qOpen: false };
   try { return Object.assign(empty, JSON.parse(localStorage.getItem(STORE_KEY))); }
   catch (e) { return empty; }
 }
@@ -281,13 +289,14 @@ function relatedBar(f) {
 }
 
 function reviewOf(f) {
+  if (state.review[f]) return state.review[f];        // в т. ч. слабые темы из экзамена, ещё не отмеченные «Изучено»
   if (!isDone(f)) return null;
-  return state.review[f] || { step: 0, due: state.done[f] + DAY };   // темы, отмеченные до появления повторения
+  return { step: 0, due: state.done[f] + DAY };       // темы, отмеченные до появления повторения
 }
+const reviewTopics = () => [...new Set([...Object.keys(state.done), ...Object.keys(state.review)])].filter(f => DATA.titles[f]);
 function dueTopics() {
   const now = Date.now();
-  return Object.keys(state.done).filter(f => DATA.titles[f] && reviewOf(f).due <= now)
-    .sort((a, b) => reviewOf(a).due - reviewOf(b).due);
+  return reviewTopics().filter(f => reviewOf(f).due <= now).sort((a, b) => reviewOf(a).due - reviewOf(b).due);
 }
 function rate(f, remembered) {
   const r = reviewOf(f) || { step: -1 };
@@ -330,6 +339,8 @@ function rateButtons(f) {
 // #/r                        повторение
 // #/d/<файл>                 интерактивная демонстрация из interactive/
 // #/n                        мои заметки
+// #/e                        режим экзамена
+// #/j/<n>                    мини-проект
 function parseHash() {
   const [route, query] = decodeURIComponent(location.hash.slice(1) || "/").split("?ctx=");
   return { parts: route.split("/").filter(Boolean), ctx: query || "" };
@@ -358,6 +369,8 @@ function render() {
   else if (kind === "r") main.innerHTML = viewReview();
   else if (kind === "d") main.innerHTML = viewDemo(parts.slice(1).join("/"));
   else if (kind === "n") main.innerHTML = viewNotes();
+  else if (kind === "e") main.innerHTML = viewExam();
+  else if (kind === "j") main.innerHTML = viewProject(+a);
   else main.innerHTML = viewHome();
   if (kind === "t" || kind === "d") forwardFrameKeys(main.querySelector("iframe"));
   else main.scrollTop = 0;
@@ -410,6 +423,8 @@ function viewHome() {
              : nextInPath ? `<a class="cta" href="#/t/${encodeURIComponent(nextInPath)}?ctx=p:0">▶ Начать с первой темы пути новичка</a>` : ""}</p>
 
     ${reviewCard()}
+    ${examCard()}
+    ${projectCards()}
     <h2>🗺️ Учебные пути</h2>
     <div class="cards">${DATA.paths.map((p, i) => {
       const items = pathItems(p), pr = progress(items);
@@ -473,7 +488,7 @@ function viewDemo(file) {
 
 function reviewCard() {
   const due = dueTopics();
-  const learned = Object.keys(state.done).filter(f => DATA.titles[f]).length;
+  const learned = reviewTopics().length;
   if (!learned) return "";
   return `<h2>🔁 Повторение</h2><a class="card ${due.length ? "due" : ""}" href="#/r">
     <b>${due.length ? `Сегодня к повторению: ${due.length} ${plural(due.length, "тема", "темы", "тем")}` : "На сегодня всё повторено ✔"}</b>
@@ -483,7 +498,7 @@ function reviewCard() {
 function viewReview() {
   const due = dueTopics();
   if (!due.length) {
-    const upcoming = Object.keys(state.done).filter(f => DATA.titles[f])
+    const upcoming = reviewTopics()
       .sort((a, b) => reviewOf(a).due - reviewOf(b).due).slice(0, 10);
     return `<div class="page"><h1>🔁 Повторение</h1>
       <p class="sub">${upcoming.length ? "На сегодня всё повторено. Ближайшие темы:" : "Отмечайте темы как изученные — они будут возвращаться сюда на повторение."}</p>
@@ -532,6 +547,7 @@ function viewPath(i) {
       ${stageExercises(s)}
     </div>`).join("")}
     ${relatedExercises(items, p.stages.flatMap(s => s.exercises))}
+    ${pathProject(i)}
   </div>`;
 }
 
@@ -590,6 +606,117 @@ function viewTopic(f, ctx) {
   </div>`;
 }
 
+// ---------- режим экзамена ----------
+// Случайные вопросы из выбранных тем; ученик сам оценивает ответ: знаю / частично / не знаю.
+// Слабые темы можно одним нажатием отправить в интервальное повторение.
+let exam = null;                       // текущий экзамен живёт в памяти вкладки
+let examSetup = { source: "auto", size: 10 };
+
+function examSources() {
+  const studied = Object.keys(state.done).filter(f => DATA.titles[f] && questionsOf(f).length);
+  const list = [];
+  if (studied.length) list.push(["done", `Изученные темы (${studied.length})`, studied]);
+  DATA.paths.forEach((p, i) => list.push(["p" + i, p.title.replace(/\s*\(.*\)\s*$/, ""), pathItems(p)]));
+  list.push(["all", "Все темы", allTopics]);
+  return list.map(([id, label, items]) => ({ id, label, items: items.filter(f => questionsOf(f).length) }));
+}
+
+function examCard() {
+  const last = (state.exams || []).slice(-1)[0];
+  return `<h2>🎓 Экзамен</h2><a class="card" href="#/e"><b>${last ? `Последний результат: ${last.pct}% (${last.n} вопросов)` : "Проверьте себя: 10–30 случайных вопросов"}</b>
+    <div class="meta">${last ? `${new Date(last.t).toLocaleDateString("ru-RU")} · ${esc(last.label)}` : "Вопросы из изученных тем, учебного пути или всего курса — со списком слабых тем в конце"}</div></a>`;
+}
+
+function startExam(sourceId, size) {
+  const src = examSources().find(x => x.id === sourceId) || examSources()[0];
+  // Сначала разные темы, затем по второму вопросу из тем — чтобы покрыть как можно больше тем
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const pool = shuffle(src.items.slice()), picked = [];
+  for (let round = 0; picked.length < size && round < 5; round++)
+    for (const f of pool) {
+      if (picked.length >= size) break;
+      const used = new Set(picked.filter(q => q.f === f).map(q => q.i));
+      const free = questionsOf(f).map((_, i) => i).filter(i => !used.has(i));
+      if (free.length && picked.filter(q => q.f === f).length === round) picked.push({ f, i: free[Math.floor(Math.random() * free.length)] });
+    }
+  exam = { label: src.label, items: shuffle(picked), pos: 0, shown: false, grades: [] };
+}
+
+function viewExam() {
+  if (!exam) {
+    const sources = examSources();
+    if (!sources.some(x => x.id === examSetup.source)) examSetup.source = sources[0].id;
+    const hist = (state.exams || []).slice(-5).reverse();
+    return `<div class="page">
+      <h1>🎓 Режим экзамена</h1>
+      <p class="sub">Случайные вопросы для самопроверки. Ответьте мысленно или вслух, откройте ответ и честно оцените себя.
+        Клавиши: <b>Пробел</b> — показать ответ, <b>1</b> / <b>2</b> / <b>3</b> — знаю / частично / не знаю.</p>
+      <h2>Откуда вопросы</h2>
+      <div class="src">${sources.map(x => `<button class="btn" aria-pressed="${x.id === examSetup.source}" data-exam-src="${x.id}">${esc(x.label)} · ${x.items.length}</button>`).join("")}</div>
+      <h2>Сколько вопросов</h2>
+      <div class="src">${[10, 20, 30].map(n => `<button class="btn" aria-pressed="${n === examSetup.size}" data-exam-size="${n}">${n}</button>`).join("")}</div>
+      <p style="margin-top:18px"><button class="cta" data-exam="start">▶ Начать экзамен</button></p>
+      ${hist.length ? `<h2>Прошлые попытки</h2><ol class="topics">${hist.map(h => `<li><span style="flex:1">${esc(h.label)} · ${h.n} вопросов</span><span class="where">${new Date(h.t).toLocaleDateString("ru-RU")}</span><b>${h.pct}%</b></li>`).join("")}</ol>` : ""}
+    </div>`;
+  }
+  if (exam.pos >= exam.items.length) return viewExamResult();
+  const q = exam.items[exam.pos], item = questionsOf(q.f)[q.i];
+  return `<div class="page">
+    <p class="sub" style="margin:0">🎓 ${esc(exam.label)} · вопрос ${exam.pos + 1} из ${exam.items.length}</p>
+    <div class="bar" style="margin:8px 0 18px"><span style="width:${100 * exam.pos / exam.items.length}%"></span></div>
+    <p class="note" style="margin:0">Тема: <a href="#/t/${encodeURIComponent(q.f)}" target="_blank">${esc(title(q.f))}</a></p>
+    <div class="exam-q">${esc(item.q)}</div>
+    ${exam.shown ? `<div class="exam-ans">${markdown(item.a)}</div>
+      <div class="grade">
+        <button class="btn good" data-exam="1">✔ Знаю <span class="kbd">1</span></button>
+        <button class="btn" data-exam="0.5">≈ Частично <span class="kbd">2</span></button>
+        <button class="btn bad" data-exam="0">✖ Не знаю <span class="kbd">3</span></button>
+      </div>` : `<p><button class="cta" data-exam="show">Показать ответ <span class="kbd" style="color:#fff">Пробел</span></button></p>`}
+    <p style="margin-top:22px"><button class="btn" data-exam="quit">Прервать экзамен</button></p>
+  </div>`;
+}
+
+function viewExamResult() {
+  const total = exam.grades.reduce((a, b) => a + b, 0), pct = Math.round(100 * total / exam.grades.length);
+  const byTopic = {};
+  exam.items.forEach((q, k) => { (byTopic[q.f] = byTopic[q.f] || []).push(exam.grades[k]); });
+  const weak = Object.entries(byTopic).filter(([, g]) => g.reduce((a, b) => a + b, 0) / g.length < 0.75).map(([f]) => f);
+  if (!exam.saved) {
+    state.exams = (state.exams || []).concat([{ t: Date.now(), n: exam.grades.length, pct, label: exam.label }]).slice(-50);
+    save(); exam.saved = true;
+  }
+  const verdict = pct >= 85 ? "Отлично! 🎉" : pct >= 60 ? "Хорошо, но есть пробелы" : "Стоит повторить материал";
+  return `<div class="page">
+    <h1>🎓 Результат</h1>
+    <div class="score">${pct}%</div>
+    <p class="sub">${verdict} · ${exam.label} · ${exam.grades.length} вопросов: знаю ${exam.grades.filter(g => g === 1).length}, частично ${exam.grades.filter(g => g === 0.5).length}, не знаю ${exam.grades.filter(g => g === 0).length}</p>
+    ${weak.length ? `<h2>Слабые темы (${weak.length})</h2>
+      <ol class="topics">${weak.map(f => topicRow(f, "")).join("")}</ol>
+      <p style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="cta" data-exam="review" ${exam.reviewed ? "disabled" : ""}>${exam.reviewed ? "✔ Добавлены в повторение" : "🔁 Добавить слабые темы в повторение на сегодня"}</button>
+      </p>` : `<p>Слабых тем нет — все ответы «знаю» или почти. Попробуйте экзамен по другому пути или по всем темам.</p>`}
+    <p style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-exam="again">Ещё раз</button><button class="btn" data-exam="new">Новый экзамен</button></p>
+  </div>`;
+}
+
+function examAction(a) {
+  if (a === "start") startExam(examSetup.source, examSetup.size);
+  else if (a === "show") exam.shown = true;
+  else if (a === "quit" || a === "new") exam = null;
+  else if (a === "again") { const id = examSetup.source; startExam(id, examSetup.size); }
+  else if (a === "review") {
+    const byTopic = {};
+    exam.items.forEach((q, k) => { (byTopic[q.f] = byTopic[q.f] || []).push(exam.grades[k]); });
+    Object.entries(byTopic).forEach(([f, g]) => {
+      if (g.reduce((x, y) => x + y, 0) / g.length < 0.75) state.review[f] = { step: 0, due: Date.now() - 1000 };   // отметку «Изучено» не трогаем
+    });
+    exam.reviewed = true; save(); refreshChrome();
+  } else if (["1", "0.5", "0"].includes(a) && exam.shown) {
+    exam.grades.push(+a); exam.pos++; exam.shown = false;
+  }
+  render();
+}
+
 function viewNotes() {
   const list = Object.entries(state.notes).filter(([f]) => DATA.titles[f]).sort((a, b) => b[1].t - a[1].t);
   return `<div class="page">
@@ -599,6 +726,46 @@ function viewNotes() {
       <a href="#/t/${encodeURIComponent(f)}"><b>${esc(title(f))}</b></a>
       <span class="note"> · ${new Date(n.t).toLocaleDateString("ru-RU")}</span>
       <pre>${esc(n.text)}</pre></div>`).join("")}
+  </div>`;
+}
+
+// ---------- мини-проекты ----------
+const METRIC_TITLE = { roc_auc: "ROC-AUC", accuracy: "accuracy", mae: "MAE", cost: "средняя стоимость ошибок" };
+
+function projectCards() {
+  if (!DATA.projects.length) return "";
+  return `<h2>🏗 Мини-проекты</h2><div class="cards">${DATA.projects.map((p, i) => `<a class="card" href="#/j/${i}">
+    ${state.projDone[p.id] ? "✅ " : ""}<b>${esc(p.title)}</b>
+    <div class="meta">${p.path !== null && DATA.paths[p.path] ? esc(DATA.paths[p.path].title.replace(/\s*\(.*\)\s*$/, "")) + " · " : ""}${METRIC_TITLE[p.metric]}</div></a>`).join("")}</div>`;
+}
+
+function pathProject(pathIndex) {
+  const list = DATA.projects.map((p, i) => [p, i]).filter(([p]) => p.path === pathIndex);
+  if (!list.length) return "";
+  return `<h2>🏗 Итоговый проект пути</h2><div class="cards">${list.map(([p, i]) =>
+    `<a class="card" href="#/j/${i}">${state.projDone[p.id] ? "✅ " : ""}<b>${esc(p.title)}</b><div class="meta">Соберите всё изученное в одном решении — от сырых данных до прогноза</div></a>`).join("")}</div>`;
+}
+
+function viewProject(i) {
+  const p = DATA.projects[i];
+  if (!p) return viewHome();
+  const t = p.thresholds, cmd = `python tools/check_mini_project.py ${p.id}`;
+  return `<div class="page">
+    <p class="sub" style="margin:0">Мини-проект${p.path !== null && DATA.paths[p.path] ? " · " + esc(DATA.paths[p.path].title) : ""}</p>
+    <p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn ${state.projDone[p.id] ? "on" : ""}" data-proj="${esc(p.id)}">${state.projDone[p.id] ? "✔ Сдан" : "☐ Сдан"}</button>
+      ${p.path !== null ? `<a class="btn" href="#/p/${p.path}">🗺️ К учебному пути</a>` : ""}
+    </p>
+    <div class="cards" style="margin:10px 0 6px">
+      <div class="card"><b>Метрика</b><div class="meta">${METRIC_TITLE[p.metric]} (${p.higher ? "больше — лучше" : "меньше — лучше"})</div></div>
+      <div class="card"><b>Пороги</b><div class="meta">базовый ${t.baseline} · хорошо ${t.good} · отлично ${t.excellent}</div></div>
+    </div>
+    <h2>📁 Файлы</h2>
+    <div class="files">${p.files.map(n => `<a class="btn" href="${esc(p.id)}/${encodeURIComponent(n)}${V}" target="_blank">${esc(n)}</a>`).join("")}</div>
+    <h2>✅ Сдача</h2>
+    <p class="note">Сохраните прогнозы для test.csv в <code>my_predictions.csv</code> в папке проекта и выполните в корне репозитория:</p>
+    <div class="cmd"><code>${esc(cmd)}</code><button class="btn" data-copy="${esc(cmd)}">Копировать</button></div>
+    <div class="md" style="margin-top:18px">${markdown(p.readme)}</div>
   </div>`;
 }
 
@@ -693,9 +860,11 @@ function renderNav() {
   if (tab === "paths") {
     html = DATA.paths.map((p, i) => item(`#/p/${i}`, p.title, pathItems(p))).join("");
   } else if (tab === "exercises") {
+    html = `<div class="navgroup">🏗 мини-проекты</div>` + DATA.projects.map((p, i) =>
+      `<a class="navitem ${hash === "#/j/" + i ? "active" : ""}" href="#/j/${i}"><span>${esc(p.title)}</span><small class="full">${state.projDone[p.id] ? "✔" : ""}</small></a>`).join("");
     const groups = {};
     DATA.exercises.forEach((e, i) => (groups[e.topic] = groups[e.topic] || []).push([e, i]));
-    html = Object.entries(groups).map(([g, list]) => `<div class="navgroup">${esc(g.replace(/_/g, " "))}</div>` +
+    html += Object.entries(groups).map(([g, list]) => `<div class="navgroup">${esc(g.replace(/_/g, " "))}</div>` +
       list.map(([e, i]) => `<a class="navitem ${hash === "#/x/" + i ? "active" : ""}" href="#/x/${i}"><span>${esc(e.title)}</span><small class="full">${state.exDone[e.id] ? "✔" : ""}</small></a>`).join("")).join("");
   } else {
     html = DATA.parts.map((p, pi) => `<div class="navgroup">${esc(p.title)}</div>` +
@@ -740,9 +909,13 @@ function rerenderKeepScroll() {
 
 // ---------- события ----------
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-tab],[data-toggle],[data-ex],[data-copy],[data-action],[data-tab-link],[data-qtoggle],[data-rate],[data-theme-toggle],#menuBtn");
+  const t = e.target.closest("[data-tab],[data-toggle],[data-ex],[data-copy],[data-action],[data-tab-link],[data-qtoggle],[data-rate],[data-theme-toggle],[data-proj],[data-exam],[data-exam-src],[data-exam-size],#menuBtn");
   if (!t) return;
   if (t.id === "menuBtn") { document.body.classList.toggle("menu-open"); return; }
+  if (t.dataset.proj) { const id = t.dataset.proj; if (state.projDone[id]) delete state.projDone[id]; else state.projDone[id] = Date.now(); save(); rerenderKeepScroll(); return; }
+  if (t.dataset.examSrc) { examSetup.source = t.dataset.examSrc; render(); return; }
+  if (t.dataset.examSize) { examSetup.size = +t.dataset.examSize; render(); return; }
+  if (t.dataset.exam) { examAction(t.dataset.exam); return; }
   if (t.hasAttribute("data-theme-toggle")) {
     const order = ["auto", "light", "dark"];
     window.mlcsTheme.set(order[(order.indexOf(window.mlcsTheme.get()) + 1) % order.length]);
@@ -810,6 +983,11 @@ document.addEventListener("keydown", e => {
   if (e.key === "/" && !typing) { e.preventDefault(); search.focus(); search.select(); return; }
   if (typing) { if (e.key === "Escape") search.blur(); return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (parseHash().parts[0] === "e" && exam && exam.pos < exam.items.length) {
+    const map = { " ": "show", "1": "1", "2": "0.5", "3": "0" };
+    if (map[e.key] && (e.key === " " ? !exam.shown : exam.shown)) { e.preventDefault(); examAction(map[e.key]); }
+    return;
+  }
   const inViewer = parseHash().parts[0] === "t";
   if (!inViewer) return;
   if (e.key === "ArrowRight" || e.key === "ArrowLeft") {

@@ -1,0 +1,14 @@
+{
+  "title": "Распознавание рукописных цифр нейросетью",
+  "path": 1,
+  "metric": "accuracy",
+  "higher_is_better": true,
+  "id": "id",
+  "target": "label",
+  "prediction": "label",
+  "thresholds": {
+    "baseline": 0.9,
+    "good": 0.94,
+    "excellent": 0.98
+  }
+}

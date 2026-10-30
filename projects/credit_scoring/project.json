@@ -1,0 +1,18 @@
+{
+  "title": "Кредитный скоринг с ценой ошибок",
+  "path": 2,
+  "metric": "cost",
+  "higher_is_better": false,
+  "id": "id",
+  "target": "default",
+  "prediction": "default_pred",
+  "thresholds": {
+    "baseline": 0.887,
+    "good": 0.753,
+    "excellent": 0.62
+  },
+  "cost": {
+    "fn": 10,
+    "fp": 1
+  }
+}

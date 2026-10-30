@@ -108,6 +108,22 @@ def first_heading(md_text, fallback):
     return match.group(1).strip() if match else fallback
 
 
+def parse_projects():
+    """projects/<имя>/: project.json (метрика, пороги, номер пути) + README.md (задание)."""
+    projects = []
+    for cfg_path in sorted((ROOT / "projects").glob("*/project.json")):
+        folder = cfg_path.parent
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+        hidden = {"answer.csv"} | LOCAL_FILES | {"my_predictions.csv", "solution_predictions.csv"}
+        projects.append({
+            "id": folder.relative_to(ROOT).as_posix(), "name": folder.name, "title": cfg["title"], "path": cfg.get("path"),
+            "metric": cfg["metric"], "higher": cfg["higher_is_better"], "thresholds": cfg["thresholds"],
+            "files": sorted(p.name for p in folder.iterdir() if p.is_file() and p.name not in hidden and p.name != "project.json"),
+            "readme": (folder / "README.md").read_text(encoding="utf-8"),
+        })
+    return projects
+
+
 def parse_exercises():
     """Каждая папка с task.md — одно упражнение."""
     exercises = []
@@ -232,6 +248,7 @@ def main():
     titles = collect_titles(parts)
     paths = parse_roadmap(titles)
     exercises = parse_exercises()
+    projects = parse_projects()
 
     listed = {f for p in parts for s in p["sections"] for f in s["items"]}
     orphans = sorted(
@@ -261,14 +278,14 @@ def main():
         print(f"  ⚠ {e}")
 
     data = {"parts": parts, "paths": paths, "exercises": exercises, "titles": titles,
-            "quizzes": quizzes, "questions": questions, "demos": demos, "prereqs": prereqs, "build": build_version()}
+            "quizzes": quizzes, "questions": questions, "demos": demos, "prereqs": prereqs, "projects": projects, "build": build_version()}
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     page = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
     OUTPUT.write_text(page, encoding="utf-8")
 
     print(f"Готово: {OUTPUT.relative_to(ROOT)}")
     print(f"  тем: {len(titles)}, разделов: {sum(len(p['sections']) for p in parts)}, "
-          f"путей: {len(paths)}, упражнений: {len(exercises)}, тестов: {len(quizzes)}, "
+          f"путей: {len(paths)}, упражнений: {len(exercises)}, проектов: {len(projects)}, тестов: {len(quizzes)}, "
           f"вопросов: {sum(map(len, questions.values()))} к {len(questions)} темам, "
           f"интерактивов: {len(demos)}, тем со связями: {len(prereqs)}, вне README: {len(orphans)}")
 

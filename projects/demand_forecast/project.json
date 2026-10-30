@@ -1,0 +1,14 @@
+{
+  "title": "Прогноз спроса на 4 недели",
+  "path": 3,
+  "metric": "mae",
+  "higher_is_better": false,
+  "id": "id",
+  "target": "sales",
+  "prediction": "sales",
+  "thresholds": {
+    "baseline": 36.5,
+    "good": 26.5,
+    "excellent": 16.5
+  }
+}
