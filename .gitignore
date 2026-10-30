@@ -79,3 +79,6 @@ Thumbs.db
 *.tmp
 .temp/
 tmp/
+
+# Ответы учеников на упражнения (проверяются tools/check_exercise.py)
+my_answer.csv

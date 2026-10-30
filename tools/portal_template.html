@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Cheatsheets — учебный портал</title>
+<!-- Файл index.html собирается скриптом tools/build_portal.py из этого шаблона. Не редактируйте index.html вручную. -->
+<style>
+  :root {
+    --bg: #f6f8fb; --panel: #ffffff; --text: #1f2933; --muted: #66768a;
+    --border: #dde3ea; --accent: #2f6fde; --accent-soft: #e6effd;
+    --done: #1f9d55; --done-soft: #e3f6eb; --warn: #c27c0e;
+    --shadow: 0 1px 3px rgba(20, 30, 50, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12161c; --panel: #1b2129; --text: #e4e9ef; --muted: #93a1b3;
+      --border: #2c3540; --accent: #6ea2ff; --accent-soft: #1f2d45;
+      --done: #4cc884; --done-soft: #183225; --warn: #e2a84b;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text);
+    display: grid; grid-template-rows: auto 1fr; grid-template-columns: 300px 1fr;
+    grid-template-areas: "top top" "side main";
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  button { font: inherit; cursor: pointer; }
+
+  header {
+    grid-area: top; display: flex; align-items: center; gap: 14px;
+    padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--border);
+  }
+  .brand { font-weight: 700; font-size: 17px; white-space: nowrap; color: var(--text); }
+  #menuBtn { display: none; }
+  .search { flex: 1; max-width: 520px; position: relative; }
+  .search input {
+    width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); font: inherit;
+  }
+  .overall { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; background: var(--done); }
+  .overall .bar { width: 120px; }
+
+  nav {
+    grid-area: side; overflow-y: auto; background: var(--panel);
+    border-right: 1px solid var(--border); padding: 10px 0 30px;
+  }
+  .tabs { display: flex; gap: 4px; padding: 0 10px 8px; }
+  .tabs button {
+    flex: 1; padding: 6px 4px; border: 1px solid var(--border); border-radius: 6px;
+    background: transparent; color: var(--muted); font-size: 13px;
+  }
+  .tabs button.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .navgroup { padding: 8px 14px 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .navitem {
+    display: flex; justify-content: space-between; gap: 8px; align-items: center;
+    padding: 5px 14px; color: var(--text); font-size: 14px; border-left: 3px solid transparent;
+  }
+  .navitem:hover { background: var(--bg); text-decoration: none; }
+  .navitem.active { background: var(--accent-soft); border-left-color: var(--accent); }
+  .navitem small { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .navitem small.full { color: var(--done); }
+
+  main { grid-area: main; overflow-y: auto; min-width: 0; }
+  .page { max-width: 980px; margin: 0 auto; padding: 24px 24px 60px; }
+  h1 { font-size: 24px; margin: 0 0 6px; }
+  h2 { font-size: 18px; margin: 26px 0 10px; }
+  .sub { color: var(--muted); margin: 0 0 18px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; box-shadow: var(--shadow); color: var(--text); display: block;
+  }
+  a.card:hover { border-color: var(--accent); text-decoration: none; }
+  .card .bar { margin-top: 10px; }
+  .card .meta { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .cta {
+    display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 8px;
+    background: var(--accent); color: #fff; border: 0; font-weight: 600;
+  }
+  .cta:hover { text-decoration: none; filter: brightness(1.08); }
+  .btn {
+    padding: 6px 12px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--text); font-size: 13px; white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); text-decoration: none; }
+  .btn.on { background: var(--done-soft); border-color: var(--done); color: var(--done); }
+
+  ol.topics { list-style: none; padding: 0; margin: 0; counter-reset: t; }
+  ol.topics li {
+    counter-increment: t; display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 6px;
+  }
+  ol.topics li::before { content: counter(t); color: var(--muted); font-size: 12px; min-width: 18px; text-align: right; }
+  ol.topics li.done { background: var(--done-soft); border-color: transparent; }
+  ol.topics li a { flex: 1; color: var(--text); }
+  ol.topics li .where { color: var(--muted); font-size: 12px; }
+  input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--done); cursor: pointer; }
+  .stage { margin-bottom: 18px; }
+  .stage h3 { font-size: 15px; margin: 0 0 8px; display: flex; gap: 10px; align-items: center; }
+  .lvl { font-size: 11px; padding: 1px 7px; border-radius: 10px; font-weight: 500; }
+  .lvl.beginner { background: var(--done-soft); color: var(--done); }
+  .lvl.intermediate { background: #fdf3dc; color: var(--warn); }
+  .lvl.advanced { background: #fde4e4; color: #c0392b; }
+  @media (prefers-color-scheme: dark) {
+    .lvl.intermediate { background: #3a2f15; } .lvl.advanced { background: #3d1d1d; color: #ff8a80; }
+  }
+  .note { color: var(--muted); font-size: 13px; margin: 0 0 6px; }
+
+  .viewer { display: flex; flex-direction: column; height: 100%; }
+  .vbar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--border);
+  }
+  .vbar .title { flex: 1; min-width: 160px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vbar .ctx { color: var(--muted); font-weight: 400; font-size: 13px; }
+  .viewer iframe { flex: 1; border: 0; width: 100%; background: #fff; }
+
+  .md { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 6px 22px 16px; }
+  .md pre, .md code { font-family: Consolas, "Courier New", monospace; font-size: 13px; }
+  .md pre { background: var(--bg); padding: 10px 12px; border-radius: 6px; overflow-x: auto; }
+  .md :not(pre) > code { background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+  .md table { border-collapse: collapse; margin: 8px 0; }
+  .md td, .md th { border: 1px solid var(--border); padding: 4px 10px; }
+  .files { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 16px; }
+  .cmd { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+  .cmd code { flex: 1; background: var(--panel); border: 1px solid var(--border); padding: 7px 10px; border-radius: 6px; font-size: 13px; overflow-x: auto; white-space: nowrap; }
+  .empty { color: var(--muted); padding: 30px 0; text-align: center; }
+  .kbd { font-size: 12px; color: var(--muted); }
+  .kbd b { border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; font-weight: 500; }
+
+  @media (max-width: 800px) {
+    body { grid-template-columns: 1fr; grid-template-areas: "top" "main"; }
+    #menuBtn { display: inline-block; }
+    nav { position: fixed; top: 52px; bottom: 0; left: 0; width: 290px; z-index: 5; transform: translateX(-100%); transition: transform .2s; box-shadow: 2px 0 10px rgba(0,0,0,.2); }
+    body.menu-open nav { transform: none; }
+    .overall .bar, .brand span { display: none; }
+    .page { padding: 16px; }
+    .kbd { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <button id="menuBtn" class="btn" aria-label="Меню">☰</button>
+  <a class="brand" href="#/">🎓 ML Cheatsheets <span>· портал</span></a>
+  <div class="search"><input id="search" type="search" placeholder="Поиск по 400+ темам…  ( / )" autocomplete="off"></div>
+  <div class="overall" title="Общий прогресс">
+    <div class="bar"><span id="overallBar"></span></div><span id="overallText"></span>
+  </div>
+</header>
+<nav>
+  <div class="tabs">
+    <button data-tab="sections">Разделы</button>
+    <button data-tab="paths">Пути</button>
+    <button data-tab="exercises">Практика</button>
+  </div>
+  <div id="navList"></div>
+</nav>
+<main id="main"></main>
+
+<script>
+const DATA = /*__DATA__*/null;
+const STORE_KEY = "mlcs-progress-v1";
+
+// ---------- состояние и прогресс ----------
+function loadState() {
+  try { return Object.assign({ done: {}, exDone: {}, last: null, tab: "sections" }, JSON.parse(localStorage.getItem(STORE_KEY))); }
+  catch (e) { return { done: {}, exDone: {}, last: null, tab: "sections" }; }
+}
+let state = loadState();
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+
+const title = f => DATA.titles[f] || f;
+const isDone = f => !!state.done[f];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const uniq = arr => [...new Set(arr)];
+const pathItems = p => uniq(p.stages.flatMap(s => s.items));
+const allTopics = uniq(DATA.parts.flatMap(p => p.sections.flatMap(s => s.items)));
+
+// где тема находится в README — для подписи в поиске
+const topicHome = {};
+DATA.parts.forEach((p, pi) => p.sections.forEach((s, si) => s.items.forEach(f => {
+  if (!topicHome[f]) topicHome[f] = { pi, si, label: s.title };
+})));
+
+function progress(items) {
+  const n = items.filter(isDone).length;
+  return { n, total: items.length, pct: items.length ? Math.round(100 * n / items.length) : 0 };
+}
+function bar(items) { return `<div class="bar"><span style="width:${progress(items).pct}%"></span></div>`; }
+function countLabel(items) {
+  const p = progress(items);
+  return `<small class="${p.n === p.total && p.total ? "full" : ""}">${p.n}/${p.total}</small>`;
+}
+
+function toggleDone(f, value) {
+  if (value === undefined) value = !isDone(f);
+  if (value) state.done[f] = Date.now(); else delete state.done[f];
+  save(); refreshChrome();
+}
+
+// ---------- маршруты ----------
+// #/                         главная
+// #/s/<part>/<section>       раздел
+// #/p/<path>                 учебный путь
+// #/x/<exercise>             упражнение
+// #/t/<file>?ctx=<контекст>  просмотр шпаргалки
+// #/q/<строка>               поиск
+function parseHash() {
+  const [route, query] = decodeURIComponent(location.hash.slice(1) || "/").split("?ctx=");
+  return { parts: route.split("/").filter(Boolean), ctx: query || "" };
+}
+
+function contextList(ctx) {
+  const [kind, a, b] = ctx.split(":");
+  if (kind === "s") {
+    const sec = DATA.parts[+a] && DATA.parts[+a].sections[+b];
+    if (sec) return { items: sec.items, label: sec.title, back: `#/s/${a}/${b}` };
+  }
+  if (kind === "p" && DATA.paths[+a]) return { items: pathItems(DATA.paths[+a]), label: DATA.paths[+a].title, back: `#/p/${a}` };
+  return null;
+}
+
+function render() {
+  const { parts, ctx } = parseHash();
+  document.body.classList.remove("menu-open");
+  const main = document.getElementById("main");
+  const [kind, a, b] = parts;
+  if (kind === "t") main.innerHTML = viewTopic(parts.slice(1).join("/"), ctx);
+  else if (kind === "s") main.innerHTML = viewSection(+a, +b);
+  else if (kind === "p") main.innerHTML = viewPath(+a);
+  else if (kind === "x") main.innerHTML = viewExercise(+a);
+  else if (kind === "q") main.innerHTML = viewSearch(parts.slice(1).join("/"));
+  else main.innerHTML = viewHome();
+  if (kind !== "t") main.scrollTop = 0;
+  else forwardFrameKeys(main.querySelector("iframe"));
+  if (kind === "s") setTab("sections", false);
+  if (kind === "p") setTab("paths", false);
+  if (kind === "x") setTab("exercises", false);
+  refreshChrome();
+}
+
+// Горячие клавиши работают и когда фокус внутри шпаргалки.
+// Через file:// браузер может запретить доступ к iframe — тогда помогает python start.py.
+function forwardFrameKeys(frame) {
+  if (!frame) return;
+  frame.addEventListener("load", () => {
+    try {
+      frame.contentDocument.addEventListener("keydown", ev => {
+        if (["ArrowLeft", "ArrowRight", "Escape", "m", "M", "ь", "Ь", "/"].includes(ev.key) && !ev.ctrlKey && !ev.altKey) {
+          ev.preventDefault();
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: ev.key }));
+        }
+      });
+    } catch (err) { /* другой origin — пропускаем */ }
+  });
+}
+
+function topicRow(f, ctx, showWhere) {
+  const where = showWhere && topicHome[f] ? `<span class="where">${esc(topicHome[f].label)}</span>` : "";
+  return `<li class="${isDone(f) ? "done" : ""}">
+    <input type="checkbox" data-done="${esc(f)}" ${isDone(f) ? "checked" : ""} title="Отметить как изученное">
+    <a href="#/t/${encodeURIComponent(f)}${ctx ? "?ctx=" + ctx : ""}">${esc(title(f))}</a>${where}</li>`;
+}
+
+// ---------- экраны ----------
+function viewHome() {
+  const last = state.last && DATA.titles[state.last] ? state.last : null;
+  const nextInPath = DATA.paths.length ? pathItems(DATA.paths[0]).find(f => !isDone(f)) : null;
+  const all = progress(allTopics);
+  const recent = Object.entries(state.done).sort((x, y) => y[1] - x[1]).slice(0, 5).map(e => e[0]).filter(f => DATA.titles[f]);
+  return `<div class="page">
+    <h1>Добро пожаловать 👋</h1>
+    <p class="sub">${allTopics.length} шпаргалок по ML и DL, ${DATA.paths.length} учебных пути и ${DATA.exercises.length} практических заданий. Прогресс сохраняется в этом браузере.</p>
+    <p>${last ? `<a class="cta" href="#/t/${encodeURIComponent(last)}${state.lastCtx ? "?ctx=" + state.lastCtx : ""}">▶ Продолжить: ${esc(title(last))}</a>`
+             : nextInPath ? `<a class="cta" href="#/t/${encodeURIComponent(nextInPath)}?ctx=p:0">▶ Начать с первой темы пути новичка</a>` : ""}</p>
+
+    <h2>🗺️ Учебные пути</h2>
+    <div class="cards">${DATA.paths.map((p, i) => {
+      const items = pathItems(p), pr = progress(items);
+      return `<a class="card" href="#/p/${i}"><b>${esc(p.title)}</b>
+        <div class="meta">${p.stages.length} этапов · изучено ${pr.n} из ${pr.total}</div>${bar(items)}</a>`;
+    }).join("")}</div>
+
+    <h2>📊 Ваш прогресс</h2>
+    <div class="cards">
+      <div class="card"><b>Все шпаргалки</b><div class="meta">${all.n} из ${all.total} (${all.pct}%)</div>${bar(allTopics)}</div>
+      <div class="card"><b>Практика</b><div class="meta">решено ${DATA.exercises.filter(e => state.exDone[e.id]).length} из ${DATA.exercises.length} упражнений</div></div>
+      <div class="card"><b>Недавно изучено</b><div class="meta">${recent.length ? recent.map(f => `<a href="#/t/${encodeURIComponent(f)}">${esc(title(f))}</a>`).join("<br>") : "пока ничего — отметьте тему галочкой ✔"}</div></div>
+    </div>
+
+    <h2>💡 Как учиться с порталом</h2>
+    <div class="card">
+      <ol style="margin:0;padding-left:20px">
+        <li>Выберите <a href="#/p/0">учебный путь</a> или раздел слева.</li>
+        <li>Откройте шпаргалку, разберите формулы и запустите код примеров.</li>
+        <li>Нажмите <b>✔ Изучено</b> (или клавишу <b>M</b>) и переходите дальше стрелкой <b>→</b>.</li>
+        <li>Закрепите тему на <a href="#" data-tab-link="exercises">практике</a> — проверка ответа одной командой.</li>
+        <li>Повторяйте: кнопка <b>🎲 Случайная тема</b> выберет изученную тему для повторения.</li>
+      </ol>
+      <p style="margin:12px 0 0;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" data-action="review">🎲 Случайная тема для повторения</button>
+        <button class="btn" data-action="export">⬇ Сохранить прогресс в файл</button>
+        <button class="btn" data-action="import">⬆ Загрузить прогресс</button>
+        <button class="btn" data-action="reset">Сбросить прогресс</button>
+      </p>
+    </div>
+    <p class="kbd" style="margin-top:16px">Клавиши: <b>/</b> поиск · <b>←</b> <b>→</b> предыдущая/следующая тема · <b>M</b> отметить изученным · <b>Esc</b> назад к списку</p>
+  </div>`;
+}
+
+function viewSection(pi, si) {
+  const part = DATA.parts[pi], sec = part && part.sections[si];
+  if (!sec) return viewHome();
+  const ctx = `s:${pi}:${si}`;
+  const firstOpen = sec.items.find(f => !isDone(f)) || sec.items[0];
+  return `<div class="page">
+    <p class="sub" style="margin:0">${esc(part.title)}</p>
+    <h1>${esc(sec.title)}</h1>
+    <p class="sub">${progress(sec.items).n} из ${sec.items.length} изучено</p>${bar(sec.items)}
+    <p>${firstOpen ? `<a class="cta" href="#/t/${encodeURIComponent(firstOpen)}?ctx=${ctx}">▶ ${isDone(firstOpen) ? "Повторить" : "Изучать"}: ${esc(title(firstOpen))}</a>` : ""}</p>
+    <ol class="topics">${sec.items.map(f => topicRow(f, ctx)).join("")}</ol>
+    ${relatedExercises(sec.items)}
+  </div>`;
+}
+
+function viewPath(i) {
+  const p = DATA.paths[i];
+  if (!p) return viewHome();
+  const ctx = `p:${i}`, items = pathItems(p);
+  const next = items.find(f => !isDone(f));
+  return `<div class="page">
+    <h1>${esc(p.title)}</h1>
+    <p class="sub">${progress(items).n} из ${items.length} тем изучено</p>${bar(items)}
+    <p>${next ? `<a class="cta" href="#/t/${encodeURIComponent(next)}?ctx=${ctx}">▶ Следующая тема: ${esc(title(next))}</a>` : "🎉 Путь пройден!"}</p>
+    ${p.stages.map(s => `<div class="stage">
+      <h3>${esc(s.title)} ${s.level ? `<span class="lvl ${s.level}">${{ beginner: "начальный", intermediate: "средний", advanced: "продвинутый" }[s.level]}</span>` : ""} ${countLabel(s.items)}</h3>
+      ${s.notes.map(n => `<p class="note">ℹ ${esc(n)}</p>`).join("")}
+      <ol class="topics">${s.items.map(f => topicRow(f, ctx)).join("")}</ol>
+    </div>`).join("")}
+    ${relatedExercises(items)}
+  </div>`;
+}
+
+function relatedExercises(items) {
+  const ex = DATA.exercises.map((e, i) => [e, i]).filter(([e]) => e.cheatsheet && items.includes(e.cheatsheet));
+  if (!ex.length) return "";
+  return `<h2>💪 Практика по этим темам</h2><div class="cards">${ex.map(([e, i]) =>
+    `<a class="card" href="#/x/${i}">${state.exDone[e.id] ? "✅ " : ""}${esc(e.title)}<div class="meta">${esc(e.id)}</div></a>`).join("")}</div>`;
+}
+
+function viewTopic(f, ctx) {
+  if (!DATA.titles[f]) return `<div class="page empty">Тема не найдена: ${esc(f)}</div>`;
+  state.last = f; state.lastCtx = ctx; save();
+  const c = contextList(ctx) || (topicHome[f] ? contextList(`s:${topicHome[f].pi}:${topicHome[f].si}`) : null);
+  const ctxStr = ctx || (topicHome[f] ? `s:${topicHome[f].pi}:${topicHome[f].si}` : "");
+  const idx = c ? c.items.indexOf(f) : -1;
+  const link = g => `#/t/${encodeURIComponent(g)}${ctxStr ? "?ctx=" + ctxStr : ""}`;
+  const prev = idx > 0 ? c.items[idx - 1] : null, next = c && idx < c.items.length - 1 ? c.items[idx + 1] : null;
+  const ex = DATA.exercises.findIndex(e => e.cheatsheet === f);
+  return `<div class="viewer">
+    <div class="vbar">
+      <a class="btn" href="${c ? c.back : "#/"}" title="К списку (Esc)">☰ Список</a>
+      <a class="btn" ${prev ? `href="${link(prev)}" title="${esc(title(prev))} (←)"` : 'style="opacity:.4;pointer-events:none"'} data-nav="prev">← Назад</a>
+      <div class="title">${esc(title(f))} ${c ? `<span class="ctx">· ${esc(c.label)} · ${idx + 1}/${c.items.length}</span>` : ""}</div>
+      ${ex >= 0 ? `<a class="btn" href="#/x/${ex}">💪 Практика</a>` : ""}
+      <a class="btn" href="cheatsheets/${encodeURIComponent(f)}" target="_blank" title="Открыть отдельно (удобно для печати)">↗</a>
+      <button class="btn ${isDone(f) ? "on" : ""}" data-toggle="${esc(f)}" title="Клавиша M">${isDone(f) ? "✔ Изучено" : "☐ Изучено"}</button>
+      <a class="btn" ${next ? `href="${link(next)}" title="${esc(title(next))} (→)"` : 'style="opacity:.4;pointer-events:none"'} data-nav="next">Далее →</a>
+    </div>
+    <iframe src="cheatsheets/${encodeURIComponent(f)}" title="${esc(title(f))}"></iframe>
+  </div>`;
+}
+
+function viewExercise(i) {
+  const e = DATA.exercises[i];
+  if (!e) return viewHome();
+  const dir = e.id;
+  return `<div class="page">
+    <p class="sub" style="margin:0">Практика · ${esc(e.topic)}</p>
+    <h1>${esc(e.title)}</h1>
+    <p style="display:flex;gap:8px;flex-wrap:wrap">
+      ${e.cheatsheet ? `<a class="btn" href="#/t/${encodeURIComponent(e.cheatsheet)}">📘 Теория: ${esc(title(e.cheatsheet))}</a>` : ""}
+      <button class="btn ${state.exDone[e.id] ? "on" : ""}" data-ex="${esc(e.id)}">${state.exDone[e.id] ? "✔ Решено" : "☐ Решено"}</button>
+    </p>
+    <h2>📁 Файлы</h2>
+    <div class="files">${e.files.map(n => `<a class="btn" href="${esc(dir)}/${encodeURIComponent(n)}" target="_blank">${esc(n)}</a>`).join("")}</div>
+    <h2>✅ Самопроверка</h2>
+    <p class="note">Сохраните свой результат в <code>my_answer.csv</code> в папке упражнения и выполните в корне репозитория:</p>
+    <div class="cmd"><code>python tools/check_exercise.py ${esc(dir)}</code><button class="btn" data-copy="python tools/check_exercise.py ${esc(dir)}">Копировать</button></div>
+    <h2>📝 Задание</h2>
+    <div class="md">${markdown(e.task)}</div>
+  </div>`;
+}
+
+function viewSearch(q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const hay = f => (title(f) + " " + f.replace(/_/g, " ") + " " + (topicHome[f] ? topicHome[f].label : "")).toLowerCase();
+  const found = words.length ? allTopics.filter(f => words.every(w => hay(f).includes(w))) : [];
+  const ex = words.length ? DATA.exercises.map((e, i) => [e, i]).filter(([e]) => words.every(w => (e.title + " " + e.id).toLowerCase().includes(w))) : [];
+  return `<div class="page">
+    <h1>Поиск: «${esc(q)}»</h1>
+    <p class="sub">Найдено тем: ${found.length}${ex.length ? `, упражнений: ${ex.length}` : ""}</p>
+    ${found.length ? `<ol class="topics">${found.slice(0, 200).map(f => topicRow(f, "", true)).join("")}</ol>` : `<div class="empty">Ничего не найдено. Попробуйте английское название (например, «boosting») или часть слова.</div>`}
+    ${ex.length ? `<h2>💪 Упражнения</h2><div class="cards">${ex.map(([e, i]) => `<a class="card" href="#/x/${i}">${esc(e.title)}</a>`).join("")}</div>` : ""}
+  </div>`;
+}
+
+// ---------- мини-рендер markdown для заданий ----------
+function markdown(src) {
+  const inline = s => esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+  const out = []; let list = null, code = null, table = null;
+  const flush = () => {
+    if (list) { out.push(`<${list.tag}>${list.items.map(i => `<li>${i}</li>`).join("")}</${list.tag}>`); list = null; }
+    if (table) { out.push(`<table>${table.map((r, k) => `<tr>${r.map(c => k ? `<td>${inline(c)}</td>` : `<th>${inline(c)}</th>`).join("")}</tr>`).join("")}</table>`); table = null; }
+  };
+  for (const line of src.split(/\r?\n/)) {
+    if (code !== null) {
+      if (line.startsWith("```")) { out.push(`<pre><code>${esc(code.join("\n"))}</code></pre>`); code = null; } else code.push(line);
+      continue;
+    }
+    if (line.startsWith("```")) { flush(); code = []; continue; }
+    let m;
+    if ((m = line.match(/^(#{1,6})\s+(.*)/))) { flush(); const l = Math.min(m[1].length + 1, 4); out.push(`<h${l}>${inline(m[2])}</h${l}>`); }
+    else if (/^\s*\|.*\|\s*$/.test(line)) {
+      if (list) flush();
+      const cells = line.trim().slice(1, -1).split("|").map(c => c.trim());
+      if (!cells.every(c => /^:?-+:?$/.test(c))) (table = table || []).push(cells);
+    }
+    else if ((m = line.match(/^\s*([-*]|\d+\.)\s+(.*)/))) {
+      const tag = /\d/.test(m[1]) ? "ol" : "ul";
+      if (/^\s{2,}/.test(line) && list) { list.items[list.items.length - 1] += "<br>• " + inline(m[2]); continue; }
+      if (!list || list.tag !== tag) { flush(); list = { tag, items: [] }; }
+      list.items.push(inline(m[2]));
+    }
+    else if (!line.trim()) flush();
+    else if (/^\s+\S/.test(line) && list) list.items[list.items.length - 1] += " " + inline(line.trim());
+    else { flush(); out.push(`<p>${inline(line)}</p>`); }
+  }
+  if (code !== null) out.push(`<pre><code>${esc(code.join("\n"))}</code></pre>`);
+  flush();
+  return out.join("\n");
+}
+
+// ---------- боковая панель ----------
+function setTab(tab, rerender = true) {
+  state.tab = tab; save();
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  if (rerender) renderNav();
+}
+
+function renderNav() {
+  const tab = state.tab, hash = location.hash.split("?")[0];
+  const item = (href, label, items) =>
+    `<a class="navitem ${hash === href ? "active" : ""}" href="${href}"><span>${esc(label)}</span>${items ? countLabel(items) : ""}</a>`;
+  let html = "";
+  if (tab === "paths") {
+    html = DATA.paths.map((p, i) => item(`#/p/${i}`, p.title, pathItems(p))).join("");
+  } else if (tab === "exercises") {
+    const groups = {};
+    DATA.exercises.forEach((e, i) => (groups[e.topic] = groups[e.topic] || []).push([e, i]));
+    html = Object.entries(groups).map(([g, list]) => `<div class="navgroup">${esc(g.replace(/_/g, " "))}</div>` +
+      list.map(([e, i]) => `<a class="navitem ${hash === "#/x/" + i ? "active" : ""}" href="#/x/${i}"><span>${esc(e.title)}</span><small class="full">${state.exDone[e.id] ? "✔" : ""}</small></a>`).join("")).join("");
+  } else {
+    html = DATA.parts.map((p, pi) => `<div class="navgroup">${esc(p.title)}</div>` +
+      p.sections.map((s, si) => item(`#/s/${pi}/${si}`, s.title, s.items)).join("")).join("");
+  }
+  document.getElementById("navList").innerHTML = html;
+  const active = document.querySelector(".navitem.active");
+  if (active) active.scrollIntoView({ block: "nearest" });
+}
+
+function refreshChrome() {
+  const p = progress(allTopics);
+  document.getElementById("overallBar").style.width = p.pct + "%";
+  document.getElementById("overallText").textContent = `${p.n} / ${p.total} изучено`;
+  renderNav();
+}
+
+function rerenderKeepScroll() {
+  const main = document.getElementById("main"), top = main.scrollTop;
+  if (parseHash().parts[0] === "t") {           // не перезагружаем iframe — только кнопку
+    const btn = document.querySelector("[data-toggle]");
+    if (btn) { const on = isDone(btn.dataset.toggle); btn.classList.toggle("on", on); btn.textContent = on ? "✔ Изучено" : "☐ Изучено"; }
+    return;
+  }
+  render(); main.scrollTop = top;
+}
+
+// ---------- события ----------
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-tab],[data-toggle],[data-ex],[data-copy],[data-action],[data-tab-link],#menuBtn");
+  if (!t) return;
+  if (t.id === "menuBtn") { document.body.classList.toggle("menu-open"); return; }
+  if (t.dataset.tab) setTab(t.dataset.tab);
+  if (t.dataset.tabLink) { e.preventDefault(); setTab(t.dataset.tabLink); document.body.classList.add("menu-open"); }
+  if (t.dataset.toggle) { toggleDone(t.dataset.toggle); rerenderKeepScroll(); }
+  if (t.dataset.ex) { const id = t.dataset.ex; if (state.exDone[id]) delete state.exDone[id]; else state.exDone[id] = Date.now(); save(); rerenderKeepScroll(); }
+  if (t.dataset.copy) { navigator.clipboard && navigator.clipboard.writeText(t.dataset.copy).then(() => { t.textContent = "Скопировано ✔"; }); }
+  if (t.dataset.action) action(t.dataset.action);
+});
+document.addEventListener("change", e => {
+  if (e.target.dataset.done) { toggleDone(e.target.dataset.done, e.target.checked); rerenderKeepScroll(); }
+});
+
+function action(name) {
+  if (name === "review") {
+    const done = Object.keys(state.done).filter(f => DATA.titles[f]);
+    const pool = done.length ? done : allTopics;
+    location.hash = "#/t/" + encodeURIComponent(pool[Math.floor(Math.random() * pool.length)]);
+  } else if (name === "export") {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 1)], { type: "application/json" }));
+    a.download = "ml-cheatsheets-progress.json"; a.click();
+  } else if (name === "import") {
+    const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".json";
+    inp.onchange = () => inp.files[0].text().then(txt => {
+      try { const s = JSON.parse(txt); state = Object.assign(loadState(), s); save(); render(); alert("Прогресс загружен"); }
+      catch (err) { alert("Не удалось прочитать файл прогресса"); }
+    });
+    inp.click();
+  } else if (name === "reset" && confirm("Сбросить весь прогресс? Это нельзя отменить (если не сохранили файл).")) {
+    state = { done: {}, exDone: {}, last: null, tab: state.tab }; save(); render();
+  }
+}
+
+const search = document.getElementById("search");
+let searchTimer;
+search.addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { location.hash = search.value.trim() ? "#/q/" + encodeURIComponent(search.value.trim()) : "#/"; }, 150);
+});
+
+document.addEventListener("keydown", e => {
+  const typing = /INPUT|TEXTAREA/.test(document.activeElement.tagName);
+  if (e.key === "/" && !typing) { e.preventDefault(); search.focus(); search.select(); return; }
+  if (typing) { if (e.key === "Escape") search.blur(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const inViewer = parseHash().parts[0] === "t";
+  if (!inViewer) return;
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+    const a = document.querySelector(`[data-nav="${e.key === "ArrowRight" ? "next" : "prev"}"][href]`);
+    if (a) location.hash = a.getAttribute("href");
+  } else if (e.key === "m" || e.key === "M" || e.key === "ь" || e.key === "Ь") {
+    const btn = document.querySelector("[data-toggle]"); if (btn) btn.click();
+  } else if (e.key === "Escape") {
+    location.hash = document.querySelector(".vbar a").getAttribute("href");
+  }
+});
+
+window.addEventListener("hashchange", () => {
+  const { parts } = parseHash();
+  if (parts[0] !== "q") search.value = "";
+  render();
+});
+setTab(state.tab || "sections", false);
+render();
+</script>
+</body>
+</html>
