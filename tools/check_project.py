@@ -199,6 +199,13 @@ def check_portal_data():
     report(errs, [], f"все ссылки портала ведут на существующие темы и файлы (тем: {len(topics)})")
 
 
+def check_prerequisites():
+    section("Что изучить заранее (prerequisites.md)")
+    from build_portal import parse_prerequisites
+    deps, errs = parse_prerequisites()
+    report(errs, [], f"связей: {sum(map(len, deps.values()))} у тем: {len(deps)}, циклов и неизвестных тем нет")
+
+
 def check_questions_and_demos():
     section("Вопросы и интерактивы")
     errs, warns = [], []
@@ -292,6 +299,7 @@ def main():
     check_theme()
     check_pages()
     check_questions_and_demos()
+    check_prerequisites()
     check_exercises(run_solutions=not args.fast)
     check_portal_fresh()
     check_portal_data()

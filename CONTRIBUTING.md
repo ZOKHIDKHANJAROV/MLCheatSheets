@@ -24,7 +24,7 @@
    ```bash
    python tools/check_project.py
    ```
-   Новую шпаргалку подключите к теме оформления (`python tools/apply_theme.py`), новому упражнению создайте тетрадку (`python tools/make_notebooks.py`).
+   Новую шпаргалку подключите к теме оформления (`python tools/apply_theme.py`), добавьте ей вопросы в `questions/` и связи в `prerequisites.md`; новому упражнению создайте тетрадку (`python tools/make_notebooks.py`).
 5. **Commit изменений** - используйте понятные сообщения:
    ```bash
    git commit -m "Add: Новый cheatsheet про XYZ"

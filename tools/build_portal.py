@@ -152,6 +152,41 @@ def parse_questions():
     return questions
 
 
+def parse_prerequisites():
+    """prerequisites.md: строки «- тема: пред1, пред2» → ({файл темы: [файлы-предпосылки]}, [ошибки])."""
+    deps, errors = {}, []
+    path = ROOT / "prerequisites.md"
+    if not path.exists():
+        return deps, errors
+    exists = lambda stem: (CHEATSHEETS / f"{stem}_cheatsheet.html").exists()
+    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        m = re.match(r"^- ([\w-]+):\s*(.+)$", line.strip())
+        if not m:
+            continue
+        topic, before = m.group(1), [x.strip() for x in m.group(2).split(",") if x.strip()]
+        for stem in [topic] + before:
+            if not exists(stem):
+                errors.append(f"prerequisites.md:{n}: нет шпаргалки «{stem}»")
+        key = f"{topic}_cheatsheet.html"
+        deps.setdefault(key, [])
+        deps[key] += [f"{b}_cheatsheet.html" for b in before if exists(b) and f"{b}_cheatsheet.html" not in deps[key]]
+    # циклы: поиск в глубину с цветами
+    state = {}
+    def visit(node, trail):
+        state[node] = "в пути"
+        for nxt in deps.get(node, []):
+            if state.get(nxt) == "в пути":
+                cycle = trail[trail.index(nxt):] + [nxt] if nxt in trail else [node, nxt]
+                errors.append("цикл в prerequisites.md: " + " → ".join(c.replace("_cheatsheet.html", "") for c in cycle))
+            elif nxt not in state:
+                visit(nxt, trail + [nxt])
+        state[node] = "готово"
+    for node in sorted(deps):
+        if node not in state:
+            visit(node, [node])
+    return deps, errors
+
+
 def parse_demos():
     """interactive/*.html: темы берутся из <meta name="mlcs-topics" content="linreg knn ...">."""
     demos = []
@@ -221,9 +256,12 @@ def main():
 
     questions = parse_questions()
     demos = parse_demos()
+    prereqs, prereq_errors = parse_prerequisites()
+    for e in prereq_errors:
+        print(f"  ⚠ {e}")
 
     data = {"parts": parts, "paths": paths, "exercises": exercises, "titles": titles,
-            "quizzes": quizzes, "questions": questions, "demos": demos, "build": build_version()}
+            "quizzes": quizzes, "questions": questions, "demos": demos, "prereqs": prereqs, "build": build_version()}
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     page = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
     OUTPUT.write_text(page, encoding="utf-8")
@@ -232,7 +270,7 @@ def main():
     print(f"  тем: {len(titles)}, разделов: {sum(len(p['sections']) for p in parts)}, "
           f"путей: {len(paths)}, упражнений: {len(exercises)}, тестов: {len(quizzes)}, "
           f"вопросов: {sum(map(len, questions.values()))} к {len(questions)} темам, "
-          f"интерактивов: {len(demos)}, вне README: {len(orphans)}")
+          f"интерактивов: {len(demos)}, тем со связями: {len(prereqs)}, вне README: {len(orphans)}")
 
 
 if __name__ == "__main__":

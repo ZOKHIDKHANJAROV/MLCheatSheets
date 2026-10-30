@@ -143,6 +143,16 @@
   .btn.bad { border-color: #c0392b; color: #c0392b; }
   .badge { font-size: 11px; color: var(--muted); white-space: nowrap; }
   .card.due { border-color: var(--accent); }
+  .related { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 6px 12px; font-size: 13px;
+    background: var(--panel); border-bottom: 1px solid var(--border); }
+  .related .lbl { color: var(--muted); margin-right: 2px; }
+  .related .sep { color: var(--border); margin: 0 4px; }
+  .chip { padding: 1px 9px; border-radius: 12px; border: 1px solid var(--border); color: var(--text); white-space: nowrap; }
+  .chip:hover { border-color: var(--accent); text-decoration: none; }
+  .chip.done { border-color: var(--done); color: var(--done); }
+  .notes textarea { width: 100%; min-height: 130px; resize: vertical; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text); font: 14px/1.5 inherit; font-family: inherit; }
+  .note-card pre { white-space: pre-wrap; font: inherit; margin: 6px 0 0; color: var(--text); }
 
   .md { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 6px 22px 16px; }
   .md pre, .md code { font-family: Consolas, "Courier New", monospace; font-size: 13px; }
@@ -204,7 +214,7 @@ window.mlcsPortal = { open: f => { if (!DATA.titles[f]) return false; location.h
 
 // ---------- состояние и прогресс ----------
 function loadState() {
-  const empty = { done: {}, exDone: {}, review: {}, last: null, tab: "sections", qOpen: false };
+  const empty = { done: {}, exDone: {}, review: {}, notes: {}, last: null, tab: "sections", qOpen: false };
   try { return Object.assign(empty, JSON.parse(localStorage.getItem(STORE_KEY))); }
   catch (e) { return empty; }
 }
@@ -250,6 +260,25 @@ const DAY = 24 * 3600 * 1000;
 const INTERVALS = [1, 3, 7, 16, 35, 90];
 const questionsOf = f => DATA.questions[f] || [];
 const demosOf = f => DATA.demos.filter(d => d.topics.includes(f));
+const prereqsOf = f => (DATA.prereqs || {})[f] || [];
+const dependentsOf = (() => {   // обратные связи: какие темы опираются на эту
+  const rev = {};
+  Object.entries(DATA.prereqs || {}).forEach(([t, before]) => before.forEach(b => (rev[b] = rev[b] || []).push(t)));
+  return f => rev[f] || [];
+})();
+const noteOf = f => (state.notes[f] && state.notes[f].text) || "";
+
+function relatedBar(f) {
+  const before = prereqsOf(f), after = dependentsOf(f);
+  if (!before.length && !after.length) return "";
+  const chip = g => `<a class="chip ${isDone(g) ? "done" : ""}" href="#/t/${encodeURIComponent(g)}" title="${isDone(g) ? "Изучено" : "Ещё не изучено"}">${isDone(g) ? "✔ " : ""}${esc(title(g))}</a>`;
+  const left = before.filter(g => !isDone(g)).length;
+  return `<div class="related">
+    ${before.length ? `<span class="lbl">📚 Сначала${left ? ` (не изучено: ${left})` : " ✔"}:</span>${before.map(chip).join("")}` : ""}
+    ${before.length && after.length ? '<span class="sep">|</span>' : ""}
+    ${after.length ? `<span class="lbl">➡ Дальше:</span>${after.map(chip).join("")}` : ""}
+  </div>`;
+}
 
 function reviewOf(f) {
   if (!isDone(f)) return null;
@@ -300,6 +329,7 @@ function rateButtons(f) {
 // #/q/<строка>               поиск
 // #/r                        повторение
 // #/d/<файл>                 интерактивная демонстрация из interactive/
+// #/n                        мои заметки
 function parseHash() {
   const [route, query] = decodeURIComponent(location.hash.slice(1) || "/").split("?ctx=");
   return { parts: route.split("/").filter(Boolean), ctx: query || "" };
@@ -327,6 +357,7 @@ function render() {
   else if (kind === "q") main.innerHTML = viewSearch(parts.slice(1).join("/"));
   else if (kind === "r") main.innerHTML = viewReview();
   else if (kind === "d") main.innerHTML = viewDemo(parts.slice(1).join("/"));
+  else if (kind === "n") main.innerHTML = viewNotes();
   else main.innerHTML = viewHome();
   if (kind === "t" || kind === "d") forwardFrameKeys(main.querySelector("iframe"));
   else main.scrollTop = 0;
@@ -359,6 +390,7 @@ function topicRow(f, ctx, showWhere) {
     <input type="checkbox" data-done="${esc(f)}" ${isDone(f) ? "checked" : ""} title="Отметить как изученное">
     <a href="#/t/${encodeURIComponent(f)}${ctx ? "?ctx=" + ctx : ""}">${esc(title(f))}</a>${where}
     ${demosOf(f).length ? `<a class="badge" href="#/d/${encodeURIComponent(demosOf(f)[0].file)}" title="Интерактивная демонстрация">🎮</a>` : ""}
+    ${noteOf(f) ? `<span class="badge" title="Есть заметка">📝</span>` : ""}
     ${questionsOf(f).length ? `<span class="badge" title="Есть вопросы для самопроверки">❓${questionsOf(f).length}</span>` : ""}</li>`;
 }
 
@@ -391,6 +423,8 @@ function viewHome() {
       <div class="card"><b>Практика</b><div class="meta">решено ${DATA.exercises.filter(e => state.exDone[e.id]).length} из ${DATA.exercises.length} упражнений</div></div>
       <div class="card"><b>Недавно изучено</b><div class="meta">${recent.length ? recent.map(f => `<a href="#/t/${encodeURIComponent(f)}">${esc(title(f))}</a>`).join("<br>") : "пока ничего — отметьте тему галочкой ✔"}</div></div>
     </div>
+
+    ${Object.keys(state.notes).length ? `<h2>📝 Мои заметки</h2><a class="card" href="#/n"><b>Заметок: ${Object.keys(state.notes).length}</b><div class="meta">Ваши конспекты по темам — удобно перечитывать перед повторением</div></a>` : ""}
 
     ${demoCards()}
 
@@ -531,13 +565,14 @@ function viewTopic(f, ctx) {
       <a class="btn" ${prev ? `href="${link(prev)}" title="${esc(title(prev))} (←)"` : 'style="opacity:.4;pointer-events:none"'} data-nav="prev">← Назад</a>
       <div class="title">${esc(title(f))} ${c ? `<span class="ctx">· ${esc(c.label)} · ${idx + 1}/${c.items.length}</span>` : ""}</div>
       ${demosOf(f).map(d => `<a class="btn" href="#/d/${encodeURIComponent(d.file)}" title="Интерактивная демонстрация: ${esc(d.title)}">🎮 ${demosOf(f).length > 1 ? esc(d.title) : "Интерактив"}</a>`).join("")}
-      <button class="btn" data-qtoggle title="Вопросы для самопроверки (Q)">❓ Вопросы${questionsOf(f).length ? ` (${questionsOf(f).length})` : ""}</button>
+      <button class="btn" data-qtoggle title="Вопросы для самопроверки и заметки (Q)">❓ Вопросы${questionsOf(f).length ? ` (${questionsOf(f).length})` : ""}<span id="noteMark">${noteOf(f) ? " · 📝" : ""}</span></button>
       ${ex >= 0 ? `<a class="btn" href="#/x/${ex}">💪 Практика</a>` : ""}
       ${DATA.quizzes[f] ? `<a class="btn" href="cheatsheets/${encodeURIComponent(DATA.quizzes[f])}${V}" target="_blank" title="Проверьте себя">📝 Тест</a>` : ""}
       <a class="btn" href="cheatsheets/${encodeURIComponent(f)}${V}" target="_blank" title="Открыть отдельно (удобно для печати)">↗</a>
       <button class="btn ${isDone(f) ? "on" : ""}" data-toggle="${esc(f)}" title="Клавиша M">${isDone(f) ? "✔ Изучено" : "☐ Изучено"}</button>
       <a class="btn" ${next ? `href="${link(next)}" title="${esc(title(next))} (→)"` : 'style="opacity:.4;pointer-events:none"'} data-nav="next">Далее →</a>
     </div>
+    ${relatedBar(f)}
     <div class="vbody">
       <iframe src="cheatsheets/${encodeURIComponent(f)}${V}" title="${esc(title(f))}"></iframe>
       <aside class="qpanel">
@@ -545,8 +580,25 @@ function viewTopic(f, ctx) {
         <p class="note">Ответьте мысленно или вслух, затем раскройте ответ.</p>
         ${questionsBlock(f)}
         <div id="rateBox">${rateButtons(f)}</div>
+        <div class="notes">
+          <h3 style="margin-top:18px">📝 Мои заметки</h3>
+          <textarea data-note="${esc(f)}" placeholder="Своими словами: главное, формулы, на чём споткнулись, вопросы на потом…">${esc(noteOf(f))}</textarea>
+          <p class="note">Сохраняется автоматически в этом браузере и попадает в файл прогресса.</p>
+        </div>
       </aside>
     </div>
+  </div>`;
+}
+
+function viewNotes() {
+  const list = Object.entries(state.notes).filter(([f]) => DATA.titles[f]).sort((a, b) => b[1].t - a[1].t);
+  return `<div class="page">
+    <h1>📝 Мои заметки</h1>
+    <p class="sub">${list.length ? "Сначала — последние изменённые. Править заметку можно в панели «❓ Вопросы» на странице темы." : "Заметок пока нет. Откройте любую тему и нажмите «❓ Вопросы» (клавиша Q) — внизу панели есть поле для заметок."}</p>
+    ${list.map(([f, n]) => `<div class="card note-card" style="margin-bottom:10px">
+      <a href="#/t/${encodeURIComponent(f)}"><b>${esc(title(f))}</b></a>
+      <span class="note"> · ${new Date(n.t).toLocaleDateString("ru-RU")}</span>
+      <pre>${esc(n.text)}</pre></div>`).join("")}
   </div>`;
 }
 
@@ -575,7 +627,7 @@ function viewExercise(i) {
 
 function viewSearch(q) {
   const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-  const hay = f => (title(f) + " " + f.replace(/_/g, " ") + " " + (topicHome[f] ? topicHome[f].label : "")).toLowerCase();
+  const hay = f => (title(f) + " " + f.replace(/_/g, " ") + " " + (topicHome[f] ? topicHome[f].label : "") + " " + noteOf(f)).toLowerCase();
   const found = words.length ? allTopics.filter(f => words.every(w => hay(f).includes(w))) : [];
   const ex = words.length ? DATA.exercises.map((e, i) => [e, i]).filter(([e]) => words.every(w => (e.title + " " + e.id).toLowerCase().includes(w))) : [];
   return `<div class="page">
@@ -712,6 +764,15 @@ document.addEventListener("click", e => {
   if (t.dataset.copy) { navigator.clipboard && navigator.clipboard.writeText(t.dataset.copy).then(() => { t.textContent = "Скопировано ✔"; }); }
   if (t.dataset.action) action(t.dataset.action);
 });
+document.addEventListener("input", e => {
+  const f = e.target.dataset && e.target.dataset.note;
+  if (!f) return;
+  const text = e.target.value;
+  if (text.trim()) state.notes[f] = { text, t: Date.now() }; else delete state.notes[f];
+  save();
+  const mark = document.getElementById("noteMark");
+  if (mark) mark.textContent = text.trim() ? " · 📝" : "";
+});
 document.addEventListener("change", e => {
   if (e.target.dataset.done) { toggleDone(e.target.dataset.done, e.target.checked); rerenderKeepScroll(); }
 });
@@ -732,8 +793,8 @@ function action(name) {
       catch (err) { alert("Не удалось прочитать файл прогресса"); }
     });
     inp.click();
-  } else if (name === "reset" && confirm("Сбросить весь прогресс? Это нельзя отменить (если не сохранили файл).")) {
-    state = { done: {}, exDone: {}, review: {}, last: null, tab: state.tab, qOpen: state.qOpen }; save(); render();
+  } else if (name === "reset" && confirm("Сбросить весь прогресс (заметки сохранятся)? Это нельзя отменить (если не сохранили файл).")) {
+    state = { done: {}, exDone: {}, review: {}, notes: state.notes, last: null, tab: state.tab, qOpen: state.qOpen }; save(); render();   // заметки не трогаем
   }
 }
 
