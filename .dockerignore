@@ -1,0 +1,7 @@
+.git
+.claude
+venv
+**/__pycache__
+**/.ipynb_checkpoints
+**/my_answer.csv
+**/my_predictions.csv

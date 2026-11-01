@@ -5,6 +5,7 @@
 
     python start.py            # http://localhost:8000
     python start.py --port 8080
+    docker build -t mlcs . && docker run --rm -p 8000:8000 mlcs   # в Docker
 
 Собирает index.html (если его нет или README/ROADMAP новее),
 поднимает локальный сервер и открывает портал в браузере.
@@ -46,6 +47,7 @@ def portal_is_stale():
 def main():
     parser = argparse.ArgumentParser(description="Учебный портал ML Cheatsheets")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--host", default="127.0.0.1", help="адрес сервера (0.0.0.0 — для Docker и доступа из сети)")
     parser.add_argument("--no-browser", action="store_true", help="не открывать браузер")
     args = parser.parse_args()
 
@@ -53,7 +55,7 @@ def main():
         subprocess.run([sys.executable, str(ROOT / "tools" / "build_portal.py")], check=True)
 
     handler = functools.partial(PortalHandler, directory=str(ROOT))
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", args.port), handler)
+    server = http.server.ThreadingHTTPServer((args.host, args.port), handler)
     # ?v=… — чтобы браузер не открыл старую копию портала из кэша после обновления проекта
     url = f"http://localhost:{args.port}/index.html?v={int((ROOT / 'index.html').stat().st_mtime)}"
     print(f"Портал открыт: {url}\nОстановить: Ctrl+C")
