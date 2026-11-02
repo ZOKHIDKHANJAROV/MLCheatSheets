@@ -196,6 +196,8 @@ def check_portal_data():
             errs.append(f"интерактив {d['file']}: нет файла")
         errs += [f"интерактив {d['file']}: неизвестная тема {t}" for t in d["topics"] if t not in topics]
     errs += [f"вопросы к {f}: неизвестная тема" for f in data.get("questions", {}) if f not in topics]
+    for t in data.get("glossary", []):
+        errs += [f"глоссарий «{t['t']}»: неизвестная тема {f}" for f in t["topics"] if f not in topics]
     report(errs, [], f"все ссылки портала ведут на существующие темы и файлы (тем: {len(topics)})")
 
 
@@ -204,6 +206,13 @@ def check_prerequisites():
     from build_portal import parse_prerequisites
     deps, errs = parse_prerequisites()
     report(errs, [], f"связей: {sum(map(len, deps.values()))} у тем: {len(deps)}, циклов и неизвестных тем нет")
+
+
+def check_glossary():
+    section("Глоссарий (glossary.md)")
+    from build_portal import parse_glossary
+    terms, errs = parse_glossary()
+    report(errs, [], f"терминов: {len(terms)}, со ссылками на шпаргалки: {sum(1 for t in terms if t['topics'])}")
 
 
 def check_questions_and_demos():
@@ -312,7 +321,7 @@ def check_portal_fresh():
     if not index.exists():
         report(["index.html не собран — запустите python tools/build_portal.py"], [], "")
         return
-    sources = [ROOT / "README.md", ROOT / "ROADMAP.md", ROOT / "tools" / "portal_template.html"]
+    sources = [ROOT / n for n in ("README.md", "ROADMAP.md", "glossary.md", "prerequisites.md", "tools/portal_template.html") if (ROOT / n).exists()]
     sources += list((ROOT / "exercises").rglob("task.md")) + list((ROOT / "questions").glob("*.md"))
     sources += list((ROOT / "interactive").glob("*.html")) + list((ROOT / "projects").glob("*/README.md"))
     newer = [rel(p) for p in sources if p.stat().st_mtime > index.stat().st_mtime]
@@ -331,6 +340,7 @@ def main():
     check_pages()
     check_questions_and_demos()
     check_prerequisites()
+    check_glossary()
     check_exercises(run_solutions=not args.fast)
     check_projects(run_solutions=not args.fast)
     check_portal_fresh()

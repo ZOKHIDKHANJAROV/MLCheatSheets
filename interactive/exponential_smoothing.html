@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="exponential_smoothing time_series moving_average_methods seasonal_decomposition time_series_validation demand_traffic_forecasting">
+<title>Сглаживание временных рядов — интерактив</title>
+<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="lab.css?v=2">
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Сглаживание временных рядов</h1><a href="../cheatsheets/exponential_smoothing_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Синтетический ряд = уровень + тренд + сезонность + шум. Последние <b>h</b> точек отложены как тест.
+    Модель сглаживает ряд на обучающей части (линия — её одношаговые прогнозы ŷ<sub>t|t−1</sub>) и строит прогноз на h шагов вперёд.
+    Сравните скользящее среднее, SES, Холта и Холта–Винтерса: что каждый метод умеет «запоминать» — уровень, тренд, сезон.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="series"></canvas>
+      <div class="legend"><span><i style="background:var(--muted)"></i>ряд (train)</span><span><i style="background:var(--c-ok)"></i>тест (отложенные h точек)</span><span><i style="background:var(--c-a)"></i>сглаживание на train</span><span><i style="background:var(--c-b)"></i>прогноз на h шагов</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Метод</h3>
+      <div class="ctl"><select id="method">
+        <option value="ma">Скользящее среднее (окно w)</option>
+        <option value="ses">SES — простое экспоненциальное (α)</option>
+        <option value="holt">Холт — уровень + тренд (α, β)</option>
+        <option value="hw" selected>Холт–Винтерс аддитивный (α, β, γ, m)</option>
+      </select></div>
+      <div class="ctl"><label for="w">Окно w <output for="w"></output></label><input id="w" type="range" min="1" max="30" step="1" value="6"></div>
+      <div class="ctl"><label for="alpha">α — уровень <output for="alpha"></output></label><input id="alpha" type="range" min="0.01" max="1" step="0.01" value="0.3"></div>
+      <div class="ctl"><label for="beta">β — тренд <output for="beta"></output></label><input id="beta" type="range" min="0" max="1" step="0.01" value="0.1"></div>
+      <div class="ctl"><label for="gamma">γ — сезонность <output for="gamma"></output></label><input id="gamma" type="range" min="0" max="1" step="0.01" value="0.2"></div>
+      <div class="ctl"><label for="m">Период модели m <output for="m"></output></label><input id="m" type="range" min="2" max="24" step="1" value="12"></div>
+      <div class="buttons"><button class="primary" id="fitBtn">Подобрать параметры</button></div>
+      <h3>Данные</h3>
+      <div class="ctl"><label for="trend">Тренд (за шаг) <output for="trend"></output></label><input id="trend" type="range" min="-0.5" max="1" step="0.05" value="0.4"></div>
+      <div class="ctl"><label for="amp">Амплитуда сезонности <output for="amp"></output></label><input id="amp" type="range" min="0" max="15" step="0.5" value="8"></div>
+      <div class="ctl"><label for="period">Период сезонности s <output for="period"></output></label><input id="period" type="range" min="4" max="24" step="1" value="12"></div>
+      <div class="ctl"><label for="noise">Шум σ <output for="noise"></output></label><input id="noise" type="range" min="0" max="6" step="0.25" value="2"></div>
+      <div class="ctl"><label for="h">Горизонт теста h <output for="h"></output></label><input id="h" type="range" min="6" max="36" step="1" value="24"></div>
+      <div class="buttons"><button id="regen">Новые данные</button></div>
+      <h3>Результат</h3>
+      <div class="stats">
+        <span>MAE прогноза на тесте</span><b id="mae"></b>
+        <span>RMSE одношаговый на train</span><b id="rmse"></b>
+        <span>Последнее наблюдение train</span><b id="lastY"></b>
+        <span>Прогноз на 1 / h шагов</span><b id="fc"></b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Веса прошлых наблюдений: SES α(1−α)<sup>k</sup> и скользящее среднее 1/w</h3><canvas id="weights"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>SES с текущим α</span><span><i style="background:var(--c-ok)"></i>скользящее среднее с окном w</span></div>
+      <div class="stats" style="margin:8px 6px 4px">
+        <span>Половина веса SES — в последних</span><b id="half"></b>
+        <span>Средний возраст данных: SES (1−α)/α / MA (w−1)/2</span><b id="age"></b>
+      </div></div>
+    <div class="card"><h3>MAE на тесте при подобранных параметрах</h3>
+      <div class="stats" id="table"></div>
+      <p style="font-size:13px;color:var(--muted);margin:10px 0 0">Параметры каждого метода подобраны перебором по сетке: минимум среднеквадратичной ошибки
+        одношагового прогноза на train (тест при подборе не используется). Для Холта–Винтерса период модели m = s; β перебирается до 0.3 (тренд должен меняться медленно, иначе Холт начинает гоняться за сезонными волнами).</p></div>
+  </div>
+  <div class="card hint" style="margin-top:16px"><h3>Что попробовать</h3><ul>
+    <li>Выберите SES: прогноз — горизонтальная линия на уровне последнего сглаженного значения. На ряду с трендом он с каждым шагом отстаёт всё сильнее — в таблице у SES самый большой MAE (≈ 9.7 при настройках по умолчанию). Подбор здесь выбирает α = 1 (а для скользящего среднего w = 1) — наивный прогноз: на ряду с трендом и сезоном лучше всего «догонять» последнее значение, поэтому их MAE совпадают.</li>
+    <li>Холт: прогноз становится наклонной прямой — тренд пойман, MAE снижается (≈ 9.7 → 7.9), но сезонных волн в прогнозе нет, и ошибка остаётся большой. Холт–Винтерс повторяет и наклон, и волны — MAE ≈ 1.6, это уровень самого шума (у шума с σ = 2 средний модуль ≈ 0.8·σ).</li>
+    <li>SES с α = 1: прогноз в точности равен последнему наблюдению — это наивный прогноз. При α → 0 линия почти не реагирует на данные.</li>
+    <li>Скользящее среднее с окном w = 12 (= период): сезонные волны исчезают — среднее по целому периоду их гасит. Но линия идёт ниже растущего ряда: запаздывание ≈ (w+1)/2 шага, т.е. ≈ 0.4·6.5 ≈ 2.5 по уровню. Окно 30 — уже ≈ 6.</li>
+    <li>Нижний график: при α = 0.1 половина веса приходится на последние 7 наблюдений, при α = 0.5 — на одно. Поставьте α = 2/(w+1) (например w = 9, α = 0.2): средний возраст данных у SES и скользящего среднего совпадает — это классическое соответствие двух методов.</li>
+    <li>Поставьте для Холта–Винтерса период модели m = 10 при истинном s = 12: сезонные компоненты «съезжают», и MAE заметно растёт. Период нужно знать или подбирать.</li>
+    <li>Тренд 0 и амплитуда 0: остаётся уровень с шумом — здесь SES ничем не хуже сложных моделей, а лишние параметры Холта–Винтерса только добавляют шум прогнозу.</li>
+  </ul></div>
+</div>
+
+<script src="lab.js?v=2"></script>
+<script>
+// ===== Вычислительное ядро: ряд, методы сглаживания, подбор параметров =====
+const N_TOTAL = 144;
+
+function makeSeries(p, seed) {
+  const r = Lab.rng(seed), y = [];
+  for (let t = 0; t < N_TOTAL; t++) y.push(50 + p.trend * t + p.amp * Math.sin(2 * Math.PI * t / p.period) + p.noise * r.normal());
+  return y;
+}
+
+// Каждый метод получает обучающую часть y и возвращает:
+//   fit[t] — одношаговый прогноз ŷ(t | t−1) (NaN, пока метод «разогревается»),
+//   fc[k]  — прогноз на k+1 шагов после конца train.
+function movingAverage(y, h, w) {
+  const T = y.length, fit = new Array(T).fill(NaN);
+  let s = 0;
+  for (let t = 0; t < T; t++) {
+    if (t >= w) fit[t] = s / w;
+    s += y[t]; if (t >= w) s -= y[t - w];
+  }
+  const last = s / Math.min(w, T);
+  return { fit, fc: new Array(h).fill(last) };
+}
+function ses(y, h, a) {
+  const T = y.length, fit = new Array(T).fill(NaN);
+  let l = y[0];
+  for (let t = 1; t < T; t++) { fit[t] = l; l = a * y[t] + (1 - a) * l; }
+  return { fit, fc: new Array(h).fill(l) };
+}
+function holt(y, h, a, b) {
+  const T = y.length, fit = new Array(T).fill(NaN);
+  let l = y[0], tr = y[1] - y[0];
+  for (let t = 1; t < T; t++) {
+    fit[t] = l + tr;
+    const ln = a * y[t] + (1 - a) * (l + tr);
+    tr = b * (ln - l) + (1 - b) * tr; l = ln;
+  }
+  return { fit, fc: Array.from({ length: h }, (_, k) => l + (k + 1) * tr) };
+}
+function holtWinters(y, h, a, b, g, m) {
+  const T = y.length, fit = new Array(T).fill(NaN);
+  if (T < 2 * m) return { fit, fc: new Array(h).fill(NaN) };
+  // начальные значения по первым двум сезонам: уровень на конец первого сезона, тренд, сезонные отклонения
+  const mean1 = y.slice(0, m).reduce((s, v) => s + v, 0) / m, mean2 = y.slice(m, 2 * m).reduce((s, v) => s + v, 0) / m;
+  let tr = (mean2 - mean1) / m, l = mean1 + tr * (m - 1) / 2;
+  const s = y.slice(0, m).map((v, i) => v - (mean1 + tr * (i - (m - 1) / 2)));
+  for (let t = m; t < T; t++) {
+    const si = s[t - m];
+    fit[t] = l + tr + si;
+    const ln = a * (y[t] - si) + (1 - a) * (l + tr);
+    tr = b * (ln - l) + (1 - b) * tr;
+    s.push(g * (y[t] - ln) + (1 - g) * si);
+    l = ln;
+  }
+  return { fit, fc: Array.from({ length: h }, (_, k) => l + (k + 1) * tr + s[T + k - m * Math.ceil((k + 1) / m)]) };
+}
+function run(method, y, h, p) {
+  if (method === "ma") return movingAverage(y, h, p.w);
+  if (method === "ses") return ses(y, h, p.alpha);
+  if (method === "holt") return holt(y, h, p.alpha, p.beta);
+  return holtWinters(y, h, p.alpha, p.beta, p.gamma, p.m);
+}
+// Ошибка одношагового прогноза на train (RMSE) — по шагам, где прогноз есть; первые `skip` шагов не считаем,
+// чтобы у разных параметров была одна и та же область сравнения
+function oneStepRmse(y, fit, skip) {
+  let s = 0, n = 0;
+  for (let t = skip; t < y.length; t++) if (!isNaN(fit[t])) { s += (y[t] - fit[t]) ** 2; n++; }
+  return n ? Math.sqrt(s / n) : Infinity;
+}
+const mae = (fc, test) => fc.reduce((s, v, k) => s + Math.abs(v - test[k]), 0) / test.length;
+
+// Подбор по сетке: минимизируем одношаговую ошибку на train
+const GRID = [0.01, 0.02, 0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1];
+const GRID0 = [0, ...GRID], GRID_B = [0, 0.01, 0.02, 0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.25, 0.3];   // β ≤ 0.3: тренд должен меняться медленно
+function fitParams(method, y, base) {
+  let best = null, bestE = Infinity;
+  const tryP = p => { const e = oneStepRmse(y, run(method, y, 1, p).fit, method === "hw" ? p.m : method === "ma" ? 30 : 1); if (e < bestE) { bestE = e; best = p; } };
+  if (method === "ma") for (let w = 1; w <= 30; w++) tryP({ ...base, w });
+  else if (method === "ses") for (let i = 1; i <= 100; i++) tryP({ ...base, alpha: i / 100 });
+  else if (method === "holt") GRID.forEach(alpha => GRID_B.forEach(beta => tryP({ ...base, alpha, beta })));
+  else GRID.forEach(alpha => GRID_B.forEach(beta => GRID0.forEach(gamma => tryP({ ...base, alpha, beta, gamma }))));
+  return { p: best, rmse: bestE };
+}
+// ===== конец ядра =====
+
+const NAMES = { ma: "Скользящее среднее", ses: "SES", holt: "Холт", hw: "Холт–Винтерс" };
+const methodEl = document.getElementById("method");
+let seed = 2, y = [], train = [], test = [], cur = null, fitted = null, pending = false;
+
+const w = Lab.slider("w", () => schedule(false), v => v);
+const alpha = Lab.slider("alpha", () => schedule(false), v => v.toFixed(2));
+const beta = Lab.slider("beta", () => schedule(false), v => v.toFixed(2));
+const gamma = Lab.slider("gamma", () => schedule(false), v => v.toFixed(2));
+const m = Lab.slider("m", () => schedule(false), v => v);
+const trend = Lab.slider("trend", () => schedule(true), v => v.toFixed(2));
+const amp = Lab.slider("amp", () => schedule(true), v => v.toFixed(1));
+const period = Lab.slider("period", () => schedule(true), v => v);
+const noise = Lab.slider("noise", () => schedule(true), v => v.toFixed(2));
+const hor = Lab.slider("h", () => schedule(true), v => v);
+const seriesView = Lab.canvas(document.getElementById("series"), 0.6, drawSeries);
+const weightsView = Lab.canvas(document.getElementById("weights"), 0.5, drawWeights);
+
+const params = () => ({ w: w.value, alpha: alpha.value, beta: beta.value, gamma: gamma.value, m: m.value });
+
+// Подбор всех четырёх методов — несколько тысяч прогонов, поэтому пересчёт собираем в один кадр
+function schedule(dataChanged) {
+  if (dataChanged) fitted = null;
+  if (pending) return;
+  pending = true;
+  requestAnimationFrame(() => { pending = false; refresh(); });
+}
+
+function refresh() {
+  y = makeSeries({ trend: trend.value, amp: amp.value, period: period.value, noise: noise.value }, seed);
+  const T = N_TOTAL - hor.value;
+  train = y.slice(0, T); test = y.slice(T);
+  if (!fitted) {
+    fitted = {};
+    ["ma", "ses", "holt", "hw"].forEach(k => {
+      const f = fitParams(k, train, { ...params(), m: period.value });
+      fitted[k] = { ...f, mae: mae(run(k, train, hor.value, f.p).fc, test) };
+    });
+    renderTable();
+  }
+  const method = methodEl.value;
+  cur = run(method, train, hor.value, params());
+  document.getElementById("mae").textContent = isNaN(cur.fc[0]) ? "—" : mae(cur.fc, test).toFixed(2);
+  document.getElementById("rmse").textContent = oneStepRmse(train, cur.fit, 0).toFixed(2);
+  document.getElementById("lastY").textContent = train[T - 1].toFixed(2);
+  document.getElementById("fc").textContent = isNaN(cur.fc[0]) ? "нужно ≥ 2 сезонов" : cur.fc[0].toFixed(2) + " / " + cur.fc[hor.value - 1].toFixed(2);
+  const need = { ma: ["w"], ses: ["alpha"], holt: ["alpha", "beta"], hw: ["alpha", "beta", "gamma", "m"] }[method];
+  ["w", "alpha", "beta", "gamma", "m"].forEach(id => document.getElementById(id).disabled = !need.includes(id));
+  const a = alpha.value, half = a >= 1 ? 1 : Math.ceil(Math.log(0.5) / Math.log(1 - a));
+  document.getElementById("half").textContent = half + " " + plural(half, "наблюдении", "наблюдениях", "наблюдениях");
+  document.getElementById("age").textContent = ((1 - a) / a).toFixed(1) + " / " + ((w.value - 1) / 2).toFixed(1);
+  seriesView.redraw(); weightsView.redraw();
+}
+function plural(n, one, few, many) { const d = n % 10, dd = n % 100; return d === 1 && dd !== 11 ? one : d >= 2 && d <= 4 && (dd < 12 || dd > 14) ? few : many; }
+
+function renderTable() {
+  const fmt = (k, p) => k === "ma" ? `w=${p.w}` : k === "ses" ? `α=${p.alpha}` : k === "holt" ? `α=${p.alpha}, β=${p.beta}` : `α=${p.alpha}, β=${p.beta}, γ=${p.gamma}`;
+  const best = Math.min(...Object.values(fitted).map(f => f.mae));
+  document.getElementById("table").innerHTML = ["ma", "ses", "holt", "hw"].map(k =>
+    `<span>${NAMES[k]} <span class="mono" style="color:var(--muted)">${fmt(k, fitted[k].p)}</span></span><b style="${fitted[k].mae === best ? "color:var(--c-ok)" : ""}">${fitted[k].mae.toFixed(2)}</b>`).join("");
+}
+
+function drawSeries(ctx, w_, h) {
+  ctx.clearRect(0, 0, w_, h);
+  if (!y.length) return;
+  const T = train.length, vals = [...y, ...cur.fc.filter(v => !isNaN(v))];
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const padY = (hi - lo) * 0.08 + 1; lo -= padY; hi += padY;
+  const sx = Lab.frame(0, N_TOTAL - 1, 40, w_ - 10), sy = Lab.frame(lo, hi, h - 22, 8);
+  const step = (hi - lo) > 60 ? 20 : 10, yt = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) yt.push(v);
+  Lab.axes(ctx, sx, sy, { xTicks: [0, 24, 48, 72, 96, 120, 143], yTicks: yt, xLabel: "t" });
+  // граница train / test
+  ctx.fillStyle = Lab.color("region-b"); ctx.fillRect(sx(T - 0.5), 8, sx(N_TOTAL - 1) - sx(T - 0.5) + 4, h - 30);
+  ctx.strokeStyle = Lab.color("axis"); ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(sx(T - 0.5), 8); ctx.lineTo(sx(T - 0.5), h - 22); ctx.stroke(); ctx.setLineDash([]);
+  const line = (xs, ys, col, width, dash) => {
+    ctx.strokeStyle = Lab.color(col); ctx.lineWidth = width; ctx.setLineDash(dash || []); ctx.beginPath();
+    let on = false;
+    xs.forEach((x, i) => { if (isNaN(ys[i])) { on = false; return; } on ? ctx.lineTo(sx(x), sy(ys[i])) : ctx.moveTo(sx(x), sy(ys[i])); on = true; });
+    ctx.stroke(); ctx.setLineDash([]);
+  };
+  const ts = n0 => (v, i) => n0 + i;
+  line(train.map(ts(0)), train, "muted", 1.2);
+  train.forEach((v, t) => Lab.dot(ctx, sx(t), sy(v), 1.8, Lab.color("muted")));
+  line(test.map(ts(T)), test, "c-ok", 1.2, [3, 3]);
+  test.forEach((v, k) => Lab.dot(ctx, sx(T + k), sy(v), 3, Lab.color("c-ok")));
+  line(train.map(ts(0)), cur.fit, "c-a", 2.2);
+  if (!isNaN(cur.fc[0])) {
+    line([T - 1, ...cur.fc.map(ts(T))], [cur.fit[T - 1] !== undefined && !isNaN(cur.fit[T - 1]) ? cur.fit[T - 1] : train[T - 1], ...cur.fc], "c-b", 2.6);
+  }
+  ctx.fillStyle = Lab.color("muted"); ctx.font = "12px system-ui, sans-serif"; ctx.textAlign = "left";
+  ctx.fillText("train", sx(2), 22); ctx.fillText("тест", sx(T) + 4, 22);
+}
+
+function drawWeights(ctx, w_, h) {
+  ctx.clearRect(0, 0, w_, h);
+  const K = 30, a = alpha.value, win = w.value;
+  const top = Math.max(a, 1 / win) * 1.1;
+  const sx = Lab.frame(-0.5, K + 0.5, 40, w_ - 10), sy = Lab.frame(0, top, h - 22, 8);
+  Lab.axes(ctx, sx, sy, { xTicks: [0, 5, 10, 15, 20, 25, 30], yTicks: [0, +(top / 2).toFixed(2), +top.toFixed(2)], xLabel: "k — сколько шагов назад", yLabel: "вес" });
+  const bw = (sx(1) - sx(0)) * 0.7;
+  for (let k = 0; k <= K; k++) {
+    const v = a * (1 - a) ** k;
+    ctx.fillStyle = Lab.color("c-a"); ctx.fillRect(sx(k) - bw / 2, sy(v), bw, sy(0) - sy(v));
+  }
+  // скользящее среднее: равные веса 1/w для последних w наблюдений
+  ctx.strokeStyle = Lab.color("c-ok"); ctx.lineWidth = 2.5; ctx.beginPath();
+  ctx.moveTo(sx(-0.5), sy(1 / win)); ctx.lineTo(sx(Math.min(win - 0.5, K + 0.5)), sy(1 / win));
+  if (win - 0.5 <= K + 0.5) { ctx.lineTo(sx(win - 0.5), sy(0)); ctx.lineTo(sx(K + 0.5), sy(0)); }
+  ctx.stroke();
+}
+
+methodEl.onchange = () => schedule(false);
+document.getElementById("fitBtn").onclick = () => {
+  if (!fitted) refresh();
+  const k = methodEl.value, p = fitted[k].p;
+  if (k === "hw") m.value = p.m;
+  if (k === "ma") w.value = p.w;
+  if (k !== "ma") alpha.value = p.alpha;
+  if (k === "holt" || k === "hw") beta.value = p.beta;
+  if (k === "hw") gamma.value = p.gamma;
+};
+document.getElementById("regen").onclick = () => { seed++; schedule(true); };
+refresh();
+</script>
+</body>
+</html>

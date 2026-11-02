@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="cross_validation time_series_validation learning_validation_curves imbalanced_data">
+<title>Кросс-валидация — интерактив</title>
+<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="lab.css?v=2">
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Кросс-валидация</h1><a href="../cheatsheets/cross_validation_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Каждая строка — один фолд: <b>синие</b> объекты идут в обучение, <b>оранжевые</b> — в валидацию.
+    На каждом фолде реально обучается k-NN (k = 5) и считается accuracy; внизу оценки фолдов сравниваются с <b>истинным</b>
+    качеством той же модели на 2000 новых объектах. Меняйте схему разбиения и данные — и смотрите, когда оценка честная, а когда нет.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="folds"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>train</span><span><i style="background:var(--c-b)"></i>validation</span><span><i style="background:var(--grid);border:1px solid var(--axis)"></i>не используется (gap / будущее)</span><span><i style="background:var(--c-bad)"></i>редкий класс (▪ в строках фолдов)</span><span>▬▬ группы (клиенты)</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Схема</h3>
+      <div class="ctl"><select id="scheme">
+        <option value="holdout">Hold-out (одно разбиение, доля 1/K)</option>
+        <option value="kfold">K-Fold без перемешивания</option>
+        <option value="kfold_shuffle" selected>K-Fold с перемешиванием</option>
+        <option value="stratified">Stratified K-Fold</option>
+        <option value="group">Group K-Fold</option>
+        <option value="timeseries">TimeSeriesSplit (расширяющееся окно)</option>
+        <option value="loo">Leave-One-Out</option>
+      </select></div>
+      <div class="ctl"><label for="K">Число фолдов K <output for="K"></output></label><input id="K" type="range" min="2" max="10" step="1" value="5"></div>
+      <div class="ctl"><label for="gap">Gap для TimeSeriesSplit <output for="gap"></output></label><input id="gap" type="range" min="0" max="20" step="1" value="0"></div>
+      <h3>Данные</h3>
+      <div class="ctl"><select id="mode">
+        <option value="iid" selected>Независимые объекты (i.i.d.)</option>
+        <option value="drift">Дрейф во времени</option>
+        <option value="groups">Группы (несколько объектов от клиента)</option>
+      </select></div>
+      <div class="ctl"><label for="N">Объектов N <output for="N"></output></label><input id="N" type="range" min="20" max="300" step="10" value="100"></div>
+      <div class="ctl"><label for="rare">Доля редкого класса <output for="rare"></output></label><input id="rare" type="range" min="0.05" max="0.5" step="0.01" value="0.3"></div>
+      <div class="buttons"><button id="regen">Новые данные</button></div>
+      <h3>Оценка</h3>
+      <div class="stats">
+        <span>CV-оценка accuracy</span><b id="est"></b>
+        <span>Истинное качество</span><b id="truth"></b>
+        <span>Ошибка оценки</span><b id="bias"></b>
+        <span>Фолдов без редкого класса</span><b id="empty"></b>
+        <span>Обучений модели</span><b id="fits"></b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Accuracy по фолдам, среднее ± std и истинное качество</h3><canvas id="scores"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>фолд</span><span><i style="background:var(--c-b)"></i>среднее ± std</span><span><i style="background:var(--c-ok)"></i>истинное качество</span></div></div>
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Ошибка оценки (оценка − истина) по повторам с разным seed</h3><canvas id="hist"></canvas>
+      <div class="legend"><span><i style="background:var(--c-b)"></i>hold-out</span><span><i style="background:var(--c-a)"></i>выбранная схема (для hold-out — K-Fold)</span><span>│ толстые линии — средние (смещение)</span></div>
+      <div class="buttons" style="margin:8px 4px 4px"><button class="primary" id="rep1">🎲 Повторить с другим seed</button><button id="rep50">×50 повторов</button><button id="repClear">Очистить</button></div>
+      <div class="stats" style="margin:0 6px 4px" id="repStats"></div></div>
+  </div>
+  <div class="card hint" style="margin-top:16px"><h3>Что попробовать</h3><ul>
+    <li>Схема «Hold-out», нажмите «×50 повторов»: гистограмма hold-out (одно разбиение) заметно шире, чем у K-Fold — одна валидационная выборка из N/K объектов даёт шумную оценку, а усреднение по K фолдам сужает разброс (при N = 100, K = 5 std ошибки hold-out ≈ 0.06–0.08, у K-Fold ≈ 0.035).</li>
+    <li>Доля редкого класса 0.05, N = 200, K = 10, «K-Fold с перемешиванием»: в нескольких фолдах нет ни одного объекта редкого класса (счётчик «Фолдов без редкого класса»). Переключитесь на «Stratified K-Fold» — в каждом фолде ровно по одному редкому объекту.</li>
+    <li>Данные «Дрейф во времени» (x₁ — номер недели, x₂ — цена с трендом, класс — «дорого относительно текущего уровня»): «K-Fold с перемешиванием», «×50 повторов» — оценка в среднем завышена на 0.15–0.18: валидационные объекты окружены обучающими из той же недели, а в будущем таких соседей нет. Выберите «TimeSeriesSplit» — смещение падает до 0.01–0.04 (разброс остаётся большим: качество в будущем само по себе шумное).</li>
+    <li>Данные «Группы»: перемешанный K-Fold кладёт объекты одного клиента и в train, и в validation и завышает качество примерно на 0.1 (видно по «×50 повторов»); «Group K-Fold» держит клиента целиком в одном фолде, и смещение исчезает (|смещение| ≤ 0.03).</li>
+    <li>«Leave-One-Out» при N = 30: 30 обучений, accuracy каждого фолда — 0 или 1, поэтому std фолдов огромный, а смысл имеет только среднее. При N = 300 это уже 300 обучений.</li>
+    <li>TimeSeriesSplit с gap = 10: между train и validation появляется зазор — так моделируют задержку между сбором признаков и моментом прогноза.</li>
+  </ul></div>
+</div>
+
+<script src="lab.js?v=2"></script>
+<script>
+// ===== Вычислительное ядро: данные, разбиения, k-NN, оценки =====
+const KNN_K = 5, TRUTH_N = 2000, TREND = 10, WEEKS = 10;
+
+// «Мир», из которого берутся данные. sample(n, t0, t1) выдаёт объекты с моментами времени t ∈ [t0, t1),
+// идущие подряд группами (клиентами) по 3–10 объектов. Каждый вызов sample создаёт новых клиентов.
+function makeWorld(mode, pRare, seed) {
+  const r = Lab.rng(seed);
+  let nextGroup = 0;
+  // группы: метка = [x₁ + 0.5·x₂ + эффект клиента b + шум > τ]; дрейф: метка = [x₂ − уровень(t) + шум > τ].
+  // Порог τ подбирается под заданную долю редкого класса.
+  const groupScore = (x, b) => x[0] + 0.5 * x[1] + b + 0.3 * r.normal();
+  let tau = 0;
+  if (mode !== "iid") {
+    const q = Lab.rng(seed + 777), s = [];
+    for (let i = 0; i < 20000; i++) {
+      if (mode === "groups") {
+        const z = [q.normal(), q.normal()], b = 1.2 * q.normal();
+        s.push(z[0] + 0.35 * q.normal() + 0.5 * (z[1] + 0.35 * q.normal()) + b + 0.3 * q.normal());
+      } else s.push(q.normal() + 0.3 * q.normal());
+    }
+    s.sort((a, b) => a - b);
+    tau = s[Math.floor((1 - pRare) * s.length)];
+  }
+  // дрейф: x₁ — «календарный» признак (номер недели, 0…10 за период наблюдения), x₂ — величина с трендом
+  // (например, цена), а класс зависит от отклонения x₂ от текущего уровня цен. Уровень растёт на TREND за период.
+  const level = t => TREND * t;
+  function sample(n, t0, t1) {
+    const X = [], y = [], g = [], t = [];
+    let left = 0, center = null, bias = 0;
+    // в i.i.d.-режиме число объектов редкого класса ровно round(p·n), их места случайны
+    const labels = shuffle(Array.from({ length: n }, (_, i) => i < Math.round(pRare * n) ? 1 : 0), r);
+    for (let i = 0; i < n; i++) {
+      if (left === 0) {   // новый клиент
+        left = 3 + Math.floor(r() * 8); nextGroup++;
+        center = [r.normal(), r.normal()]; bias = 1.2 * r.normal();
+      }
+      left--;
+      const ti = t0 + (i + 0.5) / n * (t1 - t0);
+      let x, c;
+      if (mode === "groups") {
+        x = [center[0] + 0.35 * r.normal(), center[1] + 0.35 * r.normal()];
+        c = groupScore(x, bias) > tau ? 1 : 0;
+      } else if (mode === "drift") {
+        const dev = r.normal();
+        x = [WEEKS * ti + 0.1 * r.normal(), level(ti) + dev];
+        c = dev + 0.3 * r.normal() > tau ? 1 : 0;
+      } else {
+        c = labels[i];
+        const sgn = c ? 1 : -1;
+        x = [sgn * 0.8 + 0.75 * r.normal(), sgn * 0.55 + 0.75 * r.normal()];
+      }
+      X.push(x); y.push(c); g.push(nextGroup); t.push(ti);
+    }
+    return { X, y, g, t, n };
+  }
+  return { sample };
+}
+
+function shuffle(a, r) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+// Разбиения в духе sklearn. Возвращает массив фолдов { train: [...], val: [...] } (индексы объектов).
+function makeSplits(scheme, data, K, gap, r) {
+  const n = data.n, idx = [...Array(n).keys()];
+  const byFold = (fold, k) => Array.from({ length: k }, (_, f) => ({ train: idx.filter(i => fold[i] !== f), val: idx.filter(i => fold[i] === f) }));
+  const fold = new Array(n).fill(-1);
+  if (scheme === "holdout") {
+    const a = shuffle(idx.slice(), r), m = Math.max(1, Math.round(n / K));
+    a.slice(0, m).forEach(i => fold[i] = 0);
+    return [byFold(fold, 1)[0]];
+  }
+  if (scheme === "kfold" || scheme === "kfold_shuffle") {
+    const a = scheme === "kfold" ? idx.slice() : shuffle(idx.slice(), r);
+    let p = 0;
+    for (let f = 0; f < K; f++) { const size = Math.floor(n / K) + (f < n % K ? 1 : 0); for (let j = 0; j < size; j++) fold[a[p++]] = f; }
+    return byFold(fold, K);
+  }
+  if (scheme === "stratified") {
+    // объекты каждого класса перемешиваются и раздаются по фолдам по кругу — доли классов в фолдах почти равны
+    const order = [...shuffle(idx.filter(i => data.y[i] === 1), r), ...shuffle(idx.filter(i => data.y[i] === 0), r)];
+    order.forEach((i, p) => fold[i] = p % K);
+    return byFold(fold, K);
+  }
+  if (scheme === "group") {
+    // как GroupKFold: группы по убыванию размера, каждую — в самый маленький пока фолд
+    const sizes = new Map();
+    data.g.forEach(gr => sizes.set(gr, (sizes.get(gr) || 0) + 1));
+    const groups = [...sizes.keys()].sort((a, b) => sizes.get(b) - sizes.get(a) || a - b);
+    const load = new Array(K).fill(0), gf = new Map();
+    groups.forEach(gr => { let f = 0; for (let j = 1; j < K; j++) if (load[j] < load[f]) f = j; gf.set(gr, f); load[f] += sizes.get(gr); });
+    idx.forEach(i => fold[i] = gf.get(data.g[i]));
+    return byFold(fold, K);
+  }
+  if (scheme === "timeseries") {
+    const ts = Math.floor(n / (K + 1)), g = effectiveGap(n, K, gap), out = [];
+    for (let f = 0; f < K; f++) {
+      const vs = n - (K - f) * ts;
+      out.push({ train: idx.slice(0, vs - g), val: idx.slice(vs, vs + ts) });
+    }
+    return out;
+  }
+  // leave-one-out
+  return idx.map(i => ({ train: idx.filter(j => j !== i), val: [i] }));
+}
+// gap не может «съесть» весь первый train: в нём остаётся хотя бы k объектов
+function effectiveGap(n, K, gap) { const ts = Math.floor(n / (K + 1)); return Math.max(0, Math.min(gap, n - K * ts - KNN_K)); }
+
+// k-NN (k = 5, евклидово расстояние, голосование большинством)
+function knnPredict(X, y, trainIdx, x) {
+  const k = Math.min(KNN_K, trainIdx.length), bestD = new Array(k).fill(Infinity), bestY = new Array(k).fill(0);
+  for (const i of trainIdx) {
+    const d = (X[i][0] - x[0]) ** 2 + (X[i][1] - x[1]) ** 2;
+    if (d >= bestD[k - 1]) continue;
+    let p = k - 1;
+    while (p > 0 && bestD[p - 1] > d) { bestD[p] = bestD[p - 1]; bestY[p] = bestY[p - 1]; p--; }
+    bestD[p] = d; bestY[p] = y[i];
+  }
+  let ones = 0; for (let j = 0; j < k; j++) ones += bestY[j];
+  return ones * 2 > k ? 1 : 0;
+}
+function foldAccuracy(data, f) {
+  let ok = 0;
+  f.val.forEach(i => { if (knnPredict(data.X, data.y, f.train, data.X[i]) === data.y[i]) ok++; });
+  return ok / f.val.length;
+}
+const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+const std = a => { const m = mean(a); return Math.sqrt(a.reduce((s, v) => s + (v - m) ** 2, 0) / a.length); };   // как np.std у cross_val_score
+
+// Истинное качество: модель, обученная на всех N объектах, на 2000 новых.
+// Для дрейфа новые объекты — из ближайшего будущего (t ∈ [1, 1.2)), для групп — от новых клиентов.
+function trueAccuracy(world, data) {
+  const test = world.sample(TRUTH_N, 1, 1.2), all = [...Array(data.n).keys()];
+  let ok = 0;
+  for (let i = 0; i < TRUTH_N; i++) if (knnPredict(data.X, data.y, all, test.X[i]) === test.y[i]) ok++;
+  return ok / TRUTH_N;
+}
+
+// Один полный эксперимент для заданного seed
+function experiment(cfg, seed, scheme) {
+  const world = makeWorld(cfg.mode, cfg.pRare, seed);
+  const data = world.sample(cfg.N, 0, 1);
+  const folds = makeSplits(scheme, data, cfg.K, cfg.gap, Lab.rng(seed * 31 + 7));
+  const acc = folds.map(f => foldAccuracy(data, f));
+  const truth = trueAccuracy(world, data);
+  const rareIn = folds.map(f => f.val.reduce((s, i) => s + data.y[i], 0));
+  return { data, folds, acc, truth, est: mean(acc), sd: std(acc), rareIn };
+}
+// Повтор для гистограммы: hold-out против выбранной схемы (для hold-out — против перемешанного K-Fold)
+function repeatOnce(cfg, seed, scheme) {
+  const other = scheme === "holdout" ? "kfold_shuffle" : scheme;
+  const world = makeWorld(cfg.mode, cfg.pRare, seed), data = world.sample(cfg.N, 0, 1), truth = trueAccuracy(world, data);
+  const est = s => mean(makeSplits(s, data, cfg.K, cfg.gap, Lab.rng(seed * 31 + 7)).map(f => foldAccuracy(data, f)));
+  return { hold: est("holdout") - truth, cv: est(other) - truth, other };
+}
+// ===== конец ядра =====
+
+const NAMES = { holdout: "Hold-out", kfold: "K-Fold", kfold_shuffle: "K-Fold (перемеш.)", stratified: "Stratified K-Fold", group: "Group K-Fold", timeseries: "TimeSeriesSplit", loo: "Leave-One-Out" };
+const schemeEl = document.getElementById("scheme"), modeEl = document.getElementById("mode");
+let seed = 1, res = null, reps = { hold: [], cv: [], other: "kfold_shuffle" }, pending = false;
+
+const K = Lab.slider("K", () => schedule(true), v => v);
+const N = Lab.slider("N", () => schedule(true), v => v);
+const rare = Lab.slider("rare", () => schedule(true), v => Math.round(v * 100) + "%");
+const gap = Lab.slider("gap", () => schedule(true), v => v);
+const foldsView = Lab.canvas(document.getElementById("folds"), 0.62, drawFolds);
+const scoresView = Lab.canvas(document.getElementById("scores"), 0.55, drawScores);
+const histView = Lab.canvas(document.getElementById("hist"), 0.45, drawHist);
+
+const cfg = () => ({ mode: modeEl.value, pRare: rare.value, N: N.value, K: K.value, gap: gap.value });
+
+// Пересчёт тяжёлый (k-NN по 2000 тестовым объектам), поэтому собираем изменения ползунков в один кадр
+function schedule(clearReps) {
+  if (clearReps) reps = { hold: [], cv: [], other: reps.other };
+  if (pending) return;
+  pending = true;
+  requestAnimationFrame(() => { pending = false; refresh(); });
+}
+
+function refresh() {
+  const scheme = schemeEl.value;
+  res = experiment(cfg(), seed, scheme);
+  const pct = v => v.toFixed(3);
+  document.getElementById("est").textContent = res.folds.length > 1 ? `${pct(res.est)} ± ${pct(res.sd)}` : pct(res.est);
+  document.getElementById("truth").textContent = pct(res.truth);
+  const b = res.est - res.truth;
+  const biasEl = document.getElementById("bias");
+  biasEl.textContent = (b >= 0 ? "+" : "−") + Math.abs(b).toFixed(3);
+  biasEl.style.color = Math.abs(b) > 0.07 ? Lab.color("c-bad") : "";
+  const empty = res.rareIn.filter(c => c === 0).length;
+  document.getElementById("empty").textContent = scheme === "loo" ? "—" : `${empty} из ${res.folds.length}`;
+  document.getElementById("empty").style.color = empty && scheme !== "loo" ? Lab.color("c-bad") : "";
+  document.getElementById("fits").textContent = res.folds.length;
+  document.getElementById("gap").disabled = scheme !== "timeseries";
+  foldsView.redraw(); scoresView.redraw(); histView.redraw(); repStats();
+}
+
+function drawFolds(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!res) return;
+  const { data, folds, acc, rareIn } = res, n = data.n, scheme = schemeEl.value;
+  const L = 44, R = 118, cw = (w - L - R) / n, x = i => L + i * cw;
+  ctx.font = "11px system-ui, sans-serif"; ctx.textBaseline = "middle";
+  // шапка: класс и группы
+  const label = (txt, y) => { ctx.fillStyle = Lab.color("muted"); ctx.textAlign = "right"; ctx.fillText(txt, L - 6, y); };
+  label("класс", 14);
+  for (let i = 0; i < n; i++) { ctx.fillStyle = Lab.color(data.y[i] ? "c-bad" : "axis"); ctx.fillRect(x(i), 6, Math.max(cw - (cw > 3 ? 1 : 0), 0.8), 16); }
+  label("группа", 33);
+  let shade = 0;
+  for (let i = 0; i < n; i++) {
+    if (i && data.g[i] !== data.g[i - 1]) shade ^= 1;
+    ctx.fillStyle = Lab.color(shade ? "text" : "axis"); ctx.fillRect(x(i), 29, cw + 0.2, 7);
+  }
+  ctx.fillStyle = Lab.color("muted"); ctx.textAlign = "left";
+  ctx.fillText(`время → (объекты в порядке поступления)`, L, 48);
+  // строки фолдов
+  const top = 60, maxRows = 60, rows = Math.min(folds.length, maxRows);
+  const rh = Math.min(36, (h - top - (folds.length > maxRows ? 16 : 4)) / rows), cell = Math.max(rh - (rh > 6 ? 3 : 1), 1);
+  const used = new Array(n);
+  for (let f = 0; f < rows; f++) {
+    const y0 = top + f * rh;
+    used.fill(0);
+    folds[f].train.forEach(i => used[i] = 1);
+    folds[f].val.forEach(i => used[i] = 2);
+    for (let i = 0; i < n; i++) {
+      const col = used[i] === 1 ? "c-a" : used[i] === 2 ? "c-b" : "grid";
+      ctx.fillStyle = Lab.color(col); ctx.fillRect(x(i), y0, Math.max(cw - (cw > 3 ? 1 : 0), 0.8), cell);
+      if (data.y[i] && used[i] && cell >= 6) { ctx.fillStyle = Lab.color("text"); ctx.fillRect(x(i) + cw * 0.2, y0 + cell * 0.55, Math.max(cw * 0.6 - 0.5, 1), cell * 0.35); }
+    }
+    if (rh >= 9) {
+      ctx.font = (rh >= 14 ? 11 : 9) + "px system-ui, sans-serif";
+      label(scheme === "holdout" ? "split" : "Ф" + (f + 1), y0 + cell / 2);
+      ctx.textAlign = "left"; ctx.fillStyle = Lab.color("text");
+      ctx.fillText(`acc ${acc[f].toFixed(2)}`, w - R + 6, y0 + cell / 2);
+      if (scheme !== "loo") { ctx.fillStyle = Lab.color(rareIn[f] ? "muted" : "c-bad"); ctx.fillText(`ред. ${rareIn[f]}`, w - R + 64, y0 + cell / 2); }
+    }
+  }
+  if (folds.length > maxRows) { ctx.fillStyle = Lab.color("muted"); ctx.textAlign = "left"; ctx.font = "11px system-ui, sans-serif"; ctx.fillText(`… и ещё ${folds.length - maxRows} фолдов (всего ${folds.length} обучений)`, L, h - 8); }
+}
+
+function drawScores(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!res) return;
+  const { acc, truth, est, sd } = res;
+  const lo = Math.max(0, Math.floor(Math.min(...acc, truth, est - sd) * 10 - 0.5) / 10);
+  const sx = Lab.frame(lo, 1, 40, w - 14), sy = Lab.frame(0, 1, h - 22, 8);
+  const ticks = []; for (let t = lo; t <= 1.0001; t += lo < 0.5 ? 0.2 : 0.1) ticks.push(+t.toFixed(1));
+  Lab.axes(ctx, sx, sy, { xTicks: ticks, xLabel: "accuracy" });
+  // полоса среднее ± std
+  const yb = sy(0.5);
+  ctx.fillStyle = Lab.color("region-b"); ctx.fillRect(sx(Math.max(lo, est - sd)), 10, sx(Math.min(1, est + sd)) - sx(Math.max(lo, est - sd)), h - 34);
+  ctx.strokeStyle = Lab.color("c-b"); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(sx(est), 10); ctx.lineTo(sx(est), h - 24); ctx.stroke();
+  ctx.strokeStyle = Lab.color("c-ok"); ctx.lineWidth = 2.5; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(sx(truth), 10); ctx.lineTo(sx(truth), h - 24); ctx.stroke(); ctx.setLineDash([]);
+  // точки фолдов: одинаковые значения раскладываются по вертикали
+  const n = acc.length, r = n > 60 ? 2 : 4.5;
+  acc.forEach((a, f) => {
+    const y = n === 1 ? yb : sy(0.08 + 0.84 * (f + 0.5) / n);
+    Lab.dot(ctx, sx(a), y, r, Lab.color("c-a"), n > 60 ? null : Lab.color("panel"));
+  });
+  ctx.font = "12px system-ui, sans-serif"; ctx.fillStyle = Lab.color("text");
+  ctx.textAlign = sx(truth) > w - 120 ? "right" : "left";
+  ctx.fillText(`истина ${truth.toFixed(3)}`, sx(truth) + (ctx.textAlign === "right" ? -5 : 5), 20);
+  ctx.textAlign = sx(est) > w - 120 ? "right" : "left";
+  ctx.fillText(`среднее ${est.toFixed(3)}`, sx(est) + (ctx.textAlign === "right" ? -5 : 5), h - 32);
+}
+
+function drawHist(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  const R = 0.4, sx = Lab.frame(-R, R, 30, w - 10), bins = 16, bw = 2 * R / bins;
+  const count = a => { const c = new Array(bins).fill(0); a.forEach(v => c[Math.max(0, Math.min(bins - 1, Math.floor((v + R) / bw)))]++); return c; };
+  const ch = count(reps.hold), cc = count(reps.cv), top = Math.max(4, ...ch, ...cc);
+  const sy = Lab.frame(0, top, h - 22, 8);
+  Lab.axes(ctx, sx, sy, { xTicks: [-0.4, -0.2, 0, 0.2, 0.4], yTicks: [0, top], xLabel: "оценка − истина (крайние столбцы — «и дальше»)" });
+  [[ch, "c-b", 0], [cc, "c-a", 1]].forEach(([c, col, k]) => {
+    c.forEach((v, b) => {
+      if (!v) return;
+      const x0 = sx(-R + b * bw), x1 = sx(-R + (b + 1) * bw);
+      ctx.globalAlpha = 0.55; ctx.fillStyle = Lab.color(col); ctx.fillRect(x0 + 1, sy(v), x1 - x0 - 2, sy(0) - sy(v)); ctx.globalAlpha = 1;
+      ctx.strokeStyle = Lab.color(col); ctx.lineWidth = 1.5; ctx.strokeRect(x0 + 1, sy(v), x1 - x0 - 2, sy(0) - sy(v));
+    });
+  });
+  ctx.strokeStyle = Lab.color("c-ok"); ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+  ctx.beginPath(); ctx.moveTo(sx(0), 8); ctx.lineTo(sx(0), h - 22); ctx.stroke(); ctx.setLineDash([]);
+  // средние ошибки (смещения) обеих оценок
+  if (reps.hold.length) [[reps.hold, "c-b"], [reps.cv, "c-a"]].forEach(([a, col]) => {
+    const m = Math.max(-R, Math.min(R, mean(a)));
+    ctx.strokeStyle = Lab.color(col); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(sx(m), 8); ctx.lineTo(sx(m), h - 22); ctx.stroke();
+  });
+  if (!reps.hold.length) { ctx.fillStyle = Lab.color("muted"); ctx.textAlign = "center"; ctx.font = "13px system-ui, sans-serif"; ctx.fillText("нажмите «Повторить» или «×50 повторов»", w / 2, h / 2); }
+}
+
+function repStats() {
+  const el = document.getElementById("repStats"), n = reps.hold.length;
+  if (!n) { el.innerHTML = ""; return; }
+  const row = (name, col, a) => `<span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--${col});margin-right:6px"></i>${name}: смещение / std</span><b>${(mean(a) >= 0 ? "+" : "−") + Math.abs(mean(a)).toFixed(3)} / ${std(a).toFixed(3)}</b>`;
+  el.innerHTML = `<span>Повторов</span><b>${n}</b>` + row("Hold-out", "c-b", reps.hold) + row(NAMES[reps.other], "c-a", reps.cv);
+}
+
+function addRepeats(m) {
+  const c = cfg(), scheme = schemeEl.value;
+  for (let j = 0; j < m; j++) {
+    seed++;
+    const o = repeatOnce(c, seed, scheme);
+    reps.hold.push(o.hold); reps.cv.push(o.cv); reps.other = o.other;
+  }
+  refresh();
+}
+
+schemeEl.onchange = () => { reps = { hold: [], cv: [], other: schemeEl.value === "holdout" ? "kfold_shuffle" : schemeEl.value }; schedule(false); };
+modeEl.onchange = () => schedule(true);
+document.getElementById("regen").onclick = () => { seed++; schedule(false); };
+document.getElementById("rep1").onclick = () => addRepeats(1);
+document.getElementById("rep50").onclick = () => addRepeats(50);
+document.getElementById("repClear").onclick = () => schedule(true);
+reps.other = schemeEl.value;
+refresh();
+</script>
+</body>
+</html>

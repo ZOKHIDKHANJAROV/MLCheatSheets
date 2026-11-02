@@ -170,349 +170,161 @@
 
 <div class="container">
 
-  <h1>🎯 Музыкальные нейросети</h1>
+  <h1>🎵 Музыкальные нейросети</h1>
   <div class="subtitle">📅 Январь 2026</div>
 
   <div class="block">
-    <h2>🔷 1. Что такое музыкальные нейросети?</h2>
-    <p><strong>Музыкальные нейросети</strong> — нейронные сети для генерации, анализа и обработки музыки.</p>
-<ul>
-  <li><strong>Цель</strong>: обнаружение проблем с моделью</li>
-  <li><strong>Performance drift</strong>: ухудшение метрик</li>
-  <li><strong>Data drift</strong>: изменение распределения данных</li>
-  <li><strong>Concept drift</strong>: изменение отношений в данных</li>
-</ul>
-<blockquote>💡 "Модели деградируют со временем — нужен постоянный мониторинг"</blockquote>
+    <h2>🔷 1. Представления музыки</h2>
+    <table>
+      <tr><th>Представление</th><th>Что это</th><th>Плюсы / минусы</th></tr>
+      <tr><td><strong>MIDI / события</strong></td><td>NOTE_ON, NOTE_OFF, TIME_SHIFT, VELOCITY (Performance RNN), REMI (такт, позиция, высота, длительность)</td><td>короткие последовательности, моделируются как язык; нет тембра и голоса</td></tr>
+      <tr><td><strong>Piano-roll</strong></td><td>матрица 128 высот × время (бинарная или громкость)</td><td>удобно для CNN/полифонии; разрежена, грубая сетка по времени</td></tr>
+      <tr><td><strong>Сырое аудио</strong></td><td>волна 16–48 кГц</td><td>передаёт всё (тембр, вокал, микс); огромная длина</td></tr>
+      <tr><td><strong>Спектрограммы</strong></td><td>STFT, mel, CQT (логарифмическая шкала частот, удобна для нот)</td><td>стандарт для классификации и транскрипции; для синтеза нужен вокодер</td></tr>
+      <tr><td><strong>Токены кодека</strong></td><td>EnCodec, SoundStream, DAC: RVQ из нескольких кодбуков, ~50–75 кадров/с</td><td>дискретно и компактно — генерируют трансформером</td></tr>
+    </table>
+    <p>См. <a href="audio_processing_spectrograms_mfcc_cheatsheet.html">спектрограммы и MFCC</a>.</p>
+  </div>
 
+  <div class="block">
+    <h2>🔷 2. Задачи (MIR и генерация)</h2>
+    <ul>
+      <li><strong>Генерация</strong>: символьная (мелодии, аккомпанемент, гармонизация) и аудио (text-to-music, продолжение трека)</li>
+      <li><strong>Транскрипция</strong> (AMT): аудио → ноты/MIDI (Onsets and Frames, MT3, Basic Pitch)</li>
+      <li><strong>Разделение источников</strong>: вокал / барабаны / бас / прочее (Spleeter, Open-Unmix, Demucs)</li>
+      <li><strong>Классификация жанров</strong>, настроения, инструментов</li>
+      <li><strong>Авто-тегирование</strong>: multi-label теги (rock, female vocal, guitar)</li>
+      <li><strong>Ритм и гармония</strong>: детекция битов и темпа, распознавание аккордов, тональности</li>
+      <li><strong>Рекомендации и поиск</strong>: эмбеддинги треков, cover song detection, текст↔аудио (CLAP, MuLan)</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 3. Почему сырое аудио — трудно</h2>
+    <ul>
+      <li>44.1 кГц: 1 секунда = 44 100 отсчётов, 3 минуты ≈ 8 млн шагов</li>
+      <li>Структура музыки — на масштабе минут (куплет, припев), детали — на микросекундах</li>
+      <li><strong>Решение</strong>: нейронный кодек сжимает аудио в токены. EnCodec 32 кГц (для MusicGen): 50 кадров/с × 4 кодбука → 200 токенов/с вместо 32 000 отсчётов</li>
+      <li><strong>RVQ</strong> (residual vector quantization): каждый следующий кодбук кодирует остаток предыдущего; первые — грубая структура, последние — детали</li>
+      <li>Альтернатива — латентная диффузия по непрерывным латентам VAE (Stable Audio)</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 4. Символьные модели</h2>
+    <ul>
+      <li><strong>RNN/LSTM</strong> (Magenta MelodyRNN, Performance RNN): предсказание следующего события; хороши локально, теряют форму</li>
+      <li><strong>MusicVAE</strong>: иерархический VAE, латентное пространство мелодий, интерполяция</li>
+      <li><strong>Music Transformer</strong> (Huang et al., 2018): <strong>относительное позиционное внимание</strong> — музыка держится на повторах и интервалах, важна относительная дистанция, а не абсолютная позиция. Трюк «skewing» снижает память с O(L²D) до O(LD)</li>
+      <li><strong>Pop Music Transformer</strong> (REMI-токены с тактами и позициями), MuseNet (GPT-подобная, много инструментов)</li>
+    </ul>
+    <p><strong>Почему next-note даёт «музыку без формы»</strong>: модель учит локальные переходы, а не крупную структуру. Помогают длинный контекст, иерархия (такты → фразы), условия на аккорды/секции, относительное внимание.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 5. Аудио-модели</h2>
+    <table>
+      <tr><th>Модель</th><th>Суть</th></tr>
+      <tr><td><strong>WaveNet</strong> (2016)</td><td>авторегрессия по отсчётам, каузальные dilated-свёртки (рецептивное поле растёт экспоненциально), μ-law 256 уровней; медленный инференс</td></tr>
+      <tr><td><strong>Jukebox</strong> (OpenAI, 2020)</td><td>3-уровневый VQ-VAE + трансформеры по уровням, условие на жанр, исполнителя и текст; часы вычислений на минуту</td></tr>
+      <tr><td><strong>MusicLM</strong> (Google, 2023)</td><td>иерархия семантических (w2v-BERT) и акустических (SoundStream) токенов, условие через MuLan</td></tr>
+      <tr><td><strong>MusicGen</strong> (Meta, 2023)</td><td>один трансформер по 4 кодбукам EnCodec с «delay pattern» (кодбуки сдвинуты по времени), условие — текст (T5) и/или мелодия (хромаграмма)</td></tr>
+      <tr><td><strong>Stable Audio</strong></td><td>латентная диффузия + условие на длительность</td></tr>
+      <tr><td><strong>Demucs</strong> (Meta)</td><td>разделение источников: U-Net во временной области; Hybrid / HT Demucs объединяет волну и спектрограмму с трансформером</td></tr>
+    </table>
+  </div>
+
+  <div class="block">
+    <h2>🔷 6. Код: признаки с librosa</h2>
+<pre><code>import numpy as np
+import librosa
+
+y, sr = librosa.load("track.wav", sr=22050, mono=True)
+
+tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
+beat_times = librosa.frames_to_time(beats, sr=sr)
+
+mel = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=2048,
+                                     hop_length=512, n_mels=128)
+mel_db = librosa.power_to_db(mel, ref=np.max)   # вход для CNN
+mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20)
+chroma = librosa.feature.chroma_cqt(y=y, sr=sr)  # 12 классов высот
+onset_env = librosa.onset.onset_strength(y=y, sr=sr)
+
+print(mel_db.shape, mfcc.shape, chroma.shape)   # (128, T) (20, T) (12, T)
+</code></pre>
+    <p>Для MIDI: <code>pretty_midi.PrettyMIDI("song.mid").get_piano_roll(fs=16)</code> → матрица 128 × T.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 7. Код: MusicGen (transformers)</h2>
+<pre><code>import scipy.io.wavfile
+from transformers import AutoProcessor, MusicgenForConditionalGeneration
+
+processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
+model = MusicgenForConditionalGeneration.from_pretrained(
+    "facebook/musicgen-small")
+
+inputs = processor(text=["lo-fi hip hop beat with mellow piano"],
+                   padding=True, return_tensors="pt")
+audio = model.generate(**inputs, do_sample=True,
+                       guidance_scale=3, max_new_tokens=256)  # ~5 c
+
+sr = model.config.audio_encoder.sampling_rate        # 32000
+scipy.io.wavfile.write("musicgen.wav", rate=sr,
+                       data=audio[0, 0].numpy())
+</code></pre>
+    <p>Через audiocraft: <code>MusicGen.get_pretrained("facebook/musicgen-small")</code>, <code>model.set_generation_params(duration=8)</code>, <code>model.generate([...])</code>. Разделение: <code>demucs --two-stems=vocals song.mp3</code>.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 8. Метрики</h2>
+    <table>
+      <tr><th>Задача</th><th>Метрики</th></tr>
+      <tr><td>Генерация аудио</td><td><strong>FAD</strong> (Fréchet Audio Distance по эмбеддингам VGGish/CLAP), KL по предсказаниям классификатора тегов, CLAP score (соответствие тексту)</td></tr>
+      <tr><td>Символьная генерация</td><td>статистики высот, ритма, плотности нот, гистограмма pitch class, доля повторов</td></tr>
+      <tr><td>Транскрипция</td><td>note-level F1 (mir_eval), допуск по онсету 50 мс</td></tr>
+      <tr><td>Разделение</td><td>SDR / SI-SDR (дБ)</td></tr>
+      <tr><td>Тегирование, жанры</td><td>ROC-AUC, PR-AUC; accuracy для жанров</td></tr>
+    </table>
+    <p>Объективные метрики показывают близость к данным, но не музыкальность → обязательны слушательские тесты (MOS, A/B). Проверяйте <strong>запоминание</strong>: поиск совпадений сгенерированного с обучающими треками. GTZAN содержит дубликаты и повторяющихся исполнителей — разбивайте по артистам.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 9. Авторские права и этика</h2>
+    <ul>
+      <li><strong>Данные</strong>: обучение на защищённых записях — предмет исков (RIAA против Suno и Udio, 2024); MusicGen обучен на ~20 тыс. часов лицензированной музыки</li>
+      <li><strong>Лицензии весов</strong>: веса MusicGen — CC-BY-NC 4.0 (некоммерческое использование)</li>
+      <li><strong>Запоминание</strong>: модель может воспроизвести фрагменты мелодий или текстов из обучения</li>
+      <li><strong>Голоса артистов</strong>: клонирование голоса без согласия — правовой и этический риск</li>
+      <li><strong>Прозрачность</strong>: водяные знаки (AudioSeal), маркировка ИИ-контента</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 10. Типичные ошибки</h2>
+    <div class="good-vs-bad">
+      <div class="bad">
+        <h3>Плохо</h3>
+        <ul>
+          <li>Сплит по трекам, когда в train и test один артист/альбом</li>
+          <li>Смешивать частоты дискретизации без ресемплинга</li>
+          <li>Судить о качестве генерации только по FAD</li>
+          <li>Генерировать сырые отсчёты без кодека</li>
+        </ul>
+      </div>
+      <div class="good">
+        <h3>Хорошо</h3>
+        <ul>
+          <li>Сплит по артистам, аугментации (pitch shift, time stretch, mixup)</li>
+          <li>log-mel + предобученные эмбеддинги (PANNs, CLAP, MERT)</li>
+          <li>Слушательские тесты и проверка запоминания</li>
+          <li>Проверять лицензии данных и весов</li>
+        </ul>
+      </div>
     </div>
-<div class="block">
-    <h2>🔷 2. Метрики для мониторинга</h2>
-    <table>
-  <tr><th>Категория</th><th>Метрики</th></tr>
-  <tr><td><strong>Performance</strong></td><td>Accuracy, F1, AUC, MAE, latency</td></tr>
-  <tr><td><strong>Data quality</strong></td><td>Missing values, outliers, schema violations</td></tr>
-  <tr><td><strong>Data drift</strong></td><td>KL divergence, PSI, KS test</td></tr>
-  <tr><td><strong>Infrastructure</strong></td><td>CPU, memory, throughput, errors</td></tr>
-  <tr><td><strong>Business</strong></td><td>Revenue, conversion, user satisfaction</td></tr>
-</table>
+    <p>См. также: <a href="audio_generation_cheatsheet.html">генерация аудио</a>, <a href="audio_classification_cheatsheet.html">классификация аудио</a>.</p>
   </div>
-
-  <div class="block">
-    <h2>🔷 3. Data drift detection</h2>
-    <pre><code>from scipy.stats import ks_2samp
-import numpy as np
-
-def detect_data_drift(reference_data, current_data, threshold=0.05):
-    """
-    Kolmogorov-Smirnov тест для drift detection
-    """
-    results = {}
-    
-    for column in reference_data.columns:
-        # KS test
-        statistic, pvalue = ks_2samp(
-            reference_data[column],
-            current_data[column]
-        )
-        
-        # Drift detected если p-value < threshold
-        drift = pvalue < threshold
-        
-        results[column] = {
-            'statistic': statistic,
-            'pvalue': pvalue,
-            'drift_detected': drift
-        }
-    
-    return results
-
-# PSI (Population Stability Index)
-def calculate_psi(expected, actual, bins=10):
-    """
-    PSI = sum((actual% - expected%) * ln(actual% / expected%))
-    """
-    # Бинирование
-    breakpoints = np.linspace(expected.min(), expected.max(), bins + 1)
-    
-    expected_percents = np.histogram(expected, breakpoints)[0] / len(expected)
-    actual_percents = np.histogram(actual, breakpoints)[0] / len(actual)
-    
-    # Avoid division by zero
-    expected_percents = np.where(expected_percents == 0, 0.0001, expected_percents)
-    actual_percents = np.where(actual_percents == 0, 0.0001, actual_percents)
-    
-    psi = np.sum((actual_percents - expected_percents) * np.log(actual_percents / expected_percents))
-    
-    return psi
-
-# Интерпретация PSI
-# PSI < 0.1: no significant change
-# 0.1 < PSI < 0.2: moderate change
-# PSI > 0.2: significant change</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 4. Performance monitoring</h2>
-    <pre><code>import mlflow
-from sklearn.metrics import accuracy_score, f1_score
-
-class ModelMonitor:
-    def __init__(self, model_name, threshold=0.05):
-        self.model_name = model_name
-        self.threshold = threshold
-        self.baseline_metrics = {}
-    
-    def set_baseline(self, y_true, y_pred):
-        """Установить baseline метрики"""
-        self.baseline_metrics = {
-            'accuracy': accuracy_score(y_true, y_pred),
-            'f1': f1_score(y_true, y_pred, average='weighted')
-        }
-    
-    def check_performance(self, y_true, y_pred):
-        """Проверить текущую performance"""
-        current_metrics = {
-            'accuracy': accuracy_score(y_true, y_pred),
-            'f1': f1_score(y_true, y_pred, average='weighted')
-        }
-        
-        # Сравнение с baseline
-        alerts = []
-        for metric_name in current_metrics:
-            baseline = self.baseline_metrics.get(metric_name)
-            current = current_metrics[metric_name]
-            
-            if baseline and (baseline - current) > self.threshold:
-                alerts.append({
-                    'metric': metric_name,
-                    'baseline': baseline,
-                    'current': current,
-                    'degradation': baseline - current
-                })
-        
-        # Log в MLflow
-        with mlflow.start_run():
-            for metric_name, value in current_metrics.items():
-                mlflow.log_metric(metric_name, value)
-        
-        return {'metrics': current_metrics, 'alerts': alerts}</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 5. Prometheus & Grafana</h2>
-    <pre><code># Экспорт метрик в Prometheus
-from prometheus_client import Counter, Histogram, Gauge
-
-# Метрики
-predictions_total = Counter('model_predictions_total', 'Total predictions')
-prediction_latency = Histogram('model_latency_seconds', 'Prediction latency')
-model_accuracy = Gauge('model_accuracy', 'Current model accuracy')
-
-# В коде модели
-@prediction_latency.time()
-def predict(data):
-    predictions_total.inc()
-    result = model.predict(data)
-    return result
-
-# Обновление accuracy
-def update_metrics(accuracy_value):
-    model_accuracy.set(accuracy_value)</code></pre>
-
-<p><strong>Grafana dashboard</strong>:</p>
-<ul>
-  <li>Predictions per second: rate(predictions_total[1m])</li>
-  <li>P95 latency: histogram_quantile(0.95, prediction_latency)</li>
-  <li>Accuracy trend: model_accuracy</li>
-</ul>
-  </div>
-
-  <div class="block">
-    <h2>🔷 6. Alerting strategies</h2>
-    <pre><code># Настройка алертов
-from datetime import datetime, timedelta
-
-class AlertManager:
-    def __init__(self):
-        self.alert_rules = []
-        self.alert_history = []
-    
-    def add_rule(self, name, condition, severity='warning'):
-        """Добавить правило алерта"""
-        self.alert_rules.append({
-            'name': name,
-            'condition': condition,
-            'severity': severity
-        })
-    
-    def check_alerts(self, metrics):
-        """Проверить условия алертов"""
-        alerts = []
-        
-        for rule in self.alert_rules:
-            if rule['condition'](metrics):
-                alert = {
-                    'name': rule['name'],
-                    'severity': rule['severity'],
-                    'timestamp': datetime.now(),
-                    'metrics': metrics
-                }
-                alerts.append(alert)
-                self.alert_history.append(alert)
-                
-                # Отправка уведомления
-                self.send_notification(alert)
-        
-        return alerts
-    
-    def send_notification(self, alert):
-        """Отправить уведомление (Slack, email, PagerDuty)"""
-        # Slack webhook
-        import requests
-        webhook_url = "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
-        
-        message = {
-            'text': f"🚨 Alert: {alert['name']}",
-            'attachments': [{
-                'color': 'danger' if alert['severity'] == 'critical' else 'warning',
-                'fields': [
-                    {'title': 'Severity', 'value': alert['severity']},
-                    {'title': 'Time', 'value': str(alert['timestamp'])}
-                ]
-            }]
-        }
-        
-        requests.post(webhook_url, json=message)
-
-# Пример использования
-monitor = AlertManager()
-
-# Добавляем правила
-monitor.add_rule(
-    'Low Accuracy',
-    lambda m: m.get('accuracy', 1.0) < 0.85,
-    severity='critical'
-)
-
-monitor.add_rule(
-    'High Latency',
-    lambda m: m.get('latency_p95', 0) > 1.0,
-    severity='warning'
-)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 7. Logging predictions</h2>
-    <pre><code>import logging
-import json
-
-# Настройка logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('model_predictions.log'),
-        logging.StreamHandler()
-    ]
-)
-
-class PredictionLogger:
-    def __init__(self, model_version):
-        self.logger = logging.getLogger('model_predictions')
-        self.model_version = model_version
-    
-    def log_prediction(self, input_data, prediction, probability=None):
-        """Логировать каждое предсказание"""
-        log_entry = {
-            'model_version': self.model_version,
-            'timestamp': datetime.now().isoformat(),
-            'input': input_data.tolist() if hasattr(input_data, 'tolist') else input_data,
-            'prediction': int(prediction),
-            'probability': float(probability) if probability else None
-        }
-        
-        self.logger.info(json.dumps(log_entry))
-    
-    def log_batch(self, inputs, predictions, metadata=None):
-        """Логировать batch предсказаний"""
-        for i, (inp, pred) in enumerate(zip(inputs, predictions)):
-            self.log_prediction(inp, pred)
-
-# Использование
-logger = PredictionLogger(model_version='v1.2.0')
-
-# При каждом предсказании
-result = model.predict(input_data)
-logger.log_prediction(input_data, result)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 8. Model retraining triggers</h2>
-    <pre><code>class RetrainingManager:
-    def __init__(self):
-        self.should_retrain = False
-        self.retrain_reasons = []
-    
-    def check_retrain_conditions(self, metrics, drift_results):
-        """Проверить условия для ретренинга"""
-        reasons = []
-        
-        # 1. Performance degradation
-        if metrics.get('accuracy', 1.0) < 0.85:
-            reasons.append('accuracy_drop')
-        
-        # 2. Data drift
-        drift_count = sum(1 for r in drift_results.values() if r['drift_detected'])
-        if drift_count > len(drift_results) * 0.3:  # >30% features drifted
-            reasons.append('data_drift')
-        
-        # 3. Time-based (30 days since last training)
-        days_since_training = (datetime.now() - self.last_training_date).days
-        if days_since_training > 30:
-            reasons.append('time_based')
-        
-        # 4. Volume (enough new data)
-        if self.new_data_count > 10000:
-            reasons.append('new_data_available')
-        
-        if reasons:
-            self.should_retrain = True
-            self.retrain_reasons = reasons
-            self.trigger_retraining()
-        
-        return {'should_retrain': self.should_retrain, 'reasons': reasons}
-    
-    def trigger_retraining(self):
-        """Запустить процесс ретренинга"""
-        print(f"Triggering retraining: {', '.join(self.retrain_reasons)}")
-        # Запуск ML pipeline
-        # trigger_airflow_dag('model_retraining')
-        # или
-        # trigger_kubeflow_pipeline('retrain_model_v2')</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 9. Tools для monitoring</h2>
-    <table>
-  <tr><th>Tool</th><th>Назначение</th></tr>
-  <tr><td><strong>Evidently AI</strong></td><td>Data & model drift detection</td></tr>
-  <tr><td><strong>WhyLabs</strong></td><td>ML observability platform</td></tr>
-  <tr><td><strong>Arize AI</strong></td><td>ML monitoring & explainability</td></tr>
-  <tr><td><strong>Fiddler</strong></td><td>ML model performance monitoring</td></tr>
-  <tr><td><strong>Neptune.ai</strong></td><td>Experiment tracking & monitoring</td></tr>
-  <tr><td><strong>Weights & Biases</strong></td><td>Experiment tracking + production monitoring</td></tr>
-</table>
-
-<pre><code># Пример с Evidently
-from evidently.dashboard import Dashboard
-from evidently.tabs import DataDriftTab
-
-dashboard = Dashboard(tabs=[DataDriftTab()])
-dashboard.calculate(reference_data, current_data)
-dashboard.save('data_drift_report.html')</code></pre>
-  </div>
-
-
 
 </div>
 </body>

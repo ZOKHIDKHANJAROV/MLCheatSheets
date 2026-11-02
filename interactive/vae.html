@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="vae autoencoders variational_inference">
+<title>Скрытое пространство VAE — интерактив</title>
+<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="lab.css?v=2">
+<style>
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pair h3, .stage h3.sub { margin: 2px 4px 6px; }
+  #interp { margin-top: 10px; }
+  @media (max-width: 860px) { .pair { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Скрытое пространство VAE</h1><a href="../cheatsheets/vae_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Вариационный автоэнкодер обучается прямо в браузере на 600 картинках 12×12 (круги, рамки и кресты разного размера).
+    Энкодер (144 → 64 → μ, log σ²) сжимает картинку в точку двумерного пространства z, декодер (2 → 64 → 144) рисует картинку обратно.
+    Лосс = BCE реконструкции + β·KL(q(z|x) ‖ N(0, I)). Тащите мышью по левой панели — в панели управления (внизу справа) появится картинка, которую декодер рисует в этой точке.
+    Клик по точке выбирает объект A или B для интерполяции.</p>
+
+  <div class="grid">
+    <div class="card stage">
+      <div class="pair">
+        <div><h3>Латентное пространство: μ обучающих картинок</h3><canvas id="latent"></canvas></div>
+        <div><h3>Атлас: декодер на сетке 10×10 по той же области</h3><canvas id="atlas"></canvas></div>
+      </div>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>круг</span><span><i style="background:var(--c-b)"></i>рамка</span><span><i style="background:var(--c-ok)"></i>крест</span><span>┄ окружности 1σ и 2σ априорного N(0, I)</span><span>✚ точка-зонд</span></div>
+      <h3 class="sub" style="margin-top:12px">Интерполяция: оригинал A → декодированные точки на отрезке μ<sub>A</sub>…μ<sub>B</sub> → оригинал B</h3>
+      <canvas id="interp"></canvas>
+    </div>
+    <div class="card controls">
+      <div class="buttons"><button class="primary" id="play">▶ Обучать</button><button id="step">+1 эпоха</button><button id="reset">Сброс</button></div>
+      <div class="stats" style="margin-bottom:14px">
+        <span>Эпоха</span><b id="ep">0</b>
+        <span>Реконструкция (BCE на картинку)</span><b id="rec">—</b>
+        <span>KL на картинку (z₁ + z₂)</span><b id="kl">—</b>
+        <span>Среднее μ по осям</span><b id="mu">—</b>
+        <span>Разброс (std) μ по осям</span><b id="sd">—</b>
+        <span>Средняя σ энкодера</span><b id="sig">—</b>
+        <span title="Для каждой ячейки атласа — среднее |разность пикселей| до самой похожей обучающей картинки">Атлас: отличие от ближайшей настоящей</span><b id="nd">—</b>
+      </div>
+      <h3>Модель</h3>
+      <div class="ctl"><label>Тип</label><select id="mode"><option value="vae">VAE (сэмплирование z + KL)</option><option value="ae">Автоэнкодер (z = μ, без KL)</option></select></div>
+      <div class="ctl"><label for="beta">Вес KL β (β-VAE) <output for="beta"></output></label><input id="beta" type="range" min="0" max="9" step="1" value="4"></div>
+      <h3>Отображение</h3>
+      <div class="ctl"><label>Цвет точек</label><select id="colorBy"><option value="cls">по классу фигуры</option><option value="size">по размеру фигуры</option></select></div>
+      <div class="buttons"><button id="pair">Случайная пара A, B</button></div>
+      <canvas id="probe" style="width:96px;display:block;margin:0 auto;border:1px solid var(--border);border-radius:6px"></canvas>
+      <p style="text-align:center;margin:4px 0 0;font-size:13px;color:var(--muted)" id="probeLbl">декодер в точке зонда</p>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Лосс по эпохам</h3><canvas id="curve"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>реконструкция (шкала слева)</span><span><i style="background:var(--c-b)"></i>KL (шкала справа)</span></div></div>
+    <div class="card hint"><h3>Что попробовать</h3><ul>
+      <li><b>VAE, β = 1</b>, 100 эпох (≈ 10 секунд): коды лежат внутри окружности 2σ, KL ≈ 3.8 нат (1.7 + 2.1), разброс μ ≈ (0.8, 1.1).
+        Атлас гладкий: почти каждая ячейка — правдоподобная фигура, классы граничат друг с другом, а при переключении «цвет по размеру» видно, что размер меняется плавно.</li>
+      <li>Переключите на <b>«Автоэнкодер (без KL)»</b> и обучите 100 эпох: реконструкция чуть лучше (BCE ≈ 26.5 против 30), но коды разъезжаются далеко от нуля —
+        среднее ≈ (−2.8, −5.1), std ≈ 4, область расширяется до ±16.5. Коды занимают узкие полосы, а большая часть атласа — фигуры, которых нет в данных
+        (отличие атласа ≈ 0.23 против 0.15 у VAE). Окружности N(0, I) попадают на край облака: сэмплировать z ~ N(0, I) у обычного AE бессмысленно.</li>
+      <li><b>β = 0</b> (выставьте до обучения или после «Сброса»): энкодер сам «выключает» шум — средняя σ падает до ≈ 0.02, коды расползаются с std ≈ 4.5. Это обычный автоэнкодер.</li>
+      <li><b>β = 5</b>: латент почти N(0, I) — среднее μ ≈ 0, std ≈ 0.9, атлас самый «чистый» (отличие ≈ 0.09), но реконструкции размытее (BCE ≈ 35).
+        Это компромисс β-VAE между качеством реконструкции и регулярностью латента.</li>
+      <li><b>Posterior collapse</b>: β = 20 — KL по оси z₂ ровно 0.00, ось не несёт информации, всё кодирует одна z₁ (BCE ≈ 51).
+        β = 50 — KL = 0 по обеим осям, μ ≈ 0, σ ≈ 1: энкодер игнорирует вход, и декодер везде рисует одно и то же размытое «среднее» пятно (BCE ≈ 58).</li>
+      <li>Щёлкните по двум точкам разных классов: промежуточные картинки плавно перетекают одна в другую (рамка → залитый квадрат → круг).
+        На этих простых данных отрезок между двумя <i>настоящими</i> кодами и у AE, и у VAE проходит по «заселённой» области — разница видна в пустых местах латента:
+        тащите зонд туда и сравните.</li>
+    </ul></div>
+  </div>
+</div>
+
+<script src="lab.js?v=2"></script>
+<script>
+// ---------- ядро: данные, слои, VAE (без DOM) ----------
+const S = 12, P = S * S;                        // картинки 12×12
+const CLASSES = ["круг", "рамка", "крест"];
+
+// Рисуем фигуру со сглаживанием (9 подвыборок на пиксель): яркость пикселя ∈ [0, 1]
+function drawShape(cls, size, cx, cy) {
+  const img = new Float64Array(P), R = size * 5.2;
+  const inside = (dx, dy) => {
+    if (cls === 0) return dx * dx + dy * dy <= R * R;
+    const ax = Math.abs(dx), ay = Math.abs(dy);
+    if (cls === 1) return Math.max(ax, ay) <= R && Math.max(ax, ay) >= R - 1.5;
+    return (ax <= 0.85 && ay <= R) || (ay <= 0.85 && ax <= R);
+  };
+  for (let py = 0; py < S; py++) for (let px = 0; px < S; px++) {
+    let c = 0;
+    for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) c += inside(px + (a + 0.5) / 3 - cx, py + (b + 0.5) / 3 - cy);
+    img[py * S + px] = c / 9;
+  }
+  return img;
+}
+function makeData(seed, n) {
+  const r = Lab.rng(seed), data = [];
+  for (let i = 0; i < n; i++) {
+    const cls = i % 3, size = 0.45 + 0.55 * r(), cx = S / 2 + (r() - 0.5) * 1.6, cy = S / 2 + (r() - 0.5) * 1.6;
+    data.push({ cls, size, x: drawShape(cls, size, cx, cy) });
+  }
+  return data;
+}
+
+// Плотный слой: W (nOut × nIn), b; прямой проход по батчу B (плоские массивы B × n)
+function layer(nIn, nOut, r, gain) {
+  const s = (gain || 1) * Math.sqrt(1 / nIn);
+  return { nIn, nOut, W: Float64Array.from({ length: nIn * nOut }, () => r.normal() * s), b: new Float64Array(nOut) };
+}
+function lin(ly, X, B, act) {
+  const { nIn, nOut, W, b } = ly, out = new Float64Array(B * nOut);
+  for (let n = 0; n < B; n++) {
+    const xo = n * nIn, oo = n * nOut;
+    for (let j = 0; j < nOut; j++) {
+      let z = b[j], wo = j * nIn;
+      for (let k = 0; k < nIn; k++) z += W[wo + k] * X[xo + k];
+      out[oo + j] = act ? Math.tanh(z) : z;
+    }
+  }
+  return out;
+}
+// Градиенты слоя (накапливаются в g) и градиент по входу; dY уже умножен на производную активации
+function linBack(ly, g, X, dY, B, needDX) {
+  const { nIn, nOut, W } = ly, dX = needDX ? new Float64Array(B * nIn) : null;
+  for (let n = 0; n < B; n++) {
+    const xo = n * nIn, oo = n * nOut;
+    for (let j = 0; j < nOut; j++) {
+      const d = dY[oo + j];
+      if (d === 0) continue;
+      g.b[j] += d;
+      const wo = j * nIn;
+      for (let k = 0; k < nIn; k++) { g.W[wo + k] += d * X[xo + k]; if (dX) dX[xo + k] += W[wo + k] * d; }
+    }
+  }
+  return dX;
+}
+const tanhBack = (dY, Y) => { for (let i = 0; i < dY.length; i++) dY[i] *= 1 - Y[i] * Y[i]; return dY; };
+
+const HE = 64, HD = 64, LR = 2e-3;
+function vaeInit(seed) {
+  const r = Lab.rng(seed);
+  const m = { e1: layer(P, HE, r), e2: layer(HE, 4, r, 0.5), d1: layer(2, HD, r, 1.5), d2: layer(HD, P, r), t: 0, rng: Lab.rng(seed + 77) };
+  m.layers = ["e1", "e2", "d1", "d2"];
+  m.adam = {};
+  m.layers.forEach(k => { m.adam[k] = { mW: new Float64Array(m[k].W.length), vW: new Float64Array(m[k].W.length), mb: new Float64Array(m[k].nOut), vb: new Float64Array(m[k].nOut) }; });
+  return m;
+}
+// Энкодер: x → (μ₁, μ₂, log σ₁², log σ₂²)
+function encode(m, X, B) { const h = lin(m.e1, X, B, true); return { h, o: lin(m.e2, h, B, false) }; }
+// Декодер: z → логиты пикселей
+function decodeLogits(m, Z, B) { const h = lin(m.d1, Z, B, true); return { h, o: lin(m.d2, h, B, false) }; }
+const sigm = s => 1 / (1 + Math.exp(-s));
+function decode(m, z) { return decodeLogits(m, Float64Array.from(z), 1).o.map(sigm); }
+function encodeAll(m, data) {
+  const X = new Float64Array(data.length * P);
+  data.forEach((d, i) => X.set(d.x, i * P));
+  const o = encode(m, X, data.length).o;
+  return data.map((_, i) => [o[i * 4], o[i * 4 + 1], o[i * 4 + 2], o[i * 4 + 3]]);
+}
+
+// Один шаг Adam на батче. mode: "vae" (сэмплирование z и KL с весом β) или "ae" (z = μ, без KL).
+// Возвращает средние по батчу реконструкционный лосс (BCE, сумма по пикселям) и KL.
+function trainStep(m, batch, beta, mode) {
+  const B = batch.length, X = new Float64Array(B * P);
+  batch.forEach((d, i) => X.set(d.x, i * P));
+  const enc = encode(m, X, B), Z = new Float64Array(B * 2), eps = new Float64Array(B * 2);
+  let kl = 0;
+  for (let n = 0; n < B; n++) for (let q = 0; q < 2; q++) {
+    const mu = enc.o[n * 4 + q], lv = enc.o[n * 4 + 2 + q];
+    if (mode === "ae") { Z[n * 2 + q] = mu; continue; }
+    eps[n * 2 + q] = m.rng.normal();
+    Z[n * 2 + q] = mu + Math.exp(0.5 * lv) * eps[n * 2 + q];              // репараметризация
+    kl += 0.5 * (mu * mu + Math.exp(lv) - 1 - lv) / B;
+  }
+  const dec = decodeLogits(m, Z, B), dO = new Float64Array(B * P);
+  let rec = 0;
+  for (let i = 0; i < B * P; i++) {
+    const s = dec.o[i], x = X[i];
+    rec += (Math.max(s, 0) - s * x + Math.log1p(Math.exp(-Math.abs(s)))) / B;   // BCE с логитами, устойчиво
+    dO[i] = (sigm(s) - x) / B;
+  }
+  const g = {};
+  m.layers.forEach(k => { g[k] = { W: new Float64Array(m[k].W.length), b: new Float64Array(m[k].nOut) }; });
+  const dHd = tanhBack(linBack(m.d2, g.d2, dec.h, dO, B, true), dec.h);
+  const dZ = linBack(m.d1, g.d1, Z, dHd, B, true);
+  const dE = new Float64Array(B * 4);
+  for (let n = 0; n < B; n++) for (let q = 0; q < 2; q++) {
+    const mu = enc.o[n * 4 + q], lv = enc.o[n * 4 + 2 + q], dz = dZ[n * 2 + q];
+    if (mode === "ae") { dE[n * 4 + q] = dz; continue; }
+    const sd = Math.exp(0.5 * lv);
+    dE[n * 4 + q] = dz + beta * mu / B;
+    dE[n * 4 + 2 + q] = dz * 0.5 * sd * eps[n * 2 + q] + beta * 0.5 * (sd * sd - 1) / B;
+  }
+  const dHe = tanhBack(linBack(m.e2, g.e2, enc.h, dE, B, true), enc.h);
+  linBack(m.e1, g.e1, X, dHe, B, false);
+  // Adam
+  m.t++;
+  const b1 = 0.9, b2 = 0.999, c1 = 1 - b1 ** m.t, c2 = 1 - b2 ** m.t;
+  m.layers.forEach(k => {
+    const ly = m[k], a = m.adam[k];
+    [[ly.W, g[k].W, a.mW, a.vW], [ly.b, g[k].b, a.mb, a.vb]].forEach(([p, gr, mm, vv]) => {
+      for (let i = 0; i < p.length; i++) {
+        mm[i] = b1 * mm[i] + (1 - b1) * gr[i]; vv[i] = b2 * vv[i] + (1 - b2) * gr[i] * gr[i];
+        p[i] -= LR * (mm[i] / c1) / (Math.sqrt(vv[i] / c2) + 1e-8);
+      }
+    });
+  });
+  return { rec, kl: mode === "ae" ? NaN : kl };          // у автоэнкодера KL не определён
+}
+
+// Обучение по батчам из 32 с перемешиванием каждую эпоху; step() делает один батч и сообщает о конце эпохи
+function shuffled(n, r) { const a = Array.from({ length: n }, (_, i) => i); for (let i = n - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function trainer(seed, data, mode) {
+  const T = { m: vaeInit(seed), data, mode, r: Lab.rng(seed + 3), epoch: 0, pos: 0, order: null, acc: [0, 0, 0], hist: [] };
+  T.order = shuffled(data.length, T.r);
+  T.step = beta => {
+    const res = trainStep(T.m, T.order.slice(T.pos, T.pos + 32).map(i => data[i]), beta, T.mode);
+    T.acc[0] += res.rec; T.acc[1] += res.kl; T.acc[2]++; T.pos += 32;
+    if (T.pos < data.length) return false;
+    T.epoch++; T.hist.push([T.acc[0] / T.acc[2], T.acc[1] / T.acc[2]]);
+    T.acc = [0, 0, 0]; T.pos = 0; T.order = shuffled(data.length, T.r);
+    return true;
+  };
+  T.epochs = (k, beta) => { for (let e = 0; e < k; e++) while (!T.step(beta)); };
+  return T;
+}
+
+// Насколько картинка похожа на реальные: минимальное среднее |разность| до обучающих картинок
+function nearestDist(img, data) {
+  let best = Infinity;
+  for (const d of data) { let s = 0; for (let i = 0; i < P; i++) s += Math.abs(img[i] - d.x[i]); if (s < best) best = s; }
+  return best / P;
+}
+
+// ---------- интерфейс ----------
+const BETAS = [0, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50];
+const $ = id => document.getElementById(id);
+const beta = Lab.slider("beta", () => {}, i => BETAS[i]);
+const data = makeData(1, 600);
+let T = null, codes = null, atlasND = 0, view = 3, probe = [0, 0], selA = 0, selB = 1, nextSel = 0;
+
+const latentV = Lab.canvas($("latent"), 1, drawLatent);
+const atlasV = Lab.canvas($("atlas"), 1, drawAtlas);
+const interpV = Lab.canvas($("interp"), 0.115, drawInterp);
+const probeV = Lab.canvas($("probe"), 1, drawProbe);
+const curveV = Lab.canvas($("curve"), 0.5, drawCurve);
+
+// Картинка 12×12 → закрашенный квадрат (фон панели → цвет текста) через ImageData
+const off = document.createElement("canvas"); off.width = off.height = S;
+const offCtx = off.getContext("2d");
+const rgb = name => { const c = Lab.color(name); const m = c.match(/^#(\w\w)(\w\w)(\w\w)$/); return m ? m.slice(1).map(h => parseInt(h, 16)) : [128, 128, 128]; };
+function drawImg(ctx, img, x, y, size) {
+  const bg = rgb("panel"), fg = rgb("text"), id = offCtx.createImageData(S, S);
+  for (let i = 0; i < P; i++) for (let c = 0; c < 3; c++) id.data[i * 4 + c] = bg[c] + (fg[c] - bg[c]) * img[i];
+  for (let i = 0; i < P; i++) id.data[i * 4 + 3] = 255;
+  offCtx.putImageData(id, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(off, x, y, size, size);
+}
+
+const frames = (w, h) => ({ sx: Lab.frame(-view, view, 6, w - 6), sy: Lab.frame(-view, view, h - 6, 6) });
+const CLS_COL = ["c-a", "c-b", "c-ok"];
+
+function drawLatent(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!codes) return;
+  const { sx, sy } = frames(w, h), G = 10;
+  ctx.strokeStyle = Lab.color("grid"); ctx.lineWidth = 1;
+  for (let i = 0; i <= G; i++) {
+    const v = -view + 2 * view * i / G;
+    ctx.beginPath(); ctx.moveTo(sx(v), sy(-view)); ctx.lineTo(sx(v), sy(view)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sx(-view), sy(v)); ctx.lineTo(sx(view), sy(v)); ctx.stroke();
+  }
+  ctx.strokeStyle = Lab.color("axis"); ctx.setLineDash([5, 4]);
+  [1, 2].forEach(r => { ctx.beginPath(); ctx.ellipse(sx(0), sy(0), sx(r) - sx(0), sy(0) - sy(r), 0, 0, 2 * Math.PI); ctx.stroke(); });
+  ctx.setLineDash([]);
+  const bySize = $("colorBy").value === "size", ca = rgb("c-a"), cb = rgb("c-b");
+  codes.forEach((c, i) => {
+    let col;
+    if (bySize) { const t = (data[i].size - 0.45) / 0.55; col = `rgb(${ca.map((v, k) => Math.round(v + (cb[k] - v) * t)).join(",")})`; }
+    else col = Lab.color(CLS_COL[data[i].cls]);
+    ctx.globalAlpha = 0.75; Lab.dot(ctx, sx(c[0]), sy(c[1]), 2.6, col); ctx.globalAlpha = 1;
+  });
+  // интерполяция A → B
+  const A = codes[selA], B = codes[selB];
+  ctx.strokeStyle = Lab.color("text"); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(sx(A[0]), sy(A[1])); ctx.lineTo(sx(B[0]), sy(B[1])); ctx.stroke();
+  [[A, "A"], [B, "B"]].forEach(([c, t]) => {
+    Lab.dot(ctx, sx(c[0]), sy(c[1]), 6, Lab.color(CLS_COL[data[t === "A" ? selA : selB].cls]), Lab.color("text"));
+    ctx.fillStyle = Lab.color("text"); ctx.font = "bold 13px system-ui, sans-serif"; ctx.textAlign = "left"; ctx.fillText(t, sx(c[0]) + 8, sy(c[1]) - 6);
+  });
+  // зонд
+  const px = sx(probe[0]), py = sy(probe[1]);
+  ctx.strokeStyle = Lab.color("c-bad"); ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(px - 8, py); ctx.lineTo(px + 8, py); ctx.moveTo(px, py - 8); ctx.lineTo(px, py + 8); ctx.stroke();
+  ctx.fillStyle = Lab.color("muted"); ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "right";
+  ctx.fillText(`z ∈ [−${fmtV(view)}, ${fmtV(view)}]²`, w - 8, h - 10);
+}
+const fmtV = v => v >= 10 ? v.toFixed(0) : v.toFixed(1);
+
+function drawAtlas(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!T) return;
+  const G = 10, cell = (w - 12) / G;
+  for (let i = 0; i < G; i++) for (let j = 0; j < G; j++) {
+    const z = [-view + 2 * view * (i + 0.5) / G, view - 2 * view * (j + 0.5) / G];
+    drawImg(ctx, decode(T.m, z), 6 + i * cell + 1, 6 + j * cell + 1, cell - 2);
+  }
+  // где сейчас зонд
+  const i = Math.floor((probe[0] + view) / (2 * view) * G), j = Math.floor((view - probe[1]) / (2 * view) * G);
+  if (i >= 0 && i < G && j >= 0 && j < G) { ctx.strokeStyle = Lab.color("c-bad"); ctx.lineWidth = 2; ctx.strokeRect(6 + i * cell, 6 + j * cell, cell, cell); }
+}
+
+function drawInterp(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!codes) return;
+  const K = 9, n = K + 2, gap = 6, size = Math.min(h - 4, (w - gap * (n - 1)) / n), x0 = (w - (size * n + gap * (n - 1))) / 2;
+  const A = codes[selA], B = codes[selB];
+  drawImg(ctx, data[selA].x, x0, 2, size);
+  for (let k = 0; k < K; k++) { const t = k / (K - 1); drawImg(ctx, decode(T.m, [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t]), x0 + (k + 1) * (size + gap), 2, size); }
+  drawImg(ctx, data[selB].x, x0 + (K + 1) * (size + gap), 2, size);
+  ctx.strokeStyle = Lab.color("accent"); ctx.lineWidth = 2;
+  [0, K + 1].forEach(k => ctx.strokeRect(x0 + k * (size + gap) - 1, 1, size + 2, size + 2));
+}
+
+function drawProbe(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (T) drawImg(ctx, decode(T.m, probe), 0, 0, w);
+}
+
+function drawCurve(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!T || !T.hist.length) return;
+  const H = T.hist, n = Math.max(20, H.length), hasKL = !isNaN(H[0][1]);
+  const rTop = Math.max(...H.map(e => e[0])) * 1.05, kTop = hasKL ? Math.max(0.5, ...H.map(e => e[1])) * 1.1 : 1;
+  const cx = Lab.frame(0, n, 36, w - 40), cy = Lab.frame(0, rTop, h - 22, 8), ck = Lab.frame(0, kTop, h - 22, 8);
+  Lab.axes(ctx, cx, cy, { xTicks: [0, n], yTicks: [0, Math.round(rTop / 2), Math.round(rTop)], xLabel: "эпоха" });
+  const line = (k, s, col) => { ctx.strokeStyle = Lab.color(col); ctx.lineWidth = 2; ctx.beginPath(); H.forEach((e, i) => i ? ctx.lineTo(cx(i + 1), s(e[k])) : ctx.moveTo(cx(1), s(e[k]))); ctx.stroke(); };
+  line(0, cy, "c-a");
+  if (hasKL) {
+    line(1, ck, "c-b");
+    ctx.fillStyle = Lab.color("c-b"); ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "left";
+    [0, kTop / 2, kTop].forEach(v => ctx.fillText(v.toFixed(kTop < 5 ? 1 : 0), w - 36, ck(v) + 4));
+  } else {
+    ctx.fillStyle = Lab.color("muted"); ctx.font = "12px system-ui, sans-serif"; ctx.textAlign = "right"; ctx.fillText("у автоэнкодера KL нет", w - 44, 22);
+  }
+}
+
+function refreshCodes() {
+  codes = encodeAll(T.m, data);
+  const ext = Math.max(...codes.map(c => Math.max(Math.abs(c[0]), Math.abs(c[1]))));
+  view = Math.max(3, Math.ceil(ext * 1.1 * 2) / 2);
+  let nd = 0;                                       // насколько ячейки атласа похожи на настоящие картинки
+  for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) nd += nearestDist(decode(T.m, [-view + 2 * view * (i + 0.5) / 10, view - 2 * view * (j + 0.5) / 10]), data) / 100;
+  atlasND = nd;
+}
+function show() {
+  const last = T.hist[T.hist.length - 1], ae = T.mode === "ae";
+  $("ep").textContent = T.epoch;
+  $("rec").textContent = last ? last[0].toFixed(1) : "—";
+  const klDim = [0, 1].map(q => codes.reduce((s, c) => s + 0.5 * (c[q] ** 2 + Math.exp(c[2 + q]) - 1 - c[2 + q]), 0) / codes.length);
+  $("kl").textContent = ae ? "— (нет σ)" : `${(klDim[0] + klDim[1]).toFixed(2)} = ${klDim[0].toFixed(2)} + ${klDim[1].toFixed(2)}`;
+  const mu = [0, 1].map(q => codes.reduce((s, c) => s + c[q], 0) / codes.length);
+  const sd = [0, 1].map(q => Math.sqrt(codes.reduce((s, c) => s + (c[q] - mu[q]) ** 2, 0) / codes.length));
+  $("mu").textContent = `${mu[0].toFixed(2)}, ${mu[1].toFixed(2)}`;
+  $("sd").textContent = `${sd[0].toFixed(2)}, ${sd[1].toFixed(2)}`;
+  $("nd").textContent = atlasND.toFixed(3);
+  $("sig").textContent = ae ? "—" : [0, 1].map(q => (codes.reduce((s, c) => s + Math.exp(0.5 * c[2 + q]), 0) / codes.length).toFixed(3)).join(", ");
+  latentV.redraw(); atlasV.redraw(); interpV.redraw(); probeV.redraw(); curveV.redraw();
+}
+
+let running = false;
+function loop() {
+  if (!running) return;
+  const t0 = performance.now();
+  let ended = false;
+  do ended = T.step(BETAS[beta.value]) || ended; while (performance.now() - t0 < 14);   // столько батчей, сколько помещается в кадр
+  if (ended) { refreshCodes(); show(); }
+  requestAnimationFrame(loop);
+}
+function setRunning(on) { running = on; $("play").textContent = on ? "⏸ Пауза" : "▶ Обучать"; if (on) loop(); }
+function reset() { T = trainer(1, data, $("mode").value); $("beta").disabled = T.mode === "ae"; refreshCodes(); show(); }
+
+// Мышь: перетаскивание двигает зонд; щелчок по точке (без перетаскивания) выбирает A или B
+let drag = null;
+const toZ = ev => { const p = Lab.pointer($("latent"), ev), { sx, sy } = frames(latentV.w, latentV.h); return { p, z: [sx.invert(p.x), sy.invert(p.y)] }; };
+$("latent").addEventListener("pointerdown", ev => { const { p, z } = toZ(ev); drag = { p, moved: false }; probe = z; $("latent").setPointerCapture(ev.pointerId); latentV.redraw(); atlasV.redraw(); probeV.redraw(); });
+$("latent").addEventListener("pointermove", ev => {
+  if (!drag) return;
+  const { p, z } = toZ(ev);
+  if (Math.hypot(p.x - drag.p.x, p.y - drag.p.y) > 3) drag.moved = true;
+  probe = z; latentV.redraw(); atlasV.redraw(); probeV.redraw();
+});
+$("latent").addEventListener("pointerup", ev => {
+  if (drag && !drag.moved && codes) {
+    const { sx, sy } = frames(latentV.w, latentV.h);
+    let best = -1, bd = 7;
+    codes.forEach((c, i) => { const d = Math.hypot(sx(c[0]) - drag.p.x, sy(c[1]) - drag.p.y); if (d < bd) { bd = d; best = i; } });
+    if (best >= 0) { if (nextSel === 0) selA = best; else selB = best; nextSel = 1 - nextSel; latentV.redraw(); interpV.redraw(); }
+  }
+  drag = null;
+});
+
+const pairRng = Lab.rng(11);
+$("pair").onclick = () => { selA = Math.floor(pairRng() * data.length); do selB = Math.floor(pairRng() * data.length); while (data[selB].cls === data[selA].cls); latentV.redraw(); interpV.redraw(); };
+$("play").onclick = () => setRunning(!running);
+$("step").onclick = () => { setRunning(false); T.epochs(1, BETAS[beta.value]); refreshCodes(); show(); };
+$("reset").onclick = () => { setRunning(false); reset(); };
+$("mode").onchange = () => { setRunning(false); reset(); };
+$("colorBy").onchange = () => latentV.redraw();
+reset();
+</script>
+</body>
+</html>

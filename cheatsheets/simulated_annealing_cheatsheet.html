@@ -206,213 +206,212 @@
 
 <div class="container">
 
-  <h1>📘 Simulated Annealing</h1>
-  <div class="subtitle">📅 5 января 2026</div>
-
+  <h1>🔥 Simulated Annealing (имитация отжига)</h1>
+  <div class="subtitle">📅 Январь 2026</div>
 
   <div class="block">
-    <h2>🔷 1. Суть Simulated Annealing • Метод отжига</h2>
-    <p><strong>Simulated Annealing (ES)</strong> — методы оптимизации, вдохновлённые эволюцией</p>
+    <h2>🔷 1. Суть и интуиция</h2>
+    <p><strong>Simulated annealing (SA)</strong> — метаэвристика глобальной оптимизации, вдохновлённая отжигом металла: при медленном остывании атомы успевают уложиться в состояние с минимальной энергией.</p>
     <ul>
-      <li><strong>Идея</strong>: популяция решений эволюционирует к оптимуму</li>
-      <li><strong>Не требует градиентов</strong>: только значения функции</li>
-      <li><strong>Стохастический поиск</strong>: использует случайность</li>
+      <li><strong>Энергия E(x)</strong>: минимизируемая функция (длина маршрута, штраф расписания, ошибка на валидации)</li>
+      <li><strong>Состояние x</strong>: текущее решение; <strong>сосед x'</strong> — небольшое изменение x</li>
+      <li><strong>Температура T</strong>: управляет готовностью принимать <em>ухудшения</em></li>
+      <li><strong>Идея</strong>: при высокой T — почти случайное блуждание (исследование), при низкой T — жадный спуск (эксплуатация)</li>
     </ul>
+    <blockquote>Ключевое отличие от hill climbing: SA иногда делает шаг «в гору», чтобы выбраться из локального минимума.</blockquote>
+  </div>
 
-    </div>
-<div class="block">
-    <h2>🔷 2. Базовый (μ,λ)-ES</h2>
+  <div class="block">
+    <h2>🔷 2. Критерий Метрополиса</h2>
+    <p>Для кандидата x' считаем ΔE = E(x') − E(x):</p>
+    <ul>
+      <li><strong>ΔE ≤ 0</strong> (улучшение или равенство): принимаем всегда</li>
+      <li><strong>ΔE &gt; 0</strong> (ухудшение): принимаем с вероятностью <strong>P = exp(−ΔE / T)</strong></li>
+    </ul>
+    <table>
+      <tr><th>ΔE</th><th>T = 0.5</th><th>T = 1</th><th>T = 10</th></tr>
+      <tr><td>0.5</td><td>0.37</td><td>0.61</td><td>0.95</td></tr>
+      <tr><td>2</td><td>0.018</td><td>0.135</td><td>0.82</td></tr>
+      <tr><td>10</td><td>≈ 0</td><td>4.5·10⁻⁵</td><td>0.37</td></tr>
+    </table>
+    <ul>
+      <li>Маленькие ухудшения принимаются легче больших</li>
+      <li>При T → 0 алгоритм вырождается в жадный локальный поиск</li>
+      <li>При фиксированной T цепочка сэмплирует распределение Больцмана p(x) ∝ exp(−E(x)/T)</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 3. Алгоритм по шагам</h2>
+    <pre><code>x = начальное решение;  best = x;  T = T0
+while T &gt; T_min and не исчерпан бюджет:
+    for i in range(L):              # L шагов на одной температуре
+        x' = neighbor(x)
+        dE = E(x') - E(x)
+        if dE &lt;= 0 or rand() &lt; exp(-dE / T):
+            x = x'
+            if E(x) &lt; E(best): best = x
+    T = cool(T)                     # расписание охлаждения
+return best</code></pre>
+    <ul>
+      <li><strong>Длина цепи L</strong>: число попыток на температуре (часто ∝ размеру окрестности)</li>
+      <li><strong>Всегда храните best</strong>: текущий x может «уплыть» от лучшего найденного решения</li>
+      <li><strong>Критерии остановки</strong>: T &lt; T_min, лимит итераций, нет улучшений N эпох, доля принятых ходов ≈ 0</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 4. Расписания охлаждения</h2>
+    <table>
+      <tr><th>Расписание</th><th>Формула</th><th>Свойства</th></tr>
+      <tr><td>Линейное</td><td>T_k = T0 − η·k</td><td>просто, нужно заранее знать бюджет</td></tr>
+      <tr><td>Геометрическое</td><td>T_k = α^k·T0, α ≈ 0.9–0.999</td><td>стандарт на практике</td></tr>
+      <tr><td>Логарифмическое</td><td>T_k = c / log(1 + k)</td><td>гарантия сходимости к глобальному оптимуму (Geman &amp; Geman), но крайне медленно</td></tr>
+      <tr><td>Быстрое (Cauchy)</td><td>T_k = T0 / (1 + k)</td><td>для «быстрого отжига» с тяжёлыми хвостами шагов</td></tr>
+      <tr><td>Адаптивное</td><td>меняем T по доле принятых ходов</td><td>держит acceptance rate в целевом коридоре</td></tr>
+    </table>
+    <ul>
+      <li><strong>Слишком быстрое охлаждение</strong> = «закалка» (quenching): застревание в первом локальном минимуме</li>
+      <li><strong>Слишком медленное</strong>: долго бродит случайно, тратит бюджет</li>
+      <li><strong>Reheating</strong>: при стагнации поднимаем T снова</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 5. Начальная температура и параметры</h2>
+    <ul>
+      <li><strong>T0</strong>: чтобы в начале принималось ~80% ухудшений. Оцениваем среднее ΔE⁺ на случайных ходах: T0 = −ΔE⁺ / ln(0.8)</li>
+      <li><strong>T_min</strong>: когда exp(−ΔE_min / T) ничтожно мало (ходы почти не принимаются)</li>
+      <li><strong>α</strong>: компромисс качество/время; при α = 0.99 температура падает в 10 раз примерно за 230 шагов охлаждения</li>
+      <li><strong>Масштаб E</strong>: T измеряется в единицах E — при нормировке целевой функции настройки переносимы между задачами</li>
+    </ul>
+    <blockquote>Мониторьте долю принятых ходов: она должна плавно падать от ~0.8 до ~0.01.</blockquote>
+  </div>
+
+  <div class="block">
+    <h2>🔷 6. Выбор соседа и перезапуски</h2>
+    <table>
+      <tr><th>Задача</th><th>Ход (neighbor)</th></tr>
+      <tr><td>TSP</td><td>2-opt (разворот участка), swap двух городов, перенос города</td></tr>
+      <tr><td>Расписания</td><td>перенос задачи в другой слот, обмен двух задач</td></tr>
+      <tr><td>Непрерывная</td><td>x' = x + σ·N(0, I), σ можно уменьшать вместе с T</td></tr>
+      <tr><td>Гиперпараметры</td><td>изменить один параметр на шаг сетки / лог-шаг</td></tr>
+      <tr><td>Булевы векторы (отбор признаков)</td><td>инвертировать один бит</td></tr>
+    </table>
+    <ul>
+      <li><strong>Локальность</strong>: сосед должен быть «близок», иначе SA = случайный поиск</li>
+      <li><strong>Инкрементальный ΔE</strong>: для 2-opt ΔE считается за O(1), а не пересчётом всего маршрута</li>
+      <li><strong>Перезапуски (restarts)</strong>: несколько независимых прогонов с разных стартов или рестарт с best — дешёвый способ повысить надёжность</li>
+      <li><strong>Ограничения</strong>: запрещённые решения либо не генерировать, либо штрафовать в E</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 7. Код: TSP с 2-opt на numpy</h2>
     <pre><code>import numpy as np
 
-def evolution_strategy(f, x0, sigma=0.1, 
-                       mu=10, lam=50, generations=100):
-    """(μ,λ)-ES: mu parents, lambda offspring"""
-    population = [x0 + np.random.randn(*x0.shape) * sigma 
-                  for _ in range(mu)]
-    
-    for gen in range(generations):
-        # Generate offspring
-        offspring = []
-        for _ in range(lam):
-            parent = population[np.random.randint(mu)]
-            child = parent + np.random.randn(*x0.shape) * sigma
-            offspring.append((child, f(child)))
-        
-        # Select best mu
-        offspring.sort(key=lambda x: x[1])
-        population = [x[0] for x in offspring[:mu]]
-    
-    return population[0]</code></pre>
+rng = np.random.default_rng(0)
+pts = rng.random((60, 2))
+D = np.linalg.norm(pts[:, None] - pts[None], axis=-1)
+
+def length(route):
+    return D[route, np.roll(route, -1)].sum()
+
+def anneal_tsp(T0=1.0, alpha=0.995, L=200, T_min=1e-4):
+    x = rng.permutation(len(pts))
+    e = length(x)
+    best, best_e, T = x.copy(), e, T0
+    while T &gt; T_min:
+        for _ in range(L):
+            i, j = sorted(rng.choice(len(x), 2, replace=False))
+            if j - i &lt; 2:
+                continue
+            a, b = x[i - 1], x[i]
+            c, d = x[j - 1], x[j % len(x)]
+            dE = D[a, c] + D[b, d] - D[a, b] - D[c, d]   # 2-opt, O(1)
+            if dE &lt;= 0 or rng.random() &lt; np.exp(-dE / T):
+                x[i:j] = x[i:j][::-1]
+                e += dE
+                if e &lt; best_e:
+                    best, best_e = x.copy(), e
+        T *= alpha                                     # геометрическое
+    return best, best_e
+
+route, L_best = anneal_tsp()
+print(f"длина маршрута: {L_best:.3f}")</code></pre>
   </div>
 
   <div class="block">
-    <h2>🔷 3. CMA-ES (Covariance Matrix Adaptation)</h2>
-    <pre><code>import cma
+    <h2>🔷 8. Код: функция Растригина и scipy</h2>
+    <p>Растригин f(x) = 10n + Σ(xᵢ² − 10·cos 2πxᵢ) — множество локальных минимумов, глобальный минимум 0 в точке x = 0.</p>
+    <pre><code>import numpy as np
+from scipy.optimize import dual_annealing
 
-# Самый популярный ES алгоритм
-es = cma.CMAEvolutionStrategy(
-    x0=np.zeros(10),  # starting point
-    sigma0=0.5         # initial standard deviation
-)
+def rastrigin(x):
+    return 10 * len(x) + np.sum(x**2 - 10 * np.cos(2 * np.pi * x))
 
-while not es.stop():
-    solutions = es.ask()
-    es.tell(solutions, [f(x) for x in solutions])
-    es.disp()
-
-best_solution = es.result.xbest
-print(f"Best: {best_solution}, f={es.result.fbest}")</code></pre>
+bounds = [(-5.12, 5.12)] * 10
+res = dual_annealing(rastrigin, bounds, maxiter=1000)
+print(res.x.round(3), res.fun, res.nfev)</code></pre>
+    <ul>
+      <li><strong>dual_annealing</strong>: обобщённый SA (Tsallis) + локальный поиск (L-BFGS-B) из лучших точек</li>
+      <li>Параметры: <code>maxiter</code>, <code>initial_temp</code> (по умолчанию 5230), <code>restart_temp_ratio</code> (reheating), <code>visit</code>, <code>accept</code>, <code>no_local_search=True</code> — «чистый» SA</li>
+      <li>Нужны только <strong>ограничения-коробка</strong> (bounds) и значения функции — градиент не требуется</li>
+    </ul>
   </div>
 
   <div class="block">
-    <h2>🔷 4. Natural Simulated Annealing • Метод отжига</h2>
-    <pre><code># NES: используют natural gradient
-def nes(f, x0, sigma=0.1, lr=0.01, n_samples=100):
-    mu = x0
-    for iteration in range(1000):
-        # Sample from distribution
-        samples = [mu + np.random.randn(*x0.shape) * sigma 
-                   for _ in range(n_samples)]
-        
-        # Evaluate
-        rewards = [f(x) for x in samples]
-        
-        # Update parameters
-        grad_mu = np.mean([
-            (x - mu) * r for x, r in zip(samples, rewards)
-        ], axis=0)
-        mu = mu + lr * grad_mu
-    
-    return mu</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 5. ES для Deep Learning</h2>
-    <pre><code>import torch
-
-def es_train_neural_network(model, env, n_generations=100):
-    """ES для обучения нейросети в RL"""
-    population_size = 50
-    sigma = 0.1
-    
-    for gen in range(n_generations):
-        # Generate perturbed weights
-        population = []
-        for _ in range(population_size):
-            noise = {name: torch.randn_like(param) * sigma
-                     for name, param in model.named_parameters()}
-            population.append(noise)
-        
-        # Evaluate each
-        rewards = []
-        for noise in population:
-            # Apply noise to model
-            with torch.no_grad():
-                for name, param in model.named_parameters():
-                    param.add_(noise[name])
-            
-            reward = evaluate(model, env)
-            rewards.append(reward)
-            
-            # Remove noise
-            with torch.no_grad():
-                for name, param in model.named_parameters():
-                    param.sub_(noise[name])
-        
-        # Update weights
-        rewards = np.array(rewards)
-        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-8)
-        
-        for name, param in model.named_parameters():
-            grad = sum([r * noise[name] for r, noise 
-                        in zip(rewards, population)])
-            param.data.add_(grad, alpha=0.01)
-    
-    return model</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 6. ES vs Gradient Descent</h2>
+    <h2>🔷 9. Сравнение с соседними методами</h2>
     <table>
-      <tr><th>Критерий</th><th>Gradient Descent</th><th>ES</th></tr>
-      <tr><td>Градиенты</td><td>✅ Нужны</td><td>❌ Не нужны</td></tr>
-      <tr><td>Скорость</td><td>✅ Быстрее</td><td>❌ Медленнее</td></tr>
-      <tr><td>Параллелизм</td><td>❌ Сложнее</td><td>✅ Легко</td></tr>
-      <tr><td>Локальные минимумы</td><td>❌ Застревает</td><td>✅ Лучше</td></tr>
-      <tr><td>Дискретность</td><td>❌ Проблема</td><td>✅ OK</td></tr>
+      <tr><th>Метод</th><th>Решений</th><th>Уход из локального минимума</th><th>Когда лучше</th></tr>
+      <tr><td>Hill climbing</td><td>1</td><td>нет (только рестарты)</td><td>гладкий ландшафт, мало времени</td></tr>
+      <tr><td><strong>SA</strong></td><td>1</td><td>вероятностное принятие ухудшений</td><td>комбинаторика, дешёвый ΔE</td></tr>
+      <tr><td>Tabu search</td><td>1</td><td>запрет недавних ходов</td><td>комбинаторные задачи с чёткой окрестностью</td></tr>
+      <tr><td><a href="genetic_algorithms_cheatsheet.html">Генетические алгоритмы</a></td><td>популяция</td><td>разнообразие + кроссовер</td><td>можно комбинировать части решений, параллельно</td></tr>
+      <tr><td><a href="evolutionary_strategies_cheatsheet.html">ES / CMA-ES</a></td><td>популяция</td><td>адаптация распределения</td><td>непрерывные задачи средней размерности</td></tr>
+      <tr><td><a href="bayesian_optimization_cheatsheet.html">Байесовская оптимизация</a></td><td>модель-суррогат</td><td>acquisition-функция</td><td>очень дорогая E (десятки–сотни вычислений)</td></tr>
     </table>
-  </div>
-
-  <div class="block">
-    <h2>🔷 7. Применения ES</h2>
     <ul>
-      <li><strong>Reinforcement Learning</strong>: альтернатива policy gradient</li>
-      <li><strong>Гиперпараметры</strong>: оптимизация hyperparameters</li>
-      <li><strong>Чёрный ящик</strong>: когда градиенты недоступны</li>
-      <li><strong>Adversarial examples</strong>: генерация атак</li>
-      <li><strong>Neural Architecture Search</strong>: поиск архитектур</li>
+      <li><strong>Плюсы SA</strong>: просто реализовать, мало памяти, работает с любой E, есть теоретическая гарантия (при логарифмическом расписании)</li>
+      <li><strong>Минусы</strong>: последовательный (плохо параллелится), чувствителен к расписанию, много вычислений E</li>
     </ul>
   </div>
 
   <div class="block">
-    <h2>🔷 8. OpenAI ES для RL</h2>
-    <pre><code># Знаменитая статья OpenAI 2017
-# ES конкурирует с A3C на Atari
-
-def openai_es(policy, env, n_workers=100):
-    for iteration in range(n_iterations):
-        # Generate perturbations
-        seeds = [np.random.randint(0, 2**32) 
-                 for _ in range(n_workers)]
-        
-        # Parallel evaluation
-        results = parallel_evaluate(policy, seeds, env)
-        
-        # Aggregate gradients
-        grad = compute_gradient(results, seeds)
-        
-        # Update policy
-        policy.update(grad)
-    
-    return policy</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 9. Параметры ES</h2>
-    <table>
-      <tr><th>Параметр</th><th>Значение</th><th>Описание</th></tr>
-      <tr><td>population_size</td><td>10-1000</td><td>Размер популяции</td></tr>
-      <tr><td>sigma</td><td>0.01-1.0</td><td>Стандартное отклонение</td></tr>
-      <tr><td>learning_rate</td><td>0.001-0.1</td><td>Шаг обновления</td></tr>
-      <tr><td>elitism</td><td>1-10%</td><td>Сколько лучших сохранить</td></tr>
-    </table>
-  </div>
-
-  <div class="block">
-    <h2>🔷 10. Типичные ошибки</h2>
+    <h2>🔷 10. Применение</h2>
     <ul>
-      <li>❌ Слишком маленькая популяция</li>
-      <li>❌ Неправильный sigma (слишком большой/малый)</li>
-      <li>✅ Нормализовать rewards</li>
-      <li>✅ Использовать параллелизацию</li>
-      <li>✅ Попробовать CMA-ES для сложных задач</li>
+      <li><strong>TSP и маршрутизация</strong>: классический пример (Kirkpatrick et al., 1983 — размещение элементов на чипе)</li>
+      <li><strong>Расписания</strong>: занятия, смены персонала, загрузка станков — E = сумма штрафов за нарушения</li>
+      <li><strong>Размещение и трассировка VLSI</strong>, раскрой, упаковка</li>
+      <li><strong>Подбор гиперпараметров</strong>: дискретные/смешанные пространства (есть в некоторых AutoML-библиотеках), см. <a href="hyperparameter_tuning_cheatsheet.html">тюнинг гиперпараметров</a></li>
+      <li><strong>Отбор признаков</strong>: бинарная маска, E = ошибка на CV + штраф за число признаков</li>
+      <li><strong>Квантовый отжиг</strong>: аппаратный аналог (D-Wave) для QUBO-задач</li>
     </ul>
   </div>
 
   <div class="block">
-    <h2>🔷 11. Чек-лист</h2>
+    <h2>🔷 11. Типичные ошибки</h2>
     <ul>
-      <li>[ ] Определить fitness function</li>
-      <li>[ ] Выбрать алгоритм (basic ES, CMA-ES, NES)</li>
-      <li>[ ] Настроить population size и sigma</li>
-      <li>[ ] Реализовать параллельное evaluation</li>
-      <li>[ ] Мониторить convergence</li>
-      <li>[ ] Сравнить с gradient-based методами</li>
+      <li>❌ T0 подобран «на глаз» без учёта масштаба E → либо случайное блуждание, либо жадный спуск</li>
+      <li>❌ Возврат последнего x вместо лучшего best</li>
+      <li>❌ Слишком «большие» ходы — пропадает локальность</li>
+      <li>❌ Пересчёт всей E вместо инкрементального ΔE — в десятки раз медленнее</li>
+      <li>❌ Шумная E (например, CV-оценка) без усреднения — критерий принимает шум за улучшение</li>
+      <li>❌ Один прогон и выводы о качестве: SA стохастичен, сравнивайте по нескольким seed</li>
     </ul>
   </div>
 
-
-
+  <div class="block">
+    <h2>🔷 12. Чек-лист</h2>
+    <ul>
+      <li>☐ Определить E и ход-соседа, ΔE считается быстро</li>
+      <li>☐ Откалибровать T0 по доле принятых ухудшений (~0.8)</li>
+      <li>☐ Геометрическое охлаждение α ≈ 0.95–0.999, длина цепи L</li>
+      <li>☐ Сохранять best, логировать acceptance rate и E</li>
+      <li>☐ Несколько перезапусков / reheating при стагнации</li>
+      <li>☐ Сравнить с hill climbing и GA на том же бюджете вычислений E</li>
+    </ul>
+  </div>
 
 </div>
 </body>

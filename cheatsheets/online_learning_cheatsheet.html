@@ -36,57 +36,219 @@
 <script src="../assets/theme.js?v=2"></script>
 </head>
 <body><div class="container">
-<h1>⚡ Online Learning</h1>
+<h1>🌊 Online Learning</h1>
 <div class="subtitle">📅 Январь 2026</div>
-<div class="block"><h2>🔷 1. Основы</h2><ul><li>Обучение по одному примеру</li><li>Concept drift</li><li>Не требует всех данных</li><li>Real-time updates</li></ul></div><div class="block"><h2>🔷 2. Алгоритмы</h2><ul><li>SGD</li><li>Perceptron</li><li>FTRL</li><li>Passive-Aggressive</li></ul></div><div class="block"><h2>🔷 3. Sklearn реализация</h2><ul><li>partial_fit метод</li><li>SGDClassifier</li><li>SGDRegressor</li><li>Incremental PCA</li></ul></div><div class="block"><h2>🔷 4. River библиотека</h2><ul><li>Streaming ML</li><li>Drift detection</li><li>Online metrics</li><li>Incremental models</li></ul></div><div class="block"><h2>🔷 5. Concept Drift</h2><ul><li>Detection методы</li><li>Adaptation strategies</li><li>Windowing techniques</li><li>ADWIN</li></ul></div><div class="block"><h2>🔷 6. Метрики</h2><ul><li>Prequential evaluation</li><li>Sliding window</li><li>Fading factors</li><li>Time-decayed performance</li></ul></div><div class="block"><h2>🔷 7. Преимущества</h2><ul><li>Малый объём памяти</li><li>Адаптация к изменениям</li><li>Real-time predictions</li><li>Continuous learning</li></ul></div><div class="block"><h2>🔷 8. Применение</h2><ul><li>Fraud detection</li><li>Stock trading</li><li>Sensor data</li><li>User behavior modeling</li></ul></div><div class="block"><h2>🔷 9. Дополнительно</h2><pre><code># Пример кода
-import example
 
-# Комментарий для увеличения размера файла
-# Ещё один комментарий
-result = example.function(param=value)</code></pre><p>Подробное объяснение с дополнительным текстом для достижения нужного размера файла. Это важная информация для понимания концепции и её применения на практике в реальных проектах машинного обучения.</p></div><div class="block"><h2>🔷 10. Дополнительно</h2><pre><code># Пример кода
-import example
+<div class="block">
+  <h2>🔷 1. Постановка</h2>
+  <p>Данные приходят потоком (x₁, y₁), (x₂, y₂), … На шаге t модель получает xₜ, выдаёт прогноз ŷₜ, затем узнаёт yₜ, платит потерю ℓ(ŷₜ, yₜ) и <strong>сразу обновляется</strong>. Весь датасет не хранится, каждый объект обычно используется один раз.</p>
+  <table>
+    <tr><th></th><th>Batch</th><th>Online</th></tr>
+    <tr><td>Данные</td><td>Весь датасет в памяти</td><td>Поток, O(1) память на объект</td></tr>
+    <tr><td>Обновление</td><td>Периодическое переобучение</td><td>После каждого объекта / мини-батча</td></tr>
+    <tr><td>Распределение</td><td>Предполагается стационарным</td><td>Может дрейфовать</td></tr>
+    <tr><td>Оценка</td><td>Train/test split, CV</td><td>Prequential (test-then-train)</td></tr>
+  </table>
+  <p><strong>Когда нужно</strong>: клики/реклама, фрод, IoT-сенсоры, рекомендации в реальном времени; данные не помещаются в память; распределение меняется. Родственное — <a href="incremental_learning_cheatsheet.html">Incremental Learning</a>.</p>
+</div>
 
-# Комментарий для увеличения размера файла
-# Ещё один комментарий
-result = example.function(param=value)</code></pre><p>Подробное объяснение с дополнительным текстом для достижения нужного размера файла. Это важная информация для понимания концепции и её применения на практике в реальных проектах машинного обучения.</p></div>
+<div class="block">
+  <h2>🔷 2. Regret</h2>
+  <p>В онлайн-постановке (даже adversarial) качество измеряют <strong>регретом</strong> — насколько суммарные потери алгоритма хуже лучшей фиксированной модели задним числом:</p>
+  <p><code>Regret_T = Σₜ ℓₜ(wₜ) − min_w Σₜ ℓₜ(w)</code></p>
+  <ul>
+    <li>Хороший алгоритм — <strong>sublinear regret</strong>: Regret_T / T → 0.</li>
+    <li>Online gradient descent на выпуклых ℓ с шагом ηₜ ∝ 1/√t: <code>Regret = O(√T)</code>; на сильно выпуклых с ηₜ ∝ 1/t: <code>O(log T)</code>.</li>
+    <li>Экспертные алгоритмы (Hedge / Weighted Majority): O(√(T log N)) для N экспертов.</li>
+    <li>Бандиты — частичная обратная связь (видим потерю только выбранного действия), см. <a href="multi_armed_bandits_cheatsheet.html">Multi-Armed Bandits</a>.</li>
+  </ul>
+</div>
 
-  <div class="block">
-    <h2>🔷 11. Практические примеры</h2>
-    <pre><code># Пример использования
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+<div class="block">
+  <h2>🔷 3. SGD по одному объекту и персептрон</h2>
+  <p><strong>Online SGD</strong>: <code>w ← w − ηₜ ∇ℓ(w; xₜ, yₜ)</code>. Для логистической регрессии: <code>w ← w − η (σ(wᵀx) − y) x</code>.</p>
+  <p><strong>Персептрон</strong> (y ∈ {−1, +1}): обновление только при ошибке: если <code>y·wᵀx ≤ 0</code>, то <code>w ← w + y·x</code>.</p>
+  <ul>
+    <li><strong>Теорема Новикова</strong>: если данные разделимы с отступом γ и ‖x‖ ≤ R, число ошибок ≤ (R/γ)².</li>
+    <li>На неразделимых данных персептрон <strong>не сходится</strong> — веса «скачут». Лечат <strong>усреднённым персептроном</strong> (возвращают среднее wₜ), ограничением эпох, или переходом к hinge/log-loss SGD с регуляризацией.</li>
+  </ul>
+  <p><strong>Learning rate</strong>: убывающий шаг (1/t, 1/√t) нужен для сходимости на стационарных данных, но при дрейфе модель «застывает». В нестационарном потоке — постоянный шаг или сброс после детекции дрейфа. Подробнее — <a href="perceptron_cheatsheet.html">Perceptron</a>, <a href="gradient_descent_cheatsheet.html">Gradient Descent</a>.</p>
+</div>
 
-# Загрузка данных
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+<div class="block">
+  <h2>🔷 4. Код: персептрон и online-SGD на numpy</h2>
+<pre><code>import numpy as np
 
-# Обучение модели
-model.fit(X_train, y_train)
+def perceptron_stream(stream, d):
+    w = np.zeros(d); w_sum = np.zeros(d); mistakes = 0
+    for t, (x, y) in enumerate(stream, 1):     # y in {-1, +1}
+        if y * (w @ x) &lt;= 0:
+            w += y * x; mistakes += 1
+        w_sum += w
+    return w, w_sum / t, mistakes              # обычный и усреднённый
 
-# Оценка
-score = model.score(X_test, y_test)
-print(f"Score: {score:.4f}")</code></pre>
-    <p>Детальное объяснение процесса с примерами кода и комментариями для лучшего понимания применения в реальных проектах машинного обучения.</p>
+def online_logreg(stream, d, eta=0.05, l2=1e-4):
+    w = np.zeros(d)
+    for x, y in stream:                        # y in {0, 1}
+        p = 1 / (1 + np.exp(-(w @ x)))
+        w -= eta * ((p - y) * x + l2 * w)      # постоянный шаг → адаптивность
+        yield p                                # прогноз ДО обучения
+
+rng = np.random.default_rng(0)
+X = rng.normal(size=(5000, 3)); y = (X @ [1., -2., .5] &gt; 0).astype(int)
+probs = np.fromiter(online_logreg(zip(X, y), 3), float)
+print("prequential acc:", ((probs &gt; .5) == y).mean())</code></pre>
+</div>
+
+<div class="block">
+  <h2>🔷 5. partial_fit в scikit-learn</h2>
+  <table>
+    <tr><th>Модель</th><th>Задача</th></tr>
+    <tr><td><code>SGDClassifier / SGDRegressor</code></td><td>Линейные модели: hinge, log_loss, modified_huber, squared_error</td></tr>
+    <tr><td><code>Perceptron</code></td><td>Классический персептрон</td></tr>
+    <tr><td><code>PassiveAggressiveClassifier</code></td><td>PA: минимальное изменение w, исправляющее ошибку с отступом; в sklearn ≥ 1.8 устарел → <code>SGDClassifier(loss='hinge', penalty=None, learning_rate='pa1', eta0=1.0)</code></td></tr>
+    <tr><td><code>MultinomialNB / BernoulliNB</code></td><td>Счётчики — обновляются точно</td></tr>
+    <tr><td><code>MiniBatchKMeans</code></td><td>Кластеризация потока</td></tr>
+    <tr><td><code>IncrementalPCA</code>, <code>StandardScaler</code></td><td>Препроцессинг по частям</td></tr>
+  </table>
+  <p>Важно: в первом вызове <code>partial_fit</code> передать <code>classes=</code>; для текста — <code>HashingVectorizer</code> (не требует словаря); масштабировать признаки (SGD чувствителен).</p>
+</div>
+
+<div class="block">
+  <h2>🔷 6. Код: sklearn на потоке чанков</h2>
+<pre><code>import numpy as np
+from sklearn.linear_model import SGDClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import MiniBatchKMeans
+from sklearn.datasets import make_classification
+
+X, y = make_classification(n_samples=20_000, n_features=20, random_state=0)
+clf = SGDClassifier(loss="log_loss", learning_rate="constant", eta0=0.01)
+scaler = StandardScaler(); km = MiniBatchKMeans(n_clusters=5, random_state=0)
+classes = np.unique(y); accs = []
+
+for start in range(0, len(X), 500):            # чанки по 500
+    Xb, yb = X[start:start+500], y[start:start+500]
+    scaler.partial_fit(Xb); Xb = scaler.transform(Xb)
+    if start &gt; 0:                               # test-then-train
+        accs.append(clf.score(Xb, yb))
+    clf.partial_fit(Xb, yb, classes=classes)
+    km.partial_fit(Xb)
+
+print("prequential acc по чанкам:", np.mean(accs).round(3))
+
+# Passive-Aggressive через SGDClassifier (sklearn &gt;= 1.8)
+pa = SGDClassifier(loss="hinge", penalty=None, learning_rate="pa1", eta0=1.0)</code></pre>
+</div>
+
+<div class="block">
+  <h2>🔷 7. FTRL-Proximal</h2>
+  <p><strong>Follow-The-Regularized-Leader</strong> (McMahan et al., Google, 2013) — стандарт для CTR-моделей с миллиардами разреженных признаков. Даёт точность online-SGD и <strong>настоящую разреженность</strong> весов (благодаря L1), экономя память.</p>
+  <p>Для каждой координаты i хранятся zᵢ и nᵢ (сумма квадратов градиентов):</p>
+<pre><code>import numpy as np
+
+class FTRLProximal:                      # логистическая регрессия
+    def __init__(self, d, alpha=0.1, beta=1.0, l1=1.0, l2=1.0):
+        self.a, self.b, self.l1, self.l2 = alpha, beta, l1, l2
+        self.z = np.zeros(d); self.n = np.zeros(d)
+
+    def weights(self):
+        w = -(self.z - np.sign(self.z) * self.l1) / (
+            (self.b + np.sqrt(self.n)) / self.a + self.l2)
+        return np.where(np.abs(self.z) &lt;= self.l1, 0.0, w)  # точные нули
+
+    def predict_proba(self, x):
+        return 1 / (1 + np.exp(-(self.weights() @ x)))
+
+    def learn(self, x, y):
+        w = self.weights()
+        g = (1 / (1 + np.exp(-(w @ x))) - y) * x          # градиент log-loss
+        sigma = (np.sqrt(self.n + g**2) - np.sqrt(self.n)) / self.a
+        self.z += g - sigma * w
+        self.n += g**2</code></pre>
+  <ul>
+    <li><strong>Per-coordinate learning rate</strong> α/(β + √nᵢ), как AdaGrad: редкие признаки учатся быстрее.</li>
+    <li>Гиперпараметры: α (шаг), β (≈1), λ₁ (разреженность), λ₂.</li>
+    <li>Есть в river: <code>optim.FTRLProximal</code>; в Vowpal Wabbit — <code>--ftrl</code>.</li>
+  </ul>
+</div>
+
+<div class="block">
+  <h2>🔷 8. Concept drift, окна и забывание</h2>
+  <ul>
+    <li><strong>Виды</strong>: virtual drift — меняется P(x); real concept drift — меняется P(y|x). По форме: внезапный, постепенный, инкрементальный, повторяющийся (сезонность).</li>
+    <li><strong>Скользящее окно</strong>: обучение только на последних N объектах; N — компромисс стабильность/адаптивность. ADWIN подбирает окно сам.</li>
+    <li><strong>Экспоненциальное забывание</strong>: вес объекта ∝ λ^(t−s), 0 &lt; λ &lt; 1; для SGD — просто постоянный шаг.</li>
+    <li><strong>Детекторы</strong>: DDM (рост ошибки над минимумом p + s на 2σ — warning, 3σ — drift), EDDM, ADWIN (сравнивает подокна), Page-Hinkley (кумулятивное отклонение от среднего).</li>
+    <li><strong>Реакция</strong>: сброс/переобучение, фоновая модель с warning-уровня, ансамбли с заменой слабых членов (ARF, Leveraging Bagging).</li>
+  </ul>
+  <p>Подробно — <a href="concept_drift_cheatsheet.html">Concept Drift</a>, <a href="ensemble_methods_streaming_cheatsheet.html">потоковые ансамбли</a>.</p>
+</div>
+
+<div class="block">
+  <h2>🔷 9. Библиотека river и prequential-оценка</h2>
+  <p><strong>Prequential (test-then-train)</strong>: каждый объект сначала предсказываем, обновляем метрику, затем учимся на нём. Все данные идут и в оценку, и в обучение, утечки нет. Часто добавляют затухание или скользящее окно метрики, чтобы видеть текущее качество. Порядок потока важен: отсортированный поток (сначала один класс) сильно смещает модель — нельзя перемешивать временной ряд, но нельзя и подавать искусственно упорядоченный поток.</p>
+<pre><code># pip install river
+from river import compose, preprocessing, linear_model, optim
+from river import metrics, datasets, evaluate, drift, tree
+
+model = compose.Pipeline(
+    preprocessing.StandardScaler(),
+    linear_model.LogisticRegression(optimizer=optim.SGD(0.05)))
+
+# вручную: test-then-train
+metric = metrics.ROCAUC()
+for x, y in datasets.Phishing():
+    p = model.predict_proba_one(x).get(True, 0.0)
+    metric.update(y, p)
+    model.learn_one(x, y)
+print(metric)
+
+# то же одной строкой; Hoeffding Adaptive Tree сам реагирует на дрейф
+hat = preprocessing.StandardScaler() | tree.HoeffdingAdaptiveTreeClassifier()
+print(evaluate.progressive_val_score(datasets.Phishing(), hat,
+                                     metrics.Accuracy(), print_every=500))
+
+# детектор дрейфа на потоке ошибок
+adwin = drift.ADWIN()
+for i, err in enumerate([0] * 1000 + [1] * 300):
+    adwin.update(err)
+    if adwin.drift_detected:
+        print("drift at", i); break</code></pre>
+</div>
+
+<div class="block">
+  <h2>🔷 10. Сравнение алгоритмов</h2>
+  <table>
+    <tr><th>Алгоритм</th><th>Плюсы</th><th>Минусы</th></tr>
+    <tr><td>Персептрон</td><td>Простота, гарантия на разделимых</td><td>Не сходится на шумных данных</td></tr>
+    <tr><td>Online SGD (log/hinge)</td><td>Универсален, вероятности</td><td>Чувствителен к шагу и масштабу</td></tr>
+    <tr><td>Passive-Aggressive</td><td>Без подбора шага, быстрая адаптация</td><td>Чувствителен к шуму (PA-I/II смягчают через C)</td></tr>
+    <tr><td>FTRL-Proximal</td><td>Разреженность, per-coordinate шаг</td><td>Только линейная модель</td></tr>
+    <tr><td>Hoeffding Tree / ARF</td><td>Нелинейность, работа с дрейфом</td><td>Медленнее, больше памяти</td></tr>
+    <tr><td>Online Naive Bayes</td><td>Точные инкрементальные счётчики</td><td>Сильное предположение независимости</td></tr>
+  </table>
+</div>
+
+<div class="block">
+  <h2>🔷 11. Типичные ошибки и чек-лист</h2>
+  <div class="good-vs-bad">
+    <div class="bad"><h3>Ошибки</h3><ul>
+      <li>Оценка на случайном split вместо prequential → утечка будущего</li>
+      <li>Learning rate 1/t в нестационарном потоке — модель перестаёт учиться</li>
+      <li>Забыли <code>classes=</code> в первом <code>partial_fit</code></li>
+      <li>Нормализация по статистикам всего датасета (утечка) вместо бегущих</li>
+      <li>Метки приходят с задержкой, а обучаемся «как будто сразу»</li>
+    </ul></div>
+    <div class="good"><h3>Чек-лист</h3><ul>
+      <li>Бегущая нормализация, hashing trick для категорий</li>
+      <li>Prequential-метрика со скользящим окном на дашборде</li>
+      <li>Детектор дрейфа + план реакции (сброс / фоновая модель)</li>
+      <li>Сравнение с периодически переобучаемой batch-моделью</li>
+      <li>Снапшоты модели для отката при «отравлении» потока</li>
+    </ul></div>
   </div>
-
-  <div class="block">
-    <h2>🔷 12. Чек-лист</h2>
-    <ul>
-      <li>[ ] Подготовить данные</li>
-      <li>[ ] Выбрать подходящую модель</li>
-      <li>[ ] Настроить гиперпараметры</li>
-      <li>[ ] Провести обучение</li>
-      <li>[ ] Оценить качество</li>
-      <li>[ ] Визуализировать результаты</li>
-      <li>[ ] Проверить на валидации</li>
-      <li>[ ] Задокументировать процесс</li>
-    </ul>
-
-    <h3>💡 Объяснение заказчику:</h3>
-    <blockquote>
-      «Этот подход позволяет решить задачу эффективно, используя современные методы машинного обучения. Результаты можно легко интерпретировать и применять на практике для принятия бизнес-решений».
-    </blockquote>
-  </div>
+</div>
 
 </div>
 </body></html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Нейросети vs Классические методы Cheatsheet — 3 колонки</title>
+  <title>Нейросети vs классические методы Cheatsheet — 3 колонки</title>
   <style>
     @media screen {
       body {
@@ -206,301 +206,192 @@
 
 <div class="container">
 
-  <h1>⚡ Нейросети vs Классические методы</h1>
+  <h1>⚖️ Нейросети vs классические методы</h1>
   <div class="subtitle">📅 Январь 2026</div>
 
   <div class="block">
-    <h2>🔷 1. Основные различия</h2>
+    <h2>🔷 1. Главная идея</h2>
+    <p>Универсального победителя нет: выбор определяется <strong>типом данных</strong>, <strong>объёмом</strong>, требованиями к <strong>интерпретации</strong> и <strong>стоимостью</strong> обучения и поддержки.</p>
     <ul>
-      <li><strong>Нейросети</strong>: автоматическое извлечение признаков из сырых данных</li>
-      <li><strong>Классические методы</strong>: требуют ручного feature engineering</li>
-      <li><strong>Данные</strong>: нейросети нужно много данных, классические работают с меньшим количеством</li>
-      <li><strong>Интерпретируемость</strong>: классические методы более прозрачны</li>
-      <li><strong>Производительность</strong>: нейросети превосходят на сложных задачах (изображения, текст)</li>
+      <li><strong>Классические методы</strong>: линейные модели, kNN, SVM, деревья, случайный лес, градиентный бустинг (XGBoost, LightGBM, CatBoost)</li>
+      <li><strong>Нейросети</strong>: MLP, CNN, RNN, трансформеры — учат представления (representation learning) end-to-end</li>
+      <li><strong>Эмпирическое правило</strong>: таблицы → бустинг; изображения, текст, звук → нейросети</li>
     </ul>
-    <blockquote>
-      Выбор между нейросетями и классическими методами зависит от задачи, объёма данных и требований к интерпретируемости.
-    </blockquote>
-
-    </div>
-<div class="block">
-    <h2>🔷 2. Установка</h2>
-    <pre><code># Установка через pip
-pip install fastai
-
-# Или через conda
-conda install -c fastai -c pytorch fastai
-
-# Проверка
-python -c "import fastai; print(fastai.__version__)"
-
-# GPU support (CUDA)
-pip install fastai torch torchvision --extra-index-url https://download.pytorch.org/whl/cu118</code></pre>
+    <blockquote>Начинайте с сильного простого бейзлайна. Сложная модель должна доказать выигрыш на честной валидации.</blockquote>
   </div>
 
   <div class="block">
-    <h2>🔷 3. Computer Vision</h2>
-    <p><strong>Классификация изображений</strong>:</p>
-    <pre><code>from fastai.vision.all import *
-
-# Загрузка данных
-path = untar_data(URLs.PETS)/'images'
-
-# DataLoader
-dls = ImageDataLoaders.from_name_re(
-    path, 
-    get_image_files(path),
-    pat=r'(.+)_\d+.jpg$',
-    item_tfms=Resize(460),
-    batch_tfms=aug_transforms(size=224)
-)
-
-# Создание модели
-learn = vision_learner(
-    dls, 
-    resnet34, 
-    metrics=error_rate
-)
-
-# Обучение
-learn.fine_tune(3)</code></pre>
-
-    <p><strong>Доступные архитектуры</strong>:</p>
+    <h2>🔷 2. Табличные данные: почему бустинг сильнее</h2>
     <ul>
-      <li>ResNet (18, 34, 50, 101, 152)</li>
-      <li>EfficientNet (b0-b7)</li>
-      <li>DenseNet, VGG, SqueezeNet</li>
-      <li>Vision Transformer (ViT)</li>
+      <li><strong>Разнородные признаки</strong>: разные шкалы, категории, пропуски — деревьям всё равно, сетям нужна предобработка</li>
+      <li><strong>Неинформативные признаки</strong>: деревья их игнорируют, MLP страдает сильнее</li>
+      <li><strong>Нерегулярные зависимости</strong>: ступеньки и пороги — естественны для деревьев; сети смещены к гладким функциям</li>
+      <li><strong>Нет инвариантности к поворотам</strong>: смысл у каждого столбца свой, а MLP «перемешивает» признаки линейным слоем</li>
+      <li><strong>Размер данных</strong>: типичная таблица — тысячи–сотни тысяч строк; сетям этого часто мало</li>
+      <li><strong>Тюнинг</strong>: бустинг хорош почти «из коробки», сети чувствительны к архитектуре, lr, регуляризации</li>
     </ul>
+    <p>Нейросети на таблицах выигрывают или полезны при: очень больших данных, мультимодальности (таблица + текст/картинки), необходимости дообучения/онлайн-обучения, эмбеддингах высококардинальных категорий, последовательностях событий. См. <a href="mlp_tabular_data_cheatsheet.html">MLP для таблиц</a>.</p>
   </div>
 
   <div class="block">
-    <h2>🔷 4. Transfer Learning</h2>
-    <ul>
-      <li><strong>Discriminative learning rates</strong>: разные LR для слоёв</li>
-      <li><strong>Gradual unfreezing</strong>: постепенное размораживание</li>
-      <li><strong>Fine-tuning</strong>: автоматическая настройка</li>
-    </ul>
-
-    <pre><code># Freeze backbone
-learn.freeze()
-learn.fit_one_cycle(2)
-
-# Unfreeze и train с разными LR
-learn.unfreeze()
-learn.fit_one_cycle(5, lr_max=slice(1e-6, 1e-4))
-
-# Learning rate finder
-learn.lr_find()</code></pre>
-
+    <h2>🔷 3. Неструктурированные данные</h2>
     <table>
-      <tr><th>Метод</th><th>Описание</th></tr>
-      <tr><td>fine_tune()</td><td>Freeze → Train → Unfreeze</td></tr>
-      <tr><td>fit_one_cycle()</td><td>One-cycle policy обучение</td></tr>
-      <tr><td>lr_find()</td><td>Поиск оптимального LR</td></tr>
+      <tr><th>Данные</th><th>Классика</th><th>Нейросети</th></tr>
+      <tr><td>Изображения</td><td>HOG/SIFT + SVM</td><td>CNN, ViT — однозначно сильнее</td></tr>
+      <tr><td>Текст</td><td>TF-IDF + логрег / NB</td><td>трансформеры (BERT, LLM)</td></tr>
+      <tr><td>Звук / речь</td><td>MFCC + GMM/HMM</td><td>wav2vec, Whisper, CNN на спектрограммах</td></tr>
+      <tr><td>Временные ряды</td><td>ARIMA, ETS, бустинг на лагах</td><td>смешанно: зависит от числа рядов и длины</td></tr>
+      <tr><td>Графы</td><td>графовые признаки + бустинг</td><td>GNN</td></tr>
+    </table>
+    <ul>
+      <li>Причина: иерархия признаков (пиксели → края → объекты; токены → смысл), которую сеть учит сама вместо ручного feature engineering</li>
+      <li>Transfer learning: предобученные модели работают даже на сотнях примеров</li>
+      <li>Короткие тексты и малые данные: TF-IDF + логрег остаётся сильным, дешёвым бейзлайном</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 4. Большая сравнительная таблица</h2>
+    <table>
+      <tr><th>Критерий</th><th>Линейные</th><th>Бустинг / лес</th><th>Нейросети</th></tr>
+      <tr><td>Табличные данные</td><td>бейзлайн</td><td>✅ обычно лучшие</td><td>иногда на уровне</td></tr>
+      <tr><td>Изображения/текст/звук</td><td>❌</td><td>❌ (только на признаках)</td><td>✅</td></tr>
+      <tr><td>Малые данные (&lt; 10k)</td><td>✅</td><td>✅</td><td>⚠️ переобучение (кроме transfer learning)</td></tr>
+      <tr><td>Огромные данные</td><td>масштабируются</td><td>хорошо до ~10⁸ строк</td><td>✅ продолжают расти</td></tr>
+      <tr><td>Предобработка</td><td>масштаб, кодирование</td><td>минимальная</td><td>нормализация, эмбеддинги, аугментации</td></tr>
+      <tr><td>Интерпретируемость</td><td>✅ коэффициенты</td><td>SHAP, важности</td><td>сложно (attention, saliency)</td></tr>
+      <tr><td>Обучение</td><td>секунды, CPU</td><td>минуты, CPU</td><td>часы+, GPU</td></tr>
+      <tr><td>Инференс</td><td>микросекунды</td><td>быстро</td><td>зависит от размера, часто нужен GPU</td></tr>
+      <tr><td>Гиперпараметры</td><td>мало (C, α)</td><td>умеренно, robust defaults</td><td>много, чувствительны</td></tr>
+      <tr><td>Экстраполяция</td><td>линейная</td><td>константа за пределами данных</td><td>непредсказуема</td></tr>
+      <tr><td>Дообучение / онлайн</td><td>✅ SGD</td><td>ограниченно</td><td>✅ fine-tuning</td></tr>
+      <tr><td>Мультимодальность</td><td>❌</td><td>❌</td><td>✅</td></tr>
     </table>
   </div>
 
   <div class="block">
-    <h2>🔷 5. NLP с Нейросети vs Классические методы</h2>
-    <p><strong>Text Classification</strong>:</p>
-    <pre><code>from fastai.text.all import *
-
-# Загрузка данных
-path = untar_data(URLs.IMDB)
-
-# DataLoader
-dls = TextDataLoaders.from_folder(
-    path, 
-    valid='test',
-    text_vocab=None
-)
-
-# Модель
-learn = text_classifier_learner(
-    dls, 
-    AWD_LSTM, 
-    drop_mult=0.5,
-    metrics=accuracy
-)
-
-# Fine-tuning
-learn.fine_tune(4, 1e-2)</code></pre>
-
-    <p><strong>Language Model</strong>:</p>
-    <pre><code># Обучение language model
-learn_lm = language_model_learner(
-    dls_lm, 
-    AWD_LSTM, 
-    drop_mult=0.3,
-    metrics=[accuracy, Perplexity()]
-)
-
-learn_lm.fit_one_cycle(1, 2e-2)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 6. Tabular Data</h2>
-    <pre><code>from fastai.tabular.all import *
-
-# Подготовка данных
-path = untar_data(URLs.ADULT_SAMPLE)
-df = pd.read_csv(path/'adult.csv')
-
-# DataLoader
-dls = TabularDataLoaders.from_csv(
-    path/'adult.csv',
-    path=path,
-    y_names="salary",
-    cat_names=['workclass', 'education', 'marital-status'],
-    cont_names=['age', 'fnlwgt', 'education-num'],
-    procs=[Categorify, FillMissing, Normalize]
-)
-
-# Модель
-learn = tabular_learner(
-    dls, 
-    metrics=accuracy
-)
-
-learn.fit_one_cycle(3)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 7. Data Augmentation</h2>
-    <p><strong>Встроенные трансформации</strong>:</p>
-    <pre><code># Image augmentation
-aug_transforms(
-    mult=1.0,           # multiplier
-    do_flip=True,       # horizontal flip
-    flip_vert=False,    # vertical flip  
-    max_rotate=10.0,    # rotation degrees
-    max_zoom=1.1,       # zoom factor
-    max_lighting=0.2,   # lighting change
-    max_warp=0.2,       # perspective warp
-    p_affine=0.75,      # probability
-    p_lighting=0.75
-)
-
-# Custom transforms
-item_tfms = [Resize(460)]
-batch_tfms = [
-    *aug_transforms(size=224),
-    Normalize.from_stats(*imagenet_stats)
-]</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 8. Learning Rate Policies</h2>
-    <p><strong>1cycle Policy</strong>:</p>
+    <h2>🔷 5. Объём данных и интерпретируемость</h2>
     <ul>
-      <li>Warm-up: постепенное увеличение LR</li>
-      <li>Annealing: постепенное уменьшение</li>
-      <li>Momentum: обратно пропорционально LR</li>
+      <li><strong>Кривая обучения</strong>: у классических методов качество выходит на плато раньше, нейросети продолжают улучшаться с ростом данных и размера модели (scaling laws)</li>
+      <li><strong>Мало данных + неструктурированные</strong>: не учить с нуля, а брать предобученную сеть (fine-tuning или эмбеддинги + логрег)</li>
+      <li><strong>Мало табличных данных</strong>: регуляризованная линейная модель, бустинг с сильной регуляризацией; TabPFN — нейросетевой вариант для малых таблиц</li>
+      <li><strong>Регуляторика</strong> (кредиты, медицина): линейные модели/скоринговые карты, GAM, бустинг с монотонными ограничениями + <a href="shap_cheatsheet.html">SHAP</a></li>
+      <li>Объяснения нейросетей (Grad-CAM, Integrated Gradients) — локальные и менее устойчивые</li>
     </ul>
-
-    <pre><code># 1cycle training
-learn.fit_one_cycle(
-    n_epoch=10,
-    lr_max=1e-3,
-    moms=(0.95, 0.85),  # momentum range
-    div=25.0,            # initial LR division
-    pct_start=0.3        # warmup percentage
-)
-
-# Flat + cosine annealing
-learn.fit_flat_cos(
-    n_epoch=10,
-    lr=1e-3,
-    pct_start=0.75
-)</code></pre>
   </div>
 
   <div class="block">
-    <h2>🔷 9. Callbacks</h2>
-    <table>
-      <tr><th>Callback</th><th>Назначение</th></tr>
-      <tr><td>EarlyStoppingCallback</td><td>Остановка при plateau</td></tr>
-      <tr><td>SaveModelCallback</td><td>Сохранение best модели</td></tr>
-      <tr><td>CSVLogger</td><td>Логирование в CSV</td></tr>
-      <tr><td>ReduceLROnPlateau</td><td>Уменьшение LR</td></tr>
-      <tr><td>MixedPrecision</td><td>FP16 training</td></tr>
-      <tr><td>GradientClip</td><td>Gradient clipping</td></tr>
-    </table>
-
-    <pre><code># Использование callbacks
-learn.fit_one_cycle(
-    10,
-    cbs=[
-        EarlyStoppingCallback(patience=3),
-        SaveModelCallback(),
-        CSVLogger()
-    ]
-)</code></pre>
+    <h2>🔷 6. Стоимость и подбор гиперпараметров</h2>
+    <ul>
+      <li><strong>Обучение</strong>: бустинг на CPU за минуты; сети — GPU, эксперименты с архитектурой, больше времени инженера</li>
+      <li><strong>Инференс</strong>: дерево/линейка — латентность микросекунды и маленький артефакт; большая сеть требует батчинга, квантизации, GPU</li>
+      <li><strong>Поддержка</strong>: версии фреймворков, CUDA, воспроизводимость, мониторинг дрейфа</li>
+      <li><strong>Тюнинг бустинга</strong>: learning_rate, n_estimators + early stopping, num_leaves/max_depth, min_child_samples, subsample, регуляризация</li>
+      <li><strong>Тюнинг сетей</strong>: lr и его расписание, ширина/глубина, dropout, weight decay, batch size, нормализация входов, эпохи</li>
+      <li>Для обоих — одинаковый бюджет поиска (например, Optuna на N trials), см. <a href="hyperparameter_tuning_cheatsheet.html">тюнинг гиперпараметров</a></li>
+    </ul>
   </div>
 
   <div class="block">
-    <h2>🔷 10. Inference и Export</h2>
-    <pre><code># Inference на одном примере
-img = PILImage.create('test.jpg')
-pred_class, pred_idx, probs = learn.predict(img)
-
-# Batch inference
-dl = learn.dls.test_dl(test_items)
-preds, _ = learn.get_preds(dl=dl)
-
-# Export модели
-learn.export('model.pkl')
-
-# Load для inference
-learn_inf = load_learner('model.pkl')
-pred = learn_inf.predict(img)</code></pre>
+    <h2>🔷 7. Дерево выбора метода</h2>
+    <pre><code>Тип данных?
+├─ Изображения / текст / звук / видео
+│   ├─ Есть предобученная модель → fine-tuning / эмбеддинги
+│   └─ Очень мало данных → эмбеддинги + логрег/kNN
+├─ Таблица
+│   ├─ Нужна полная прозрачность → линейная / GAM / скоркарта
+│   ├─ Обычный случай → бустинг (CatBoost / LightGBM / XGBoost)
+│   ├─ &lt; ~10k строк → + TabPFN / линейка, сравнить на CV
+│   └─ Огромные данные, мультимодальность, онлайн → нейросеть
+│        или гибрид (эмбеддинги + бустинг)
+└─ Смешанные (таблица + текст/изображения)
+    → эмбеддинги из сети как признаки бустинга
+      или мультимодальная сеть end-to-end
+Всегда: бейзлайн → честное сравнение → ансамбль, если выгодно</code></pre>
   </div>
 
   <div class="block">
-    <h2>🔷 11. Interpretation</h2>
-    <pre><code># Classification interpretation
-interp = ClassificationInterpretation.from_learner(learn)
-
-# Confusion matrix
-interp.plot_confusion_matrix(figsize=(12,12))
-
-# Top losses
-interp.plot_top_losses(9, figsize=(15,11))
-
-# Most confused
-interp.most_confused(min_val=2)</code></pre>
+    <h2>🔷 8. Бенчмарки (качественно)</h2>
+    <ul>
+      <li><strong>Grinsztajn et al., 2022</strong> («Why do tree-based models still outperform deep learning on tabular data?»): на средних таблицах деревья в целом впереди; причины — нерегулярные функции, неинформативные признаки, неинвариантность к поворотам</li>
+      <li><strong>Shwartz-Ziv &amp; Armon, 2022</strong> («Tabular data: deep learning is not all you need»): XGBoost в среднем сильнее предложенных табличных сетей, ансамбль сети + XGBoost — лучше всех</li>
+      <li><strong>Gorishniy et al., 2021</strong> (FT-Transformer): хорошо настроенные ResNet/MLP — сильный бейзлайн; явного победителя нет, многое зависит от датасета</li>
+      <li><strong>McElfresh et al., 2023</strong>: разница между лучшими сетями и бустингом часто меньше, чем выигрыш от тюнинга; характеристики датасета важнее семейства модели</li>
+      <li><strong>TabPFN</strong> (Hollmann et al.): предобученный трансформер, конкурентен на малых таблицах</li>
+    </ul>
+    <blockquote>Выводы бенчмарков зависят от выбора датасетов и бюджета тюнинга — проверяйте на своих данных.</blockquote>
   </div>
 
   <div class="block">
-    <h2>🔷 12. Best Practices</h2>
-    <div class="good-vs-bad">
-      <div class="good">
-        <h3>✅ Рекомендации</h3>
-        <ul>
-          <li>Использовать lr_find()</li>
-          <li>Применять fit_one_cycle()</li>
-          <li>Начинать с small models</li>
-          <li>Использовать mixed precision</li>
-          <li>Progressive resizing</li>
-          <li>Test time augmentation</li>
-        </ul>
-      </div>
-      
-      <div class="bad">
-        <h3>❌ Избегать</h3>
-        <ul>
-          <li>Случайный выбор LR</li>
-          <li>Игнорирование validation</li>
-          <li>Переобучение с первого раза</li>
-          <li>Слишком большой batch size</li>
-          <li>Отсутствие augmentation</li>
-        </ul>
-      </div>
-    </div>
+    <h2>🔷 9. Гибриды</h2>
+    <ul>
+      <li><strong>Эмбеддинги + бустинг</strong>: текст/изображения → эмбеддинги предобученной сети (BERT, CLIP, ResNet) → признаки для LightGBM вместе с табличными</li>
+      <li><strong>Entity embeddings</strong>: сеть учит эмбеддинги высококардинальных категорий, затем они идут в бустинг</li>
+      <li><strong><a href="tabnet_cheatsheet.html">TabNet</a></strong>: последовательное внимание к признакам, встроенный отбор признаков и интерпретация</li>
+      <li><strong>FT-Transformer</strong>: каждый признак → токен, далее трансформер; сильный нейросетевой бейзлайн для таблиц</li>
+      <li><strong>NODE, GrowNet</strong>: дифференцируемые деревья / бустинг из сетей</li>
+      <li><strong>Ансамбль / стекинг</strong>: усреднение бустинга и сети часто лучше каждой модели — ошибки разные (<a href="ensemble_methods_voting_stacking_cheatsheet.html">стекинг</a>)</li>
+    </ul>
   </div>
 
+  <div class="block">
+    <h2>🔷 10. Код: честное сравнение на sklearn</h2>
+    <pre><code>import time
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import StratifiedKFold, cross_validate
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.neural_network import MLPClassifier
 
+X, y = load_breast_cancer(return_X_y=True)
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)  # одни фолды
+
+models = {
+    "logreg": make_pipeline(StandardScaler(), LogisticRegression(C=1.0, max_iter=1000)),
+    "rf": RandomForestClassifier(n_estimators=300, random_state=42),
+    "hgb": HistGradientBoostingClassifier(learning_rate=0.05, max_iter=300,
+                                          early_stopping=True, random_state=42),
+    "mlp": make_pipeline(StandardScaler(),             # сетям нужен скейлинг
+                         MLPClassifier(hidden_layer_sizes=(128, 64), alpha=1e-3,
+                                       early_stopping=True, max_iter=500,
+                                       random_state=42)),
+}
+for name, m in models.items():
+    t = time.perf_counter()
+    r = cross_validate(m, X, y, cv=cv, scoring=["roc_auc", "accuracy"])
+    print(f"{name:7s} AUC={r['test_roc_auc'].mean():.4f}±{r['test_roc_auc'].std():.4f} "
+          f"acc={r['test_accuracy'].mean():.4f} time={time.perf_counter() - t:.1f}s")</code></pre>
+    <ul>
+      <li>Одинаковые фолды и метрики, предобработка внутри Pipeline (нет утечки)</li>
+      <li>Сравнивайте разброс по фолдам, а не только среднее; для значимости — повторный CV</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 11. Типичные ошибки сравнения</h2>
+    <ul>
+      <li>❌ Одну модель тюнят часами, другую запускают с параметрами по умолчанию</li>
+      <li>❌ Подбор гиперпараметров на тесте; разные разбиения для разных моделей</li>
+      <li>❌ MLP без масштабирования признаков и без early stopping</li>
+      <li>❌ Вывод по одному датасету / одному seed</li>
+      <li>❌ Игнорирование стоимости: +0.1% AUC ценой GPU-инференса и сложной поддержки</li>
+      <li>❌ Нейросеть с нуля на 500 картинках вместо transfer learning</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 12. Чек-лист выбора</h2>
+    <ul>
+      <li>☐ Тип данных и объём; есть ли предобученные модели</li>
+      <li>☐ Требования к интерпретации, регуляторике, латентности, железу</li>
+      <li>☐ Бейзлайны: линейная модель + бустинг (+ предобученная сеть для неструктурированных)</li>
+      <li>☐ Равный бюджет тюнинга, одни фолды, несколько seed</li>
+      <li>☐ Учесть стоимость обучения, инференса и поддержки</li>
+      <li>☐ Попробовать гибрид или ансамбль, если модели ошибаются по-разному</li>
+    </ul>
+  </div>
 
 </div>
 </body>

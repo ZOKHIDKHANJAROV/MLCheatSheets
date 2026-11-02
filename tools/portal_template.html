@@ -150,6 +150,16 @@
   .src { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 14px; }
   .src .btn.on, .src .btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
   .score { font-size: 42px; font-weight: 700; margin: 4px 0; }
+  .gloss-letters { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 14px; }
+  .gloss-letters a { padding: 2px 9px; border: 1px solid var(--border); border-radius: 6px; color: var(--text); }
+  .gloss-letters a:hover { border-color: var(--accent); text-decoration: none; }
+  .gloss-filter { width: 100%; max-width: 420px; font: inherit; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--text); }
+  .term { padding: 10px 0; border-bottom: 1px solid var(--border); scroll-margin-top: 12px; }
+  .term b { font-size: 15.5px; }
+  .term .md p { margin: 4px 0; }
+  .term .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: 13px; }
+  .term.hit { background: var(--accent-soft); border-radius: 6px; padding-left: 8px; }
+  .qpanel .term { padding: 6px 0; }
   .heat { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 13px); gap: 3px; margin: 8px 0 4px; overflow-x: auto; }
   .heat i { width: 13px; height: 13px; border-radius: 3px; background: var(--border); }
   .heat i.l1 { background: color-mix(in srgb, var(--done) 35%, var(--border)); }
@@ -206,6 +216,7 @@
   <button id="menuBtn" class="btn" aria-label="Меню">☰</button>
   <a class="brand" href="#/">🎓 ML Cheatsheets <span>· портал</span></a>
   <div class="search"><input id="search" type="search" placeholder="Поиск по 400+ темам…  ( / )" autocomplete="off"></div>
+  <a class="btn" href="#/k" title="Глоссарий терминов">📖</a>
   <a class="btn" href="#/g" title="План занятий на сегодня">📅</a>
   <a class="btn" href="#/e" title="Режим экзамена: случайные вопросы с самооценкой">🎓</a>
   <a class="btn" href="#/r" id="reviewBtn" title="Интервальное повторение">🔁 <span id="dueCount"></span></a>
@@ -357,6 +368,7 @@ function rateButtons(f) {
 // #/e                        режим экзамена
 // #/j/<n>                    мини-проект
 // #/g                        план занятий
+// #/k/<термин>               глоссарий (термин — подсветить)
 function parseHash() {
   const [route, query] = decodeURIComponent(location.hash.slice(1) || "/").split("?ctx=");
   return { parts: route.split("/").filter(Boolean), ctx: query || "" };
@@ -388,6 +400,7 @@ function render() {
   else if (kind === "e") main.innerHTML = viewExam();
   else if (kind === "j") main.innerHTML = viewProject(+a);
   else if (kind === "g") main.innerHTML = viewPlan();
+  else if (kind === "k") { if (parts[1]) glossaryQuery = ""; main.innerHTML = viewGlossary(); requestAnimationFrame(() => glossaryJump(parts.slice(1).join("/"))); }   // после сброса прокрутки ниже
   else main.innerHTML = viewHome();
   if (kind === "t" || kind === "d") forwardFrameKeys(main.querySelector("iframe"));
   else main.scrollTop = 0;
@@ -614,6 +627,7 @@ function viewTopic(f, ctx) {
         <p class="note">Ответьте мысленно или вслух, затем раскройте ответ.</p>
         ${questionsBlock(f)}
         <div id="rateBox">${rateButtons(f)}</div>
+        ${termsOf(f).length ? `<h3 style="margin-top:18px">📖 Термины темы</h3>${termsOf(f).map(t => `<details class="q"><summary>${esc(t.t)}</summary><div class="ans">${markdown(t.d)}</div></details>`).join("")}` : ""}
         <div class="notes">
           <h3 style="margin-top:18px">📝 Мои заметки</h3>
           <textarea data-note="${esc(f)}" placeholder="Своими словами: главное, формулы, на чём споткнулись, вопросы на потом…">${esc(noteOf(f))}</textarea>
@@ -912,6 +926,45 @@ function viewNotes() {
   </div>`;
 }
 
+// ---------- глоссарий ----------
+const termsOf = (() => {                                // термины, которые ссылаются на тему
+  const by = {};
+  (DATA.glossary || []).forEach(t => t.topics.forEach(f => (by[f] = by[f] || []).push(t)));
+  return f => by[f] || [];
+})();
+const termId = t => "term-" + t.t.toLowerCase().replace(/[^a-z0-9а-яё]+/g, "-").replace(/^-|-$/g, "");
+let glossaryQuery = "";
+
+function termHtml(t) {
+  return `<div class="term" id="${termId(t)}"><b>${esc(t.t)}</b><div class="md">${markdown(t.d)}</div>
+    ${t.topics.length ? `<div class="chips">📘 ${t.topics.map(f => `<a class="chip ${isDone(f) ? "done" : ""}" href="#/t/${encodeURIComponent(f)}">${esc(title(f))}</a>`).join("")}</div>` : ""}</div>`;
+}
+
+function viewGlossary() {
+  const q = glossaryQuery.toLowerCase().trim();
+  const list = DATA.glossary.filter(t => !q || (t.t + " " + t.d).toLowerCase().includes(q));
+  const groups = {};
+  list.forEach(t => { const L = t.t[0].toUpperCase(); (groups[L] = groups[L] || []).push(t); });
+  return `<div class="page">
+    <h1>📖 Глоссарий</h1>
+    <p class="sub">${DATA.glossary.length} ${plural(DATA.glossary.length, "термин", "термина", "терминов")} ML и DL с короткими определениями и ссылками на шпаргалки.
+      Термины темы также видны в панели «❓ Вопросы» на странице шпаргалки.</p>
+    <input class="gloss-filter" id="glossFilter" type="search" placeholder="Фильтр: термин или слово из определения…" value="${esc(glossaryQuery)}" autocomplete="off">
+    <div class="gloss-letters">${Object.keys(groups).map(L => `<a href="#/k/${encodeURIComponent(L)}">${esc(L)}</a>`).join("")}</div>
+    ${list.length ? Object.entries(groups).map(([L, ts]) => `<h2 id="letter-${esc(L)}">${esc(L)}</h2>${ts.map(termHtml).join("")}`).join("") : `<div class="empty">Ничего не найдено.</div>`}
+  </div>`;
+}
+
+// #/k/A — к букве, #/k/<термин> — к термину с подсветкой
+function glossaryJump(target) {
+  if (!target) return;
+  const t = DATA.glossary.find(x => x.t.toLowerCase() === target.toLowerCase());
+  const el = t ? document.getElementById(termId(t)) : document.getElementById("letter-" + target);
+  if (!el) return;
+  if (t) el.classList.add("hit");
+  el.scrollIntoView({ block: "start" });
+}
+
 // ---------- мини-проекты ----------
 const METRIC_TITLE = { roc_auc: "ROC-AUC", accuracy: "accuracy", mae: "MAE", cost: "средняя стоимость ошибок" };
 
@@ -980,9 +1033,11 @@ function viewSearch(q) {
   const hay = f => (title(f) + " " + f.replace(/_/g, " ") + " " + (topicHome[f] ? topicHome[f].label : "") + " " + noteOf(f)).toLowerCase();
   const found = words.length ? allTopics.filter(f => words.every(w => hay(f).includes(w))) : [];
   const ex = words.length ? DATA.exercises.map((e, i) => [e, i]).filter(([e]) => words.every(w => (e.title + " " + e.id).toLowerCase().includes(w))) : [];
+  const terms = words.length ? DATA.glossary.filter(t => words.every(w => t.t.toLowerCase().includes(w))) : [];
   return `<div class="page">
     <h1>Поиск: «${esc(q)}»</h1>
-    <p class="sub">Найдено тем: ${found.length}${ex.length ? `, упражнений: ${ex.length}` : ""}</p>
+    <p class="sub">Найдено тем: ${found.length}${ex.length ? `, упражнений: ${ex.length}` : ""}${terms.length ? `, терминов: ${terms.length}` : ""}</p>
+    ${terms.length ? `<h2>📖 Глоссарий</h2>${terms.slice(0, 5).map(termHtml).join("")}${terms.length > 5 ? `<p><a href="#/k">Все термины →</a></p>` : ""}<h2>📘 Темы</h2>` : ""}
     ${found.length ? `<ol class="topics">${found.slice(0, 200).map(f => topicRow(f, "", true)).join("")}</ol>` : `<div class="empty">Ничего не найдено. Попробуйте английское название (например, «boosting») или часть слова.</div>`}
     ${ex.length ? `<h2>💪 Упражнения</h2><div class="cards">${ex.map(([e, i]) => `<a class="card" href="#/x/${i}">${esc(e.title)}</a>`).join("")}</div>` : ""}
   </div>`;
@@ -1124,6 +1179,11 @@ document.addEventListener("click", e => {
   if (t.dataset.action) action(t.dataset.action);
 });
 document.addEventListener("input", e => {
+  if (e.target.id === "glossFilter") {
+    glossaryQuery = e.target.value; const pos = e.target.selectionStart;
+    render(); const inp = document.getElementById("glossFilter"); inp.focus(); inp.setSelectionRange(pos, pos);
+    return;
+  }
   const f = e.target.dataset && e.target.dataset.note;
   if (!f) return;
   const text = e.target.value;

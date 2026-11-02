@@ -38,55 +38,208 @@
 <body><div class="container">
 <h1>📈 Model Monitoring и A/B Testing</h1>
 <div class="subtitle">📅 Январь 2026</div>
-<div class="block"><h2>🔷 1. Зачем мониторить</h2><ul><li>Data drift</li><li>Model drift</li><li>Performance degradation</li><li>System health</li></ul></div><div class="block"><h2>🔷 2. Метрики мониторинга</h2><ul><li>Accuracy over time</li><li>Latency</li><li>Throughput</li><li>Error rates</li></ul></div><div class="block"><h2>🔷 3. Data Drift детекция</h2><ul><li>KS test</li><li>PSI (Population Stability Index)</li><li>Wasserstein distance</li><li>Визуализация распределений</li></ul></div><div class="block"><h2>🔷 4. Model Drift</h2><ul><li>Performance metrics</li><li>Confusion matrix changes</li><li>Feature importance shifts</li><li>Calibration plots</li></ul></div><div class="block"><h2>🔷 5. A/B тестирование</h2><ul><li>Контрольная группа</li><li>Treatment group</li><li>Randomization</li><li>Statistical significance</li></ul></div><div class="block"><h2>🔷 6. Размер выборки</h2><ul><li>Power analysis</li><li>Effect size</li><li>Минимальная детектируемая разница</li><li>Duration planning</li></ul></div><div class="block"><h2>🔷 7. Инструменты</h2><ul><li>MLflow</li><li>Weights & Biases</li><li>Evidently</li><li>WhyLabs</li></ul></div><div class="block"><h2>🔷 8. Best practices</h2><ul><li>Алерты и уведомления</li><li>Dashboard для мониторинга</li><li>Rollback стратегии</li><li>Документация изменений</li></ul></div><div class="block"><h2>🔷 9. Дополнительно</h2><pre><code># Пример кода
-import example
 
-# Комментарий для увеличения размера файла
-# Ещё один комментарий
-result = example.function(param=value)</code></pre><p>Подробное объяснение с дополнительным текстом для достижения нужного размера файла. Это важная информация для понимания концепции и её применения на практике в реальных проектах машинного обучения.</p></div><div class="block"><h2>🔷 10. Дополнительно</h2><pre><code># Пример кода
-import example
+<div class="block">
+  <h2>🔷 1. Жизненный цикл: мониторинг + эксперимент</h2>
+  <p>Мониторинг отвечает на вопрос «<strong>не сломалась ли текущая модель?</strong>», A/B-тест — «<strong>лучше ли новая модель старой для бизнеса?</strong>». Они замыкают цикл: мониторинг находит деградацию → переобучаем → новую модель выкатываем через shadow/canary → A/B-тест → победитель становится новым бейзлайном мониторинга.</p>
+  <ul>
+    <li><strong>Offline-метрики</strong> (AUC, RMSE на отложенной выборке) не гарантируют рост онлайн-метрик: другая аудитория, feedback loop, задержка, UX.</li>
+    <li><strong>Online-метрики</strong> (CTR, конверсия, выручка, retention) измеряются только на живом трафике.</li>
+  </ul>
+  <p>Подробно про инструменты и дашборды мониторинга — в шпаргалке <a href="model_monitoring_cheatsheet.html">Model Monitoring</a>; про дрейф — <a href="concept_drift_cheatsheet.html">Concept Drift</a>.</p>
+</div>
 
-# Комментарий для увеличения размера файла
-# Ещё один комментарий
-result = example.function(param=value)</code></pre><p>Подробное объяснение с дополнительным текстом для достижения нужного размера файла. Это важная информация для понимания концепции и её применения на практике в реальных проектах машинного обучения.</p></div>
+<div class="block">
+  <h2>🔷 2. Что мониторить</h2>
+  <table>
+    <tr><th>Слой</th><th>Что смотрим</th><th>Примеры сигналов</th></tr>
+    <tr><td>Система</td><td>Сервис инференса</td><td>latency p50/p95/p99, RPS, 5xx, OOM, CPU/GPU</td></tr>
+    <tr><td>Данные</td><td>Качество входа</td><td>схема, доля NaN, out-of-range, новые категории, задержка фичей</td></tr>
+    <tr><td>Дрейф входа</td><td>P(X)</td><td>PSI, KS, χ² по каждому признаку</td></tr>
+    <tr><td>Предсказания</td><td>P(ŷ)</td><td>среднее/квантили скора, доля класса, уверенность</td></tr>
+    <tr><td>Качество</td><td>P(y|X)</td><td>AUC, precision@k, MAE — когда пришли метки</td></tr>
+    <tr><td>Бизнес</td><td>Эффект</td><td>конверсия, выручка, жалобы, ручные оверрайды</td></tr>
+  </table>
+  <p>Всегда храните лог: <code>request_id, timestamp, model_version, features, prediction</code> — без него нельзя ни посчитать качество задним числом, ни анализировать A/B.</p>
+</div>
 
-  <div class="block">
-    <h2>🔷 11. Практические примеры</h2>
-    <pre><code># Пример использования
+<div class="block">
+  <h2>🔷 3. Детекция дрейфа: PSI, KS, χ²</h2>
+  <ul>
+    <li><strong>PSI</strong> (Population Stability Index): бьём признак на бины (обычно 10 квантилей по референсу), <code>PSI = Σ (aᵢ − eᵢ) · ln(aᵢ / eᵢ)</code>, где eᵢ, aᵢ — доли в референсе и текущем окне. Правило: &lt; 0.1 — стабильно, 0.1–0.25 — умеренный сдвиг, &gt; 0.25 — значимый.</li>
+    <li><strong>KS-тест</strong> (непрерывные): D = max|F₁(x) − F₂(x)|. На больших выборках p-value почти всегда &lt; 0.05 — смотрите на величину D, а не только на p.</li>
+    <li><strong>χ²-тест</strong> (категориальные): сравнивает частоты категорий в таблице сопряжённости.</li>
+    <li><strong>Wasserstein / JS-дивергенция</strong> — «расстояния», удобные как непрерывный индикатор.</li>
+  </ul>
+  <p>При сотнях признаков делайте поправку на множественные проверки (Bonferroni/BH) или алертьте только по важным признакам.</p>
+</div>
+
+<div class="block">
+  <h2>🔷 4. Код: PSI, KS, χ²</h2>
+<pre><code>import numpy as np
+from scipy import stats
+
+def psi(ref, cur, bins=10, eps=1e-6):
+    edges = np.quantile(ref, np.linspace(0, 1, bins + 1))
+    edges[0], edges[-1] = -np.inf, np.inf
+    e = np.histogram(ref, edges)[0] / len(ref) + eps
+    a = np.histogram(cur, edges)[0] / len(cur) + eps
+    return float(np.sum((a - e) * np.log(a / e)))
+
+rng = np.random.default_rng(0)
+ref = rng.normal(0, 1, 10_000)       # обучающее окно
+cur = rng.normal(0.3, 1.1, 10_000)   # прод за неделю
+
+print("PSI:", round(psi(ref, cur), 3))
+ks = stats.ks_2samp(ref, cur)
+print("KS D=%.3f p=%.2e" % (ks.statistic, ks.pvalue))
+
+# категориальный признак: частоты по категориям
+ref_counts = np.array([500, 300, 200])
+cur_counts = np.array([420, 330, 250])
+chi2, p, dof, _ = stats.chi2_contingency([ref_counts, cur_counts])
+print("chi2=%.1f p=%.3f" % (chi2, p))</code></pre>
+</div>
+
+<div class="block">
+  <h2>🔷 5. Задержанные метки и алертинг</h2>
+  <p>Метки часто приходят через дни/месяцы (дефолт по кредиту, отток). Пока их нет:</p>
+  <ul>
+    <li><strong>Proxy-сигналы</strong>: дрейф признаков и распределения скоров, средняя уверенность, доля «пограничных» прогнозов.</li>
+    <li><strong>Ранние метки</strong>: короткий горизонт (просрочка 30 дней вместо дефолта за год).</li>
+    <li><strong>Ручная разметка</strong> небольшой случайной выборки.</li>
+    <li><strong>Backfill</strong>: когда метки пришли — пересчитать метрики по когортам на дату прогноза.</li>
+  </ul>
+  <p><strong>Алертинг</strong>: пороги (статические или по истории ± kσ), уровни severity, минимальный объём окна, подавление дублей. Алерт должен иметь runbook: кто реагирует и что делать (откат, переобучение, фича-фикс). Слишком чувствительные алерты → alert fatigue.</p>
+</div>
+
+<div class="block">
+  <h2>🔷 6. Безопасный выкат: shadow → canary → A/B</h2>
+  <table>
+    <tr><th>Режим</th><th>Как работает</th><th>Что даёт</th></tr>
+    <tr><td>Shadow</td><td>Новая модель получает копию трафика, ответы не показываются пользователю</td><td>Проверка latency, ошибок, расхождения прогнозов без риска; бизнес-эффект не измерить</td></tr>
+    <tr><td>Canary</td><td>1–5% трафика на новую модель, постепенное увеличение</td><td>Ловит поломки на малом объёме; быстрый rollback</td></tr>
+    <tr><td>A/B-тест</td><td>Случайное разбиение 50/50 (или иное) на заранее рассчитанный срок</td><td>Причинная оценка эффекта на бизнес-метрике</td></tr>
+    <tr><td>Interleaving</td><td>Смешивание выдач двух ранжировщиков в одном списке</td><td>Для ранжирования в 10–100× чувствительнее A/B</td></tr>
+  </table>
+</div>
+
+<div class="block">
+  <h2>🔷 7. Дизайн A/B-теста модели</h2>
+  <ol>
+    <li><strong>Гипотеза</strong>: «новая модель увеличит конверсию».</li>
+    <li><strong>Метрики</strong>: одна целевая (OEC), guardrail-метрики (latency, жалобы, выручка не падает), диагностические.</li>
+    <li><strong>Единица рандомизации</strong>: пользователь (не запрос!), иначе один человек видит обе модели. Хэш <code>hash(user_id + salt) % 100</code>.</li>
+    <li><strong>MDE</strong> (minimum detectable effect), α (обычно 0.05), мощность 1−β (0.8) → размер выборки.</li>
+    <li><strong>Длительность</strong>: ≥ 1–2 полных недели (сезонность по дням), не меньше расчётной выборки.</li>
+    <li><strong>Проверки</strong>: A/A-тест, SRM (sample ratio mismatch: χ² на размеры групп), отсутствие утечки между группами.</li>
+    <li><strong>Анализ</strong> строго по плану, затем решение и документирование.</li>
+  </ol>
+</div>
+
+<div class="block">
+  <h2>🔷 8. Размер выборки и мощность</h2>
+  <p>Для двух долей (конверсии p₁, p₂) на группу: <code>n ≈ (z₁₋α/₂ + z₁₋β)² · [p₁(1−p₁) + p₂(1−p₂)] / (p₂ − p₁)²</code>. Для средних: <code>n ≈ 2(z₁₋α/₂ + z₁₋β)² σ² / Δ²</code>.</p>
+  <ul>
+    <li>Уменьшили MDE вдвое → выборка ×4.</li>
+    <li>Снижение дисперсии: <strong>CUPED</strong> (ковариата — та же метрика до эксперимента), стратификация, обрезка выбросов.</li>
+  </ul>
+<pre><code>from statsmodels.stats.power import NormalIndPower, TTestIndPower
+from statsmodels.stats.proportion import proportion_effectsize
+
+# конверсия 5% -&gt; хотим заметить 5.5%
+es = proportion_effectsize(0.055, 0.05)          # Cohen's h
+n = NormalIndPower().solve_power(effect_size=es, alpha=0.05,
+                                 power=0.8, ratio=1.0)
+print(f"на группу: {n:,.0f}")                    # ≈ 31 000
+
+# непрерывная метрика: Cohen's d = Δ / σ
+n_t = TTestIndPower().solve_power(effect_size=0.05, alpha=0.05, power=0.8)
+print(f"t-test на группу: {n_t:,.0f}")</code></pre>
+</div>
+
+<div class="block">
+  <h2>🔷 9. Статистические тесты и анализ</h2>
+  <table>
+    <tr><th>Метрика</th><th>Тест</th></tr>
+    <tr><td>Доля (CTR, конверсия)</td><td>z-тест для долей, χ²</td></tr>
+    <tr><td>Среднее (чек, время)</td><td>t-тест Уэлча; при тяжёлых хвостах — bootstrap / Манна–Уитни</td></tr>
+    <tr><td>Ratio-метрика (клики/сессии)</td><td>delta-метод или bootstrap по пользователям</td></tr>
+  </table>
+<pre><code>import numpy as np
+from scipy import stats
+from statsmodels.stats.proportion import proportions_ztest, confint_proportions_2indep
+
+conv = np.array([1650, 1540]); n = np.array([30000, 30000])  # B, A
+z, p = proportions_ztest(conv, n)
+lo, hi = confint_proportions_2indep(conv[0], n[0], conv[1], n[1])
+print(f"p={p:.4f}, uplift CI=[{lo:.4f}, {hi:.4f}]")
+
+rev_a = np.random.default_rng(1).exponential(100, 5000)
+rev_b = np.random.default_rng(2).exponential(104, 5000)
+print(stats.ttest_ind(rev_b, rev_a, equal_var=False))
+
+# SRM-проверка: ожидали 50/50
+print(stats.chisquare([30000, 30410]).pvalue)   # p &lt; 0.001 → тест сломан</code></pre>
+  <p>Смотрите на доверительный интервал эффекта, а не только на p-value; при многих метриках/сегментах — поправка на множественность.</p>
+</div>
+
+<div class="block">
+  <h2>🔷 10. Peeking и последовательное тестирование</h2>
+  <p><strong>Peeking</strong> — ежедневно смотреть p-value и остановиться при p &lt; 0.05. При 10–20 «подглядываниях» реальная вероятность ложного срабатывания вырастает с 5% до 20–30%.</p>
+  <ul>
+    <li><strong>Фиксированный горизонт</strong>: анализ только в конце расчётного срока.</li>
+    <li><strong>Group sequential</strong> (O'Brien–Fleming, Pocock): заранее заданные промежуточные анализы с более строгими порогами (alpha spending).</li>
+    <li><strong>Always-valid p-values / mSPRT</strong>: можно смотреть в любой момент.</li>
+    <li><strong>Байесовский A/B</strong>: P(B &gt; A) и ожидаемые потери — понятнее бизнесу, но тоже не защищён от произвольной остановки без правил.</li>
+  </ul>
+  <p>Другие ловушки: novelty/primacy effect (эффект новизны затухает), сетевые эффекты (нарушение независимости групп), изменение модели во время теста.</p>
+</div>
+
+<div class="block">
+  <h2>🔷 11. Multi-armed bandits vs A/B</h2>
+  <table>
+    <tr><th></th><th>A/B-тест</th><th>Бандит</th></tr>
+    <tr><td>Трафик</td><td>Фиксированный сплит</td><td>Динамически к лучшему варианту</td></tr>
+    <tr><td>Цель</td><td>Оценить эффект (exploration)</td><td>Максимизировать награду (exploit)</td></tr>
+    <tr><td>Regret во время теста</td><td>Выше</td><td>Ниже</td></tr>
+    <tr><td>Статистический вывод</td><td>Чистый, CI на эффект</td><td>Смещённые оценки, сложнее</td></tr>
+    <tr><td>Когда</td><td>Долгосрочные решения, много метрик</td><td>Короткоживущие варианты (баннеры, заголовки), много вариантов</td></tr>
+  </table>
+<pre><code># Thompson sampling для конверсий (Beta-Bernoulli)
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+rng = np.random.default_rng(0)
+true_p = [0.050, 0.055, 0.045]
+alpha = np.ones(3); beta = np.ones(3)
+for _ in range(50_000):
+    arm = np.argmax(rng.beta(alpha, beta))
+    r = rng.random() &lt; true_p[arm]
+    alpha[arm] += r; beta[arm] += 1 - r
+print("показы по рукам:", (alpha + beta - 2).astype(int))</code></pre>
+  <p>Подробнее — <a href="multi_armed_bandits_cheatsheet.html">Multi-Armed Bandits</a>, тесты — <a href="hypothesis_testing_cheatsheet.html">Hypothesis Testing</a>.</p>
+</div>
 
-# Загрузка данных
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Обучение модели
-model.fit(X_train, y_train)
-
-# Оценка
-score = model.score(X_test, y_test)
-print(f"Score: {score:.4f}")</code></pre>
-    <p>Детальное объяснение процесса с примерами кода и комментариями для лучшего понимания применения в реальных проектах машинного обучения.</p>
+<div class="block">
+  <h2>🔷 12. Типичные ошибки и чек-лист</h2>
+  <div class="good-vs-bad">
+    <div class="bad"><h3>Ошибки</h3><ul>
+      <li>Рандомизация по запросам вместо пользователей</li>
+      <li>Остановка теста при первом p &lt; 0.05</li>
+      <li>Нет расчёта мощности → «незначимо» при маленькой выборке трактуют как «нет эффекта»</li>
+      <li>Мониторинг только accuracy, без данных и latency</li>
+      <li>Алерты по p-value KS на миллионах строк — шум</li>
+      <li>Не логируется версия модели в каждом прогнозе</li>
+    </ul></div>
+    <div class="good"><h3>Чек-лист</h3><ul>
+      <li>Логи прогнозов + версия модели + фичи</li>
+      <li>Дашборд: система, данные, дрейф, скоры, качество</li>
+      <li>Shadow → canary → A/B с guardrail-метриками</li>
+      <li>MDE, α, мощность и длительность зафиксированы до старта</li>
+      <li>A/A и SRM-проверка</li>
+      <li>План отката (rollback) одной кнопкой</li>
+    </ul></div>
   </div>
-
-  <div class="block">
-    <h2>🔷 12. Чек-лист</h2>
-    <ul>
-      <li>[ ] Подготовить данные</li>
-      <li>[ ] Выбрать подходящую модель</li>
-      <li>[ ] Настроить гиперпараметры</li>
-      <li>[ ] Провести обучение</li>
-      <li>[ ] Оценить качество</li>
-      <li>[ ] Визуализировать результаты</li>
-      <li>[ ] Проверить на валидации</li>
-      <li>[ ] Задокументировать процесс</li>
-    </ul>
-
-    <h3>💡 Объяснение заказчику:</h3>
-    <blockquote>
-      «Этот подход позволяет решить задачу эффективно, используя современные методы машинного обучения. Результаты можно легко интерпретировать и применять на практике для принятия бизнес-решений».
-    </blockquote>
-  </div>
+</div>
 
 </div>
 </body></html>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="word_embeddings">
+<title>Эмбеддинги слов — интерактив</title>
+<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="lab.css?v=2">
+<style>
+  .nb { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 14px; margin-top: 6px; }
+  .nb b { font-variant-numeric: tabular-nums; text-align: right; }
+  .nb .bar { grid-column: 1 / -1; height: 3px; border-radius: 2px; background: var(--accent); margin-bottom: 3px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  #plane { cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Эмбеддинги слов: word2vec в браузере</h1><a href="../cheatsheets/word_embeddings_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Skip-gram с negative sampling учится прямо здесь на крошечном корпусе из 60 предложений про животных, еду, города и движение
+    (уже очищен: леммы, без служебных слов). Для каждой пары «слово → слово из окна» модель повышает σ(u·v), а для <b>k</b> случайных
+    «негативных» слов — понижает. Слова, встречающиеся в похожих контекстах, получают похожие векторы. Цвет точки — тема, которую модель <b>не видит</b>.
+    Кликните по слову, чтобы увидеть его ближайших соседей по косинусу.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="plane"></canvas>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="card controls">
+      <h3>Модель</h3>
+      <div class="ctl"><label for="dim">Размерность эмбеддинга</label><select id="dim"><option value="2">2 — рисуем как есть</option><option value="8">8 — проекция PCA на 2D</option><option value="16">16 — проекция PCA на 2D</option></select></div>
+      <div class="ctl"><label for="win">Окно контекста ± <output for="win"></output></label><input id="win" type="range" min="1" max="4" step="1" value="2"></div>
+      <div class="ctl"><label for="neg">Негативных примеров k <output for="neg"></output></label><input id="neg" type="range" min="0" max="10" step="1" value="5"></div>
+      <div class="ctl"><label for="lr">Learning rate <output for="lr"></output></label><input id="lr" type="range" min="-2.3" max="-0.3" step="0.1" value="-1.3"></div>
+      <div class="ctl"><label for="speed">Скорость, эпох в секунду <output for="speed"></output></label><input id="speed" type="range" min="2" max="60" step="1" value="15"></div>
+      <div class="buttons"><button class="primary" id="play">▶ Обучать</button><button id="step">Шаг</button><button id="reset">Сброс</button></div>
+      <div class="stats">
+        <span>Эпоха</span><b id="ep">0</b>
+        <span>Пар (центр, контекст)</span><b id="np">—</b>
+        <span>Лосс за эпоху</span><b id="loss">—</b>
+        <span>Ср. косинус внутри тем</span><b id="cw">—</b>
+        <span>Ср. косинус между темами</span><b id="cb">—</b>
+        <span>Ближайший сосед из своей темы</span><b id="pur">—</b>
+        <span id="evrL">Дисперсия, видная на картинке</span><b id="evr">—</b>
+      </div>
+      <h3 style="margin-top:14px" id="nbTitle">Соседи слова</h3>
+      <div id="nb" class="muted">Кликните по слову на холсте.</div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Лосс по эпохам</h3><canvas id="curve"></canvas>
+      <div class="legend"><span><i style="background:var(--accent)"></i>средний лосс на пару: −log σ(u·v) − Σ log σ(−uₙ·v)</span></div></div>
+    <div class="card hint"><h3>Что попробовать</h3><ul>
+      <li>Нажмите «▶ Обучать» при настройках по умолчанию: к 100-й эпохе слова разъезжаются на 4 «луча» по темам, и ближайший сосед почти у каждого слова (95–100%) — из его же темы, хотя темы модели никто не сообщал.</li>
+      <li>В 2D косинус внутри темы почти 1, а между темами ≈ 0.55: группы различаются <b>направлением</b>, а не расстоянием — поэтому соседей ищут по косинусу. Лосс при этом застревает около 2.0: двух чисел на слово мало.</li>
+      <li>Размерность 8: лосс опускается до ≈ 1.1. Около 20-й эпохи слова темы почти слипаются (косинус внутри ≈ 0.95), затем расходятся до ≈ 0.6 — модель начинает различать слова внутри темы. Проекция PCA показывает лишь ≈ 40% разброса (при d = 16 — ≈ 23%), поэтому картинка — грубый срез, а честные соседи — в списке справа.</li>
+      <li>Окно 1 против 4 (d = 8): пар меньше (242 против 378), и темы разделяются позже — на 20-й эпохе косинус между темами ≈ 0.9 против ≈ 0.5. Итоговый лосс с окном 1 ниже (≈ 0.9 против ≈ 1.1): соседнее слово предсказать легче, чем любое слово предложения.</li>
+      <li>k = 0 (без негативов, d = 8): к 50-й эпохе лосс падает почти до 0 — достаточно сделать все u·v большими, ничего не «отталкивается». Слова одной темы слипаются (косинус внутри ≈ 0.95 против ≈ 0.6 при k = 5) и перестают различаться.</li>
+      <li>Learning rate 0.005 (d = 8): около 100-й эпохи <b>все</b> слова сначала выстраиваются в одном направлении (косинус и внутри, и между темами ≈ 0.98), и только к 300-й эпохе темы расходятся. При 0.5 лосс скачет около 3.5 и не сходится.</li>
+    </ul></div>
+  </div>
+</div>
+
+<script src="lab.js?v=2"></script>
+<script>
+// CORE START
+// Корпус: предложения уже очищены — леммы, без служебных слов. Номер группы нужен только для раскраски точек.
+const GROUPS = ["животные", "еда", "города и страны", "движение"];
+const CORPUS = [
+  // 0 — животные
+  "кошка ловить мышь", "собака гнать кошка", "волк гнать лошадь", "кошка мягкий шерсть", "собака пушистый хвост",
+  "лошадь длинный хвост", "корова лошадь пастись луг", "волк собака серый шерсть", "мышь маленький хвост",
+  "кошка собака четыре лапа", "волк ловить мышь", "корова пастись луг", "лошадь корова четыре лапа",
+  "мышь серый шерсть", "собака лапа хвост",
+  // 1 — еда
+  "хлеб масло сыр завтрак", "горячий суп обед", "каша молоко завтрак", "сладкий яблоко вкусный", "свежий хлеб вкусный",
+  "сыр молоко масло", "суп хлеб обед", "яблоко каша завтрак", "вкусный сыр хлеб", "свежий молоко яблоко",
+  "горячий каша масло", "сладкий каша молоко", "суп сыр вкусный обед", "свежий яблоко сладкий", "хлеб суп горячий",
+  // 2 — города и страны
+  "париж столица франция", "берлин столица германия", "рим столица италия", "москва столица россия",
+  "париж большой город", "берлин старый город", "рим древний город", "москва большой город",
+  "франция германия страна европа", "италия франция страна", "россия большой страна", "германия италия европа",
+  "москва россия город", "старый рим италия", "париж берлин европа",
+  // 3 — движение
+  "бежать быстро дорога", "идти медленно дорога", "ехать быстро машина", "лететь высоко небо", "плыть медленно река",
+  "бежать идти дорога", "ехать лететь далеко", "плыть быстро река", "идти пешком далеко", "лететь быстро небо",
+  "бежать быстро далеко", "ехать машина дорога", "плыть лететь далеко", "идти бежать пешком", "ехать медленно машина"
+];
+const GROUP_OF_SENT = CORPUS.map((_, i) => Math.floor(i / 15));
+
+// Словарь: слова, встретившиеся не реже minCount раз (как min_count в word2vec); группа слова — где оно чаще встречается.
+function buildVocab(minCount) {
+  const cnt = new Map(), grp = new Map();
+  CORPUS.forEach((s, i) => s.split(" ").forEach(w => {
+    cnt.set(w, (cnt.get(w) || 0) + 1);
+    if (!grp.has(w)) grp.set(w, [0, 0, 0, 0]);
+    grp.get(w)[GROUP_OF_SENT[i]]++;
+  }));
+  const words = [...cnt.keys()].filter(w => cnt.get(w) >= minCount);
+  const index = new Map(words.map((w, i) => [w, i]));
+  const counts = words.map(w => cnt.get(w));
+  const group = words.map(w => { const g = grp.get(w); return g.indexOf(Math.max(...g)); });
+  const sents = CORPUS.map(s => s.split(" ").filter(w => index.has(w)).map(w => index.get(w)));
+  return { words, index, counts, group, sents };
+}
+
+// Обучающие пары (центр, контекст) для окна ±win.
+function makePairs(sents, win) {
+  const pairs = [];
+  sents.forEach(s => s.forEach((c, i) => {
+    for (let j = Math.max(0, i - win); j <= Math.min(s.length - 1, i + win); j++) if (j !== i) pairs.push(c, s[j]);
+  }));
+  return Int32Array.from(pairs);
+}
+
+// Распределение для негативных примеров: частота^0.75 (как в word2vec).
+function noiseCdf(counts) {
+  const p = counts.map(c => Math.pow(c, 0.75)), z = p.reduce((a, b) => a + b, 0);
+  let acc = 0;
+  return p.map(v => (acc += v / z));
+}
+function sampleNoise(cdf, u) {
+  let lo = 0, hi = cdf.length - 1;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (cdf[m] < u) lo = m + 1; else hi = m; }
+  return lo;
+}
+
+// Две матрицы: входные векторы (их и рисуем) и выходные (контекстные). Инициализация как в word2vec.
+function makeModel(V, d, seed) {
+  const rng = Lab.rng(seed), Win = new Float64Array(V * d), Wout = new Float64Array(V * d);
+  for (let i = 0; i < V * d; i++) Win[i] = (rng() - 0.5) / d;
+  return { V, d, Win, Wout, rng, epoch: 0 };
+}
+const sigmoid = z => 1 / (1 + Math.exp(-z));
+
+// Одна эпоха SGD по всем парам; возвращает средний лосс −log σ(u·v) − Σ log σ(−uₙ·v).
+function trainEpoch(m, pairs, k, lr, cdf) {
+  const d = m.d, n = pairs.length / 2, order = new Int32Array(n), gv = new Float64Array(d);
+  for (let i = 0; i < n; i++) order[i] = i;
+  for (let i = n - 1; i > 0; i--) { const j = Math.floor(m.rng() * (i + 1)); const t = order[i]; order[i] = order[j]; order[j] = t; }
+  let loss = 0;
+  for (let q = 0; q < n; q++) {
+    const c = pairs[2 * order[q]], o = pairs[2 * order[q] + 1], vo = c * d;
+    gv.fill(0);
+    for (let s = 0; s <= k; s++) {
+      let t = o, label = 1;
+      if (s > 0) { t = sampleNoise(cdf, m.rng()); if (t === o) continue; label = 0; }
+      const uo = t * d;
+      let z = 0;
+      for (let a = 0; a < d; a++) z += m.Win[vo + a] * m.Wout[uo + a];
+      const p = sigmoid(z), g = p - label;
+      loss -= label ? Math.log(Math.max(p, 1e-12)) : Math.log(Math.max(1 - p, 1e-12));
+      for (let a = 0; a < d; a++) { gv[a] += g * m.Wout[uo + a]; m.Wout[uo + a] -= lr * g * m.Win[vo + a]; }
+    }
+    for (let a = 0; a < d; a++) m.Win[vo + a] -= lr * gv[a];
+  }
+  m.epoch++;
+  return loss / n;
+}
+
+function cosine(m, i, j) {
+  let s = 0, a = 0, b = 0;
+  for (let t = 0; t < m.d; t++) { const x = m.Win[i * m.d + t], y = m.Win[j * m.d + t]; s += x * y; a += x * x; b += y * y; }
+  return s / Math.sqrt(a * b + 1e-300);
+}
+function neighbours(m, i, top) {
+  const res = [];
+  for (let j = 0; j < m.V; j++) if (j !== i) res.push([j, cosine(m, i, j)]);
+  return res.sort((x, y) => y[1] - x[1]).slice(0, top);
+}
+// Средний косинус между словами одной группы и разных групп.
+function groupCosines(m, group) {
+  let sw = 0, nw = 0, sb = 0, nb = 0;
+  for (let i = 0; i < m.V; i++) for (let j = i + 1; j < m.V; j++) {
+    const c = cosine(m, i, j);
+    if (group[i] === group[j]) { sw += c; nw++; } else { sb += c; nb++; }
+  }
+  return [sw / nw, sb / nb];
+}
+// Доля слов, у которых ближайший сосед из той же группы.
+function nnPurity(m, group) {
+  let ok = 0;
+  for (let i = 0; i < m.V; i++) if (group[neighbours(m, i, 1)[0][0]] === group[i]) ok++;
+  return ok / m.V;
+}
+
+// Проекция на 2 главные компоненты (степенной метод с исчерпыванием); для d = 2 — сами координаты.
+function project(m, prev) {
+  const d = m.d, V = m.V;
+  if (d === 2) return { xy: Array.from({ length: V }, (_, i) => [m.Win[2 * i], m.Win[2 * i + 1]]), pcs: null, evr: 1 };
+  const mean = new Float64Array(d);
+  for (let i = 0; i < V; i++) for (let a = 0; a < d; a++) mean[a] += m.Win[i * d + a] / V;
+  const C = Array.from({ length: d }, () => new Float64Array(d));
+  for (let i = 0; i < V; i++) for (let a = 0; a < d; a++) for (let b = 0; b < d; b++) C[a][b] += (m.Win[i * d + a] - mean[a]) * (m.Win[i * d + b] - mean[b]) / V;
+  let total = 0; for (let a = 0; a < d; a++) total += C[a][a];
+  const pcs = [], lams = [];
+  for (let c = 0; c < 2; c++) {
+    let v = prev && prev[c] ? Float64Array.from(prev[c]) : Float64Array.from({ length: d }, (_, a) => Math.cos(a + 1 + c * 7));
+    let lam = 0;
+    for (let it = 0; it < 200; it++) {
+      const w = new Float64Array(d);
+      for (let a = 0; a < d; a++) for (let b = 0; b < d; b++) w[a] += C[a][b] * v[b];
+      pcs.forEach((p, pi) => { let s = 0; for (let a = 0; a < d; a++) s += p[a] * w[a]; for (let a = 0; a < d; a++) w[a] -= s * p[a]; });
+      const nrm = Math.hypot(...w);
+      if (nrm < 1e-300) break;
+      for (let a = 0; a < d; a++) v[a] = w[a] / nrm;
+      lam = nrm;
+    }
+    if (prev && prev[c]) { let s = 0; for (let a = 0; a < d; a++) s += v[a] * prev[c][a]; if (s < 0) for (let a = 0; a < d; a++) v[a] = -v[a]; }
+    pcs.push(v); lams.push(lam);
+  }
+  const xy = Array.from({ length: V }, (_, i) => pcs.map(p => { let s = 0; for (let a = 0; a < d; a++) s += (m.Win[i * d + a] - mean[a]) * p[a]; return s; }));
+  return { xy, pcs, evr: total > 0 ? (lams[0] + lams[1]) / total : 0 };
+}
+// CORE END
+
+// ---------------- интерфейс ----------------
+const VOC = buildVocab(2), CDF = noiseCdf(VOC.counts), GCOL = ["c-a", "c-b", "c-ok", "c-bad"];
+let lastS = null, model = null, pairs = null, hist = [], seed = 1, running = false, selected = -1, proj = null, prevPcs = null, view = null, lastT = 0, acc = 0;
+const win = Lab.slider("win", v => { pairs = makePairs(VOC.sents, v); show(); }, v => v);
+const neg = Lab.slider("neg", () => {}, v => v);
+const lr = Lab.slider("lr", () => {}, v => Math.pow(10, v).toPrecision(2));
+const speed = Lab.slider("speed", () => {}, v => v);
+const dimSel = document.getElementById("dim");
+const plane = Lab.canvas(document.getElementById("plane"), 0.72, draw);
+const curve = Lab.canvas(document.getElementById("curve"), 0.45, drawCurve);
+document.getElementById("legend").innerHTML = GROUPS.map((g, i) => `<span><i style="background:var(--${GCOL[i]})"></i>${g}</span>`).join("") + "<span>— линии к 5 ближайшим соседям выбранного слова</span>";
+
+function reset() {
+  model = makeModel(VOC.words.length, +dimSel.value, seed);
+  pairs = makePairs(VOC.sents, win.value);
+  hist = []; prevPcs = null; view = null;
+  show();
+}
+function step(n) {
+  for (let i = 0; i < n; i++) hist.push(trainEpoch(model, pairs, neg.value, Math.pow(10, lr.value), CDF));
+}
+
+function show() {
+  proj = project(model, prevPcs); prevPcs = proj.pcs;
+  const gc = groupCosines(model, VOC.group);
+  document.getElementById("ep").textContent = model.epoch;
+  document.getElementById("np").textContent = pairs.length / 2;
+  document.getElementById("loss").textContent = hist.length ? hist[hist.length - 1].toFixed(3) : "—";
+  document.getElementById("cw").textContent = gc[0].toFixed(2);
+  document.getElementById("cb").textContent = gc[1].toFixed(2);
+  document.getElementById("pur").textContent = Math.round(100 * nnPurity(model, VOC.group)) + "%";
+  document.getElementById("evr").textContent = model.d === 2 ? "100% (d = 2)" : Math.round(100 * proj.evr) + "% (PC1+PC2)";
+  showNeighbours();
+  plane.redraw(); curve.redraw();
+}
+function showNeighbours() {
+  const box = document.getElementById("nb");
+  if (selected < 0) { document.getElementById("nbTitle").textContent = "Соседи слова"; box.className = "muted"; box.textContent = "Кликните по слову на холсте."; return; }
+  document.getElementById("nbTitle").textContent = `Соседи слова «${VOC.words[selected]}» (косинус, d = ${model.d})`;
+  box.className = "nb";
+  box.innerHTML = neighbours(model, selected, 8).map(([j, c]) =>
+    `<span style="color:var(--${GCOL[VOC.group[j]]})">${VOC.words[j]}</span><b>${c.toFixed(3)}</b><span class="bar" style="width:${Math.max(0, c) * 100}%;background:var(--${GCOL[VOC.group[j]]})"></span>`).join("");
+}
+
+// Окно просмотра плавно следует за облаком точек (в 2D всегда включает начало координат).
+function targetView(w, h) {
+  const xs = proj.xy.map(p => p[0]), ys = proj.xy.map(p => p[1]);
+  if (model.d === 2) { xs.push(0); ys.push(0); }
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const half = Math.max((x1 - x0) / 2 * h / w, (y1 - y0) / 2, 1e-3) * 1.18;
+  return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, half };
+}
+function frames(w, h) {
+  const t = targetView(w, h);
+  if (!view || !running) view = t;
+  else { const a = 0.25; view = { cx: view.cx + (t.cx - view.cx) * a, cy: view.cy + (t.cy - view.cy) * a, half: Math.max(t.half, view.half + (t.half - view.half) * a) }; }
+  const hw = view.half * w / h;
+  return [Lab.frame(view.cx - hw, view.cx + hw, 0, w), Lab.frame(view.cy - view.half, view.cy + view.half, h, 0)];
+}
+function niceTicks(lo, hi, n) {
+  const raw = (hi - lo) / n, p = Math.pow(10, Math.floor(Math.log10(raw))), st = [1, 2, 5, 10].map(m => m * p).find(s => s >= raw);
+  const out = []; for (let v = Math.ceil(lo / st) * st; v <= hi; v += st) out.push(+v.toFixed(6));
+  return out;
+}
+
+function draw(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!proj) return;
+  const [sx, sy] = frames(w, h);
+  lastS = [sx, sy];
+  Lab.axes(ctx, sx, sy, { xTicks: niceTicks(sx.invert(30), sx.invert(w - 10), 6), yTicks: niceTicks(sy.invert(h - 20), sy.invert(10), 5),
+    xLabel: model.d === 2 ? "v₁" : "PC1", yLabel: model.d === 2 ? "v₂" : "PC2" });
+  ctx.strokeStyle = Lab.color("axis"); ctx.lineWidth = 1;
+  if (model.d === 2) { ctx.beginPath(); ctx.moveTo(sx(0), 0); ctx.lineTo(sx(0), h); ctx.moveTo(0, sy(0)); ctx.lineTo(w, sy(0)); ctx.stroke(); }
+  if (selected >= 0) {
+    const [x0, y0] = proj.xy[selected];
+    ctx.strokeStyle = Lab.color("text"); ctx.globalAlpha = .45; ctx.setLineDash([4, 4]);
+    neighbours(model, selected, 5).forEach(([j]) => { ctx.beginPath(); ctx.moveTo(sx(x0), sy(y0)); ctx.lineTo(sx(proj.xy[j][0]), sy(proj.xy[j][1])); ctx.stroke(); });
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+  }
+  ctx.font = "12px system-ui, sans-serif"; ctx.textAlign = "left";
+  proj.xy.forEach(([x, y], i) => {
+    const col = Lab.color(GCOL[VOC.group[i]]), sel = i === selected;
+    Lab.dot(ctx, sx(x), sy(y), sel ? 6 : 4, col, sel ? Lab.color("text") : null);
+    ctx.fillStyle = sel ? Lab.color("text") : col;
+    ctx.font = (sel ? "bold 13px" : "12px") + " system-ui, sans-serif";
+    ctx.fillText(VOC.words[i], sx(x) + 6, sy(y) - 5);
+  });
+}
+
+function drawCurve(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  const n = Math.max(50, hist.length), top = Math.max(1, ...hist) * 1.08;
+  const cx = Lab.frame(0, n, 40, w - 10), cy = Lab.frame(0, top, h - 22, 8);
+  Lab.axes(ctx, cx, cy, { xTicks: niceTicks(0, n, 5), yTicks: niceTicks(0, top, 4), xLabel: "эпоха", yLabel: "лосс" });
+  if (!hist.length) return;
+  ctx.strokeStyle = Lab.color("accent"); ctx.lineWidth = 2; ctx.beginPath();
+  hist.forEach((v, i) => i ? ctx.lineTo(cx(i + 1), cy(v)) : ctx.moveTo(cx(1), cy(v)));
+  ctx.stroke();
+}
+
+document.getElementById("plane").addEventListener("pointerdown", ev => {
+  if (!proj) return;
+  if (!lastS) return;
+  const p = Lab.pointer(ev.currentTarget, ev), [sx, sy] = lastS;
+  let best = -1, bd = 22 * 22;
+  proj.xy.forEach(([x, y], i) => { const d = (sx(x) - p.x) ** 2 + (sy(y) - p.y) ** 2; if (d < bd) { bd = d; best = i; } });
+  selected = best === selected ? -1 : best;
+  showNeighbours(); plane.redraw();
+});
+
+// Анимация: заданное число эпох в секунду, не больше 4 эпох за кадр.
+function loop(t) {
+  if (!running) return;
+  if (lastT) acc += Math.min(0.25, (t - lastT) / 1000) * speed.value;
+  lastT = t;
+  const n = Math.min(4, Math.floor(acc));
+  if (n > 0) { acc -= n; step(n); show(); }
+  requestAnimationFrame(loop);
+}
+function setRunning(on) {
+  running = on; lastT = 0; acc = 0;
+  document.getElementById("play").textContent = on ? "⏸ Пауза" : "▶ Обучать";
+  if (on) requestAnimationFrame(loop);
+}
+document.getElementById("play").onclick = () => setRunning(!running);
+document.getElementById("step").onclick = () => { setRunning(false); step(1); show(); };
+document.getElementById("reset").onclick = () => { setRunning(false); seed++; reset(); };
+dimSel.onchange = () => { setRunning(false); reset(); };
+reset();
+</script>
+</body>
+</html>

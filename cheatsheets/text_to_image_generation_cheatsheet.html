@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🚀 Text-to-Image Generation Cheatsheet — 3 колонки</title>
+  <title>Text-to-Image Generation Cheatsheet — 3 колонки</title>
   <style>
     @media screen {
       body {
@@ -206,197 +206,206 @@
 
 <div class="container">
 
-  <h1>🚀 Text-to-Image Generation</h1>
+  <h1>🎨 Text-to-Image Generation</h1>
   <div class="subtitle">📅 Январь 2026</div>
 
   <div class="block">
-    <h2>🔷 1. Основы Text-to-Image Generation</h2>
-    <ul>
-      <li><strong>Text-to-Image</strong>: генерация изображений по текстовому описанию</li>
-      <li><strong>Технологии</strong>: Diffusion Models, GANs, Transformers</li>
-      <li><strong>Ключевые модели</strong>: DALL-E, Stable Diffusion, Midjourney, Imagen</li>
-      <li><strong>Применение</strong>: концепт-арт, маркетинг, дизайн, образование</li>
-    </ul>
-    <blockquote>
-      Text-to-image революционизировала креативные индустрии благодаря diffusion models.
-    </blockquote>
-
-    </div>
-<div class="block">
-    <h2>🔷 2. Архитектура</h2>
+    <h2>🔷 1. Суть и эволюция</h2>
+    <p><strong>Text-to-image</strong> — генерация изображения x по текстовому описанию (промпту) c, т.е. сэмплирование из p(x | c). Сегодня доминируют <strong>диффузионные модели</strong> с текстовым условием (основы — в шпаргалке <a href="diffusion_models_cheatsheet.html">Diffusion Models</a>).</p>
     <table>
-      <tr><th>Компонент</th><th>Назначение</th></tr>
-      <tr><td>Servables</td><td>Сервируемые объекты (модели)</td></tr>
-      <tr><td>Loaders</td><td>Загрузка и выгрузка моделей</td></tr>
-      <tr><td>Sources</td><td>Источники моделей</td></tr>
-      <tr><td>Managers</td><td>Управление версиями</td></tr>
-      <tr><td>Core</td><td>Координация компонентов</td></tr>
+      <tr><th>Поколение</th><th>Модели</th><th>Идея</th></tr>
+      <tr><td>GAN</td><td>StackGAN, AttnGAN</td><td>условный <a href="gan_cheatsheet.html">GAN</a>, малые домены</td></tr>
+      <tr><td>Авторегрессия</td><td>DALL·E (2021), Parti</td><td>изображение как последовательность токенов</td></tr>
+      <tr><td>Диффузия в пикселях</td><td>Imagen, DALL·E 2 (unCLIP)</td><td>каскад: 64×64 → апсемплинг</td></tr>
+      <tr><td>Латентная диффузия</td><td>Stable Diffusion 1.x/2.x, SDXL</td><td>диффузия в латенте VAE, U-Net</td></tr>
+      <tr><td>Диффузионные трансформеры</td><td>SD3 (MMDiT), FLUX</td><td>DiT вместо U-Net, flow matching</td></tr>
     </table>
   </div>
 
   <div class="block">
-    <h2>🔷 3. Установка</h2>
-    <pre><code># Docker (recommended)
-docker pull tensorflow/serving
-
-# Запуск контейнера
-docker run -p 8501:8501 \
-  --mount type=bind,source=/path/to/model,target=/models/my_model \
-  -e MODEL_NAME=my_model \
-  -t tensorflow/serving
-
-# Или через pip
-pip install tensorflow-serving-api</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 4. Подготовка модели</h2>
-    <pre><code>import tensorflow as tf
-
-# Сохранение в SavedModel формате
-model = create_model()
-model.save('/models/my_model/1', save_format='tf')
-
-# Структура директорий
-# /models/my_model/
-#   └── 1/              # версия 1
-#       ├── saved_model.pb
-#       ├── variables/
-#       └── assets/</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 5. REST API</h2>
-    <pre><code># Предсказание через REST
-import requests
-import json
-
-data = json.dumps({
-    "signature_name": "serving_default",
-    "instances": [[1.0, 2.0, 3.0]]
-})
-
-response = requests.post(
-    'http://localhost:8501/v1/models/my_model:predict',
-    data=data
-)
-
-predictions = response.json()['predictions']
-print(predictions)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 6. gRPC API</h2>
-    <pre><code>import grpc
-from tensorflow_serving.apis import predict_pb2
-from tensorflow_serving.apis import prediction_service_pb2_grpc
-import tensorflow as tf
-
-# Создание канала
-channel = grpc.insecure_channel('localhost:8500')
-stub = prediction_service_pb2_grpc.PredictionServiceStub(channel)
-
-# Подготовка запроса
-request = predict_pb2.PredictRequest()
-request.model_spec.name = 'my_model'
-request.model_spec.signature_name = 'serving_default'
-request.inputs['input'].CopyFrom(
-    tf.make_tensor_proto([1.0, 2.0, 3.0])
-)
-
-# Получение предсказания
-result = stub.Predict(request, 10.0)  # 10 sec timeout
-output = tf.make_ndarray(result.outputs['output'])</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 7. Версионирование</h2>
+    <h2>🔷 2. Текстовые энкодеры</h2>
     <ul>
-      <li><strong>Multiple versions</strong>: /models/name/1, /models/name/2</li>
-      <li><strong>Version policy</strong>: latest, specific, all</li>
-      <li><strong>Canary testing</strong>: постепенный rollout</li>
-      <li><strong>A/B testing</strong>: сравнение версий</li>
+      <li><strong>CLIP text encoder</strong>: обучен контрастивно на парах картинка–текст (<a href="clip_multimodal_models_cheatsheet.html">CLIP</a>); SD 1.x — CLIP ViT-L/14 (эмбеддинги 77×768), SD 2.x — OpenCLIP ViT-H, SDXL — два CLIP-энкодера</li>
+      <li><strong>T5</strong> (T5-XXL): чисто языковая модель; Imagen показал, что масштаб текстового энкодера сильно улучшает следование промпту и отрисовку текста; SD3/FLUX используют CLIP + T5</li>
+      <li><strong>Лимит токенов</strong>: у CLIP — 77 токенов, хвост длинного промпта обрезается</li>
+      <li>Энкодер обычно <strong>заморожен</strong>; в денойзер подаётся последовательность эмбеддингов токенов (а не один вектор)</li>
     </ul>
-    
-    <pre><code># Конфигурация версий
-model_config_list {
-  config {
-    name: 'my_model'
-    base_path: '/models/my_model'
-    model_platform: 'tensorflow'
-    model_version_policy {
-      specific {
-        versions: 1
-        versions: 2
-      }
-    }
-  }
-}</code></pre>
+    <blockquote>CLIP плохо кодирует композицию и счёт: «красный куб на синем шаре» и наоборот дают близкие эмбеддинги — отсюда перепутанные атрибуты.</blockquote>
   </div>
 
   <div class="block">
-    <h2>🔷 8. Мониторинг</h2>
+    <h2>🔷 3. Stable Diffusion: архитектура</h2>
+    <pre><code>промпт ──► CLIP text encoder ──► эмбеддинги c (77×768)
+                                     │ cross-attention
+шум z_T (4×64×64) ──► U-Net ε_θ(z_t, t, c) ──► ... ──► z_0
+                       (T шагов сэмплера)
+z_0 ──► VAE decoder ──► изображение 512×512×3</code></pre>
+    <ul>
+      <li><strong>VAE</strong> (<a href="vae_cheatsheet.html">VAE</a>): сжатие в 8 раз по стороне, 512×512×3 → 64×64×4 (~48× меньше значений) — диффузия на порядки дешевле, чем в пикселях</li>
+      <li><strong>U-Net</strong>: предсказывает шум ε; ResNet-блоки + self-attention + <strong>cross-attention</strong></li>
+      <li><strong>Cross-attention</strong>: Q — из пространственных признаков изображения, K и V — из эмбеддингов токенов: Attn = softmax(QKᵀ/√d)·V — каждая область «смотрит» на нужные слова</li>
+      <li><strong>Время t</strong>: синусоидальный эмбеддинг, добавляется в ResNet-блоки</li>
+      <li><strong>Обучение</strong>: L = E‖ε − ε_θ(z_t, t, c)‖², z_t = √ᾱ_t·z_0 + √(1−ᾱ_t)·ε</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 4. Classifier-free guidance (CFG)</h2>
+    <p>При обучении условие c с вероятностью ~10% заменяется на пустой промпт → одна модель умеет и условное, и безусловное предсказание. При генерации:</p>
+    <pre><code>ε̂ = ε_θ(z_t, ∅) + w · (ε_θ(z_t, c) − ε_θ(z_t, ∅))</code></pre>
     <table>
-      <tr><th>Метрика</th><th>Описание</th></tr>
-      <tr><td>request_count</td><td>Количество запросов</td></tr>
-      <tr><td>request_latency</td><td>Латентность запросов</td></tr>
-      <tr><td>model_load_time</td><td>Время загрузки модели</td></tr>
-      <tr><td>memory_usage</td><td>Использование памяти</td></tr>
-      <tr><td>queue_length</td><td>Длина очереди запросов</td></tr>
+      <tr><th>guidance_scale w</th><th>Результат</th></tr>
+      <tr><td>1</td><td>обычное условное сэмплирование, слабое следование тексту</td></tr>
+      <tr><td>5–9 (типично 7.5)</td><td>баланс качества и соответствия промпту</td></tr>
+      <tr><td>&gt; 12–15</td><td>пересыщенные цвета, артефакты, низкое разнообразие</td></tr>
     </table>
-  </div>
-
-  <div class="block">
-    <h2>🔷 9. Batching</h2>
-    <pre><code># Конфигурация batching
-max_batch_size { value: 128 }
-batch_timeout_micros { value: 1000 }
-max_enqueued_batches { value: 1000000 }
-num_batch_threads { value: 8 }
-
-# Преимущества batching
-# - Выше throughput
-# - Эффективное использование GPU
-# - Меньше латентность на запрос</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 10. Производительность</h2>
     <ul>
-      <li><strong>GPU acceleration</strong>: автоматическое использование GPU</li>
-      <li><strong>Model warmup</strong>: предзагрузка для снижения latency</li>
-      <li><strong>Thread pools</strong>: параллельная обработка</li>
-      <li><strong>Model optimization</strong>: TensorRT integration</li>
+      <li>Стоимость: два прохода U-Net на шаг (батчем условный + безусловный)</li>
+      <li>Компромисс: ↑w — выше CLIP score, но хуже FID и разнообразие</li>
+      <li>Distilled-модели (SDXL-Turbo, LCM) работают с w ≈ 0–2</li>
     </ul>
   </div>
 
   <div class="block">
-    <h2>🔷 11. Best Practices</h2>
-    <div class="good-vs-bad">
-      <div class="good">
-        <h3>✅ Рекомендации</h3>
-        <ul>
-          <li>Использовать batching для throughput</li>
-          <li>Настроить model warmup</li>
-          <li>Мониторить латентность</li>
-          <li>Использовать gRPC для production</li>
-          <li>Тестировать версии перед rollout</li>
-        </ul>
-      </div>
-      
-      <div class="bad">
-        <h3>❌ Избегать</h3>
-        <ul>
-          <li>Слишком большие batch sizes</li>
-          <li>Игнорирование мониторинга</li>
-          <li>Deployment без warmup</li>
-          <li>Отсутствие version policy</li>
-        </ul>
-      </div>
-    </div>
+    <h2>🔷 5. Сэмплеры, шаги, негативные промпты</h2>
+    <table>
+      <tr><th>Сэмплер (scheduler)</th><th>Шагов</th><th>Особенности</th></tr>
+      <tr><td>DDPM</td><td>~1000</td><td>стохастический, исходный, медленный</td></tr>
+      <tr><td>DDIM</td><td>25–50</td><td>детерминированный, инверсия изображения</td></tr>
+      <tr><td>Euler / Euler a</td><td>20–40</td><td>просты; «a» (ancestral) добавляет шум — не сходится к одному результату</td></tr>
+      <tr><td>DPM-Solver++ (2M, Karras)</td><td>15–30</td><td>качество при малом числе шагов, частый выбор</td></tr>
+      <tr><td>LCM / Turbo / Lightning</td><td>1–8</td><td>требуют дистиллированной модели или LoRA</td></tr>
+    </table>
+    <ul>
+      <li>Больше шагов → больше деталей до насыщения; после ~30–50 прирост мал</li>
+      <li><strong>Seed</strong> (generator) фиксирует начальный шум → воспроизводимость</li>
+      <li><strong>Негативный промпт</strong>: подставляется вместо пустого ∅ в CFG — генерация отталкивается от «blurry, lowres, extra fingers, watermark»</li>
+      <li><strong>Разрешение</strong>: генерируйте в родном разрешении модели (SD 1.5 — 512, SDXL — 1024), иначе дубли объектов</li>
+    </ul>
   </div>
 
+  <div class="block">
+    <h2>🔷 6. Код: diffusers</h2>
+    <pre><code>import torch
+from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 
+pipe = StableDiffusionPipeline.from_pretrained(
+    "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    torch_dtype=torch.float16).to("cuda")
+pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+pipe.enable_attention_slicing()            # экономия памяти
+
+g = torch.Generator("cuda").manual_seed(42)
+image = pipe(
+    prompt="a cozy wooden cabin in snowy mountains, golden hour, photo",
+    negative_prompt="blurry, lowres, watermark, text",
+    num_inference_steps=25,
+    guidance_scale=7.5,
+    height=512, width=512,
+    generator=g,
+).images[0]
+image.save("cabin.png")</code></pre>
+    <ul>
+      <li>SDXL: <code>StableDiffusionXLPipeline</code>, универсально — <code>AutoPipelineForText2Image</code></li>
+      <li>fp16 + <code>enable_model_cpu_offload()</code> — запуск на GPU с малой памятью</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 7. img2img и inpainting</h2>
+    <ul>
+      <li><strong>img2img</strong>: исходное изображение кодируется VAE, зашумляется до шага t = strength·T и расшумляется по промпту. <code>strength</code> 0.3 — лёгкая стилизация, 0.8 — почти новая картинка</li>
+      <li><strong>Inpainting</strong>: перерисовка области под маской; спец. модели с доп. входными каналами (маска + замаскированное изображение)</li>
+      <li><strong>Outpainting</strong>: расширение холста = inpainting за краями</li>
+    </ul>
+    <pre><code>from diffusers import StableDiffusionImg2ImgPipeline
+from PIL import Image
+
+img2img = StableDiffusionImg2ImgPipeline(**pipe.components)   # те же веса
+init = Image.open("sketch.png").convert("RGB").resize((512, 512))
+out = img2img(prompt="watercolor painting of a cabin",
+              image=init, strength=0.6, guidance_scale=7.5).images[0]
+# inpainting: StableDiffusionInpaintPipeline(..)(prompt, image=init, mask_image=mask)</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 8. ControlNet, LoRA, DreamBooth</h2>
+    <table>
+      <tr><th>Метод</th><th>Что даёт</th><th>Как</th></tr>
+      <tr><td><strong>ControlNet</strong></td><td>пространственный контроль: контуры (Canny), поза (OpenPose), глубина, сегментация</td><td>обучаемая копия энкодера U-Net, присоединённая через zero-convolution; базовая модель заморожена</td></tr>
+      <tr><td>IP-Adapter</td><td>изображение как промпт (стиль/объект)</td><td>отдельный cross-attention для эмбеддингов картинки</td></tr>
+      <tr><td><strong>LoRA</strong></td><td>стиль/персонаж, файлы ~10–200 МБ</td><td>низкоранговые добавки W + BA к attention-весам</td></tr>
+      <tr><td><strong>DreamBooth</strong></td><td>конкретный объект по 3–5 фото («sks dog»)</td><td>дообучение модели на редком токене + prior preservation loss</td></tr>
+      <tr><td>Textual Inversion</td><td>новое «слово»-концепт</td><td>обучается только эмбеддинг токена</td></tr>
+    </table>
+    <pre><code>from diffusers import ControlNetModel, StableDiffusionControlNetPipeline
+
+cn = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny",
+                                     torch_dtype=torch.float16)
+cpipe = StableDiffusionControlNetPipeline.from_pretrained(
+    "stable-diffusion-v1-5/stable-diffusion-v1-5", controlnet=cn,
+    torch_dtype=torch.float16).to("cuda")
+img = cpipe("a futuristic house", image=canny_edges,
+            controlnet_conditioning_scale=1.0).images[0]
+
+pipe.load_lora_weights("path/to/lora_dir")      # LoRA-адаптер
+img = pipe("portrait in my_style", cross_attention_kwargs={"scale": 0.8}).images[0]</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 9. Метрики качества</h2>
+    <ul>
+      <li><strong>FID</strong>: расстояние Фреше между гауссианами признаков Inception для реальных и сгенерированных изображений — реализм + разнообразие (↓ лучше); нужны тысячи изображений, зависит от реализации</li>
+      <li><strong>CLIP score</strong>: косинус CLIP-эмбеддингов текста и изображения ×100 — соответствие промпту (↑ лучше)</li>
+      <li><strong>Композиция</strong>: GenEval, T2I-CompBench — счёт объектов, цвета, взаимное расположение</li>
+      <li><strong>Предпочтения людей</strong>: ImageReward, PickScore, HPS — модели, обученные на человеческих оценках; финальное слово — side-by-side оценка людьми</li>
+    </ul>
+    <pre><code>from torchmetrics.multimodal.clip_score import CLIPScore
+from torchmetrics.image.fid import FrechetInceptionDistance
+
+clip = CLIPScore(model_name_or_path="openai/clip-vit-base-patch16")
+score = clip(images_uint8, prompts)          # images: (N, 3, H, W) uint8
+
+fid = FrechetInceptionDistance(feature=2048)
+fid.update(real_uint8, real=True); fid.update(fake_uint8, real=False)
+print(fid.compute())</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 10. Ограничения и типичные проблемы</h2>
+    <ul>
+      <li><strong>Счёт и пространственные отношения</strong>: «три кошки слева от собаки» — частые ошибки</li>
+      <li><strong>Связывание атрибутов</strong>: цвета/свойства «перетекают» между объектами</li>
+      <li><strong>Текст на изображении</strong>: слабое место моделей с CLIP; лучше у моделей с T5 (Imagen, SD3, FLUX)</li>
+      <li><strong>Руки, пальцы, анатомия</strong>, дублирование объектов при нестандартном разрешении</li>
+      <li><strong>Слишком большой guidance</strong> → пересвет и артефакты; слишком мало шагов → «мыло»</li>
+      <li><strong>Промпт длиннее 77 токенов</strong> обрезается (у CLIP-энкодеров)</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 11. Этика и безопасность</h2>
+    <ul>
+      <li><strong>Дипфейки и дезинформация</strong>: реалистичные изображения реальных людей и событий</li>
+      <li><strong>Авторское право</strong>: обучение на веб-данных (LAION), копирование стиля художников, меморизация обучающих изображений</li>
+      <li><strong>Смещения</strong>: стереотипы по профессии, полу, этносу из обучающих данных</li>
+      <li><strong>Защиты</strong>: safety checker / NSFW-фильтры, фильтрация данных, концепт-эрейзинг, водяные знаки (invisible watermark, C2PA-метаданные)</li>
+      <li>Соблюдайте лицензию модели (например, CreativeML OpenRAIL-M) и правила платформы</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 12. Чек-лист</h2>
+    <ul>
+      <li>☐ Модель под задачу: SD 1.5 (экосистема LoRA/ControlNet), SDXL (качество), SD3/FLUX (текст и следование промпту)</li>
+      <li>☐ Родное разрешение, fp16, DPM-Solver++ на 20–30 шагов</li>
+      <li>☐ guidance_scale 5–9, негативный промпт, фиксированный seed для сравнений</li>
+      <li>☐ Контроль композиции — ControlNet / img2img / inpainting</li>
+      <li>☐ Свой стиль или объект — LoRA / DreamBooth</li>
+      <li>☐ Оценка: CLIP score + FID + человеческая оценка</li>
+      <li>☐ Фильтры безопасности, лицензия, маркировка сгенерированного контента</li>
+    </ul>
+  </div>
 
 </div>
 </body>

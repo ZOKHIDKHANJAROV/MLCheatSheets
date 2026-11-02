@@ -43,14 +43,15 @@ python start.py
 - 🗺️ **Учебные пути** из [ROADMAP.md](ROADMAP.md) с этапами и следующей темой «▶ Продолжить»
 - ✔ **Отметки «Изучено»** и прогресс по разделам и путям (хранятся в браузере, можно сохранить в файл)
 - ⌨️ Листание тем стрелками `←` `→`, отметка — клавиша `M`
-- ❓ **Вопросы для самопроверки** с раскрывающимися ответами (клавиша `Q`) — ко всем 422 шпаргалкам (2110 вопросов), формат описан в [questions/README.md](questions/README.md)
+- ❓ **Вопросы для самопроверки** с раскрывающимися ответами (клавиша `Q`) — ко всем 418 шпаргалкам (2098 вопросов), формат описан в [questions/README.md](questions/README.md)
 - 📚 **Что изучить заранее** — у темы видно, какие темы нужны до неё («Сначала») и на какие она открывает дорогу («Дальше»); связи в [prerequisites.md](prerequisites.md)
+- 📖 **Глоссарий** — 350 терминов ML и DL с короткими определениями и ссылками на шпаргалки ([glossary.md](glossary.md)): кнопка 📖 в шапке, термины находятся поиском и видны в панели вопросов темы
 - 📝 **Заметки к темам** — своё поле в панели вопросов, страница «Мои заметки», поиск по заметкам
 - 📅 **План занятий** — выберите путь, минуты в день и (по желанию) дату цели: портал покажет темы, повторение и упражнение на сегодня, прогноз окончания, отставание или опережение, серию дней подряд и календарь активности (кнопка 📅 в шапке)
 - 🎓 **Режим экзамена** — 10–30 случайных вопросов из изученных тем, пути или всего курса с самооценкой; слабые темы одним нажатием уходят в повторение (кнопка 🎓 в шапке)
 - 🏗 **Мини-проекты** — по одному сквозному проекту на путь (отток, цифры, скоринг, прогноз спроса) с проверкой на скрытых метках: [projects/](projects/README.md)
 - 🔁 **Интервальное повторение** — изученные темы возвращаются через 1, 3, 7, 16, 35 и 90 дней; «Помню» увеличивает интервал, «Есть пробелы» возвращает тему завтра
-- 🎮 **Интерактивные демонстрации** — градиентный спуск, МНК, переобучение, k-NN, порог и ROC, k-means, дерево решений, градиентный бустинг, SVM, перцептрон, песочница нейросети, функции активации, свёртка, PCA, Q-learning и SARSA, механизм внимания, Dropout и BatchNorm: ползунки и пошаговые алгоритмы ([interactive/](interactive/README.md))
+- 🎮 **Интерактивные демонстрации** — градиентный спуск, МНК, переобучение, k-NN, порог и ROC, k-means, дерево решений, градиентный бустинг, SVM, перцептрон, песочница нейросети, функции активации, свёртка, PCA, Q-learning и SARSA, механизм внимания, Dropout и BatchNorm, эмбеддинги слов, геометрия L1/L2, кросс-валидация, сглаживание рядов, GAN и VAE: ползунки и пошаговые алгоритмы ([interactive/](interactive/README.md))
 - 🌙 **Тёмная тема** для портала и всех шпаргалок — кнопка 🌓 в шапке (как в системе → светлая → тёмная)
 - 💪 **Практика** — условия упражнений, файлы и команда самопроверки
 
@@ -295,13 +296,12 @@ Computer Vision, NLP, Time Series, Reinforcement Learning
 1. [Гауссовские процессы](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/gaussian_processes_cheatsheet.html)
 1. [Вариационный вывод](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/variational_inference_cheatsheet.html)
 1. [Марковские цепи Монте-Карло (MCMC) и Байесовский вывод](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/mcmc_bayesian_inference_cheatsheet.html)
-1. [Expectation-Maximization (EM)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/expectation_maximization_cheatsheet.html)
+1. [EM-алгоритм (Expectation-Maximization)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/em_algorithm_cheatsheet.html)
 1. [Графические модели](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/graphical_models_cheatsheet.html)
 1. [Наивный Байес (как байесовский метод)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/naive_bayes_bayesian_method_cheatsheet.html)
 
 ### **13. Проектирование признаков (Feature Engineering)**
-1. [Feature Engineering (основы)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/feature_engineering_cheatsheet.html)
-1. [Feature Engineering (подробно)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/feature_engineering_detailed_cheatsheet.html)
+1. [Feature Engineering](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/feature_engineering_cheatsheet.html)
 1. [Создание полиномиальных признаков и взаимодействия](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/feature_interaction_cheatsheet.html)
 1. [Биннинг (дискретизация)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/binning_discretization_cheatsheet.html)
 1. [Target Encoding](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/target_encoding_cheatsheet.html)
@@ -427,7 +427,7 @@ Computer Vision, NLP, Time Series, Reinforcement Learning
 1. [Canonical Correlation Analysis (CCA)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/canonical_correlation_analysis_cheatsheet.html)
 1. [Kernel CCA](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/kernel_cca_cheatsheet.html)
 1. [Multi-view learning](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/multi_view_learning_cheatsheet.html)
-1. [Co-training](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/cotraining_semi_supervised_cheatsheet.html)
+1. [Co-training](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/cotraining_cheatsheet.html)
 
 ### **30. Обучение с ограничениями**
 1. [Constrained optimization в ML](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/constrained_optimization_ml_cheatsheet.html)
@@ -610,7 +610,7 @@ Computer Vision, NLP, Time Series, Reinforcement Learning
 1. [Defensive distillation](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/defensive_distillation_cheatsheet.html)
 1. [Adversarial training](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/adversarial_training_cheatsheet.html)
 1. [Bias в нейросетях](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/bias_neural_networks_cheatsheet.html)
-1. [Fairness в ML](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/fairness_ml_deep_learning_cheatsheet.html)
+1. [Fairness в ML](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/fairness_ml_cheatsheet.html)
 1. [Federated learning](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/federated_learning_cheatsheet.html)
 1. [Differential privacy](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/differential_privacy_cheatsheet.html)
 

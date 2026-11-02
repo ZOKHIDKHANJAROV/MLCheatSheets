@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RNN Основы Cheatsheet — 3 колонки</title>
+  <title>Двунаправленные RNN (BiRNN, BiLSTM, BiGRU) Cheatsheet — 3 колонки</title>
   <style>
     @media screen {
       body {
@@ -206,237 +206,216 @@
 
 <div class="container">
 
-  <h1>🔄 RNN (Двунаправленные нейросети)</h1>
+  <h1>↔️ Двунаправленные RNN (BiRNN, BiLSTM, BiGRU)</h1>
   <div class="subtitle">📅 Январь 2026</div>
 
   <div class="block">
-    <h2>🔷 1. Суть</h2>
+    <h2>🔷 1. Идея</h2>
+    <p>Обычная RNN в момент t видит только прошлое x<sub>1..t</sub>. Но смысл элемента часто зависит и от <strong>правого</strong> контекста: в «<em>Лук</em> был натянут до предела» значение слова «лук» (оружие или овощ) раскрывается только справа. <strong>Bidirectional RNN</strong> (Schuster &amp; Paliwal, 1997) читает последовательность двумя независимыми RNN:</p>
     <ul>
-      <li><strong>Специализация</strong>: последовательные данные</li>
-      <li><strong>Память</strong>: использует информацию из прошлого</li>
-      <li><strong>Двунаправленность</strong>: выход возвращается на вход</li>
-      <li><strong>Применение</strong>: текст, временные ряды, аудио</li>
+      <li><strong>Прямая</strong> (forward) →: слева направо, h→<sub>t</sub> = f(x<sub>t</sub>, h→<sub>t−1</sub>)</li>
+      <li><strong>Обратная</strong> (backward) ←: справа налево, h←<sub>t</sub> = g(x<sub>t</sub>, h←<sub>t+1</sub>)</li>
+      <li><strong>Объединение</strong>: h<sub>t</sub> = [h→<sub>t</sub> ; h←<sub>t</sub>] — представление видит весь вход</li>
     </ul>
+    <p>Ячейка может быть любой: простая RNN, <a href="lstm_cheatsheet.html">LSTM</a>, <a href="gru_cheatsheet.html">GRU</a>. Основы рекуррентных сетей — в <a href="rnn_basics_cheatsheet.html">RNN Basics</a>.</p>
+  </div>
 
-    </div>
-<div class="block">
-    <h2>🔷 2. Структура RNN</h2>
+  <div class="block">
+    <h2>🔷 2. Схема и формулы</h2>
+<pre><code>x1     x2     x3     x4
+ │      │      │      │
+→h1 ──→ h2 ──→ h3 ──→ h4     (forward)
+←h1 ←── h2 ←── h3 ←── h4     (backward)
+ │      │      │      │
+[→;←]  [→;←]  [→;←]  [→;←]  → y_t</code></pre>
     <ul>
-      <li><strong>x_t</strong>: входные данные в момент t</li>
-      <li><strong>h_t</strong>: скрытое состояние (память)</li>
-      <li><strong>y_t</strong>: выходные данные</li>
+      <li>У направлений <strong>свои веса</strong> (W→, W←) — параметров ×2</li>
+      <li>Выход: y<sub>t</sub> = W<sub>y</sub>·[h→<sub>t</sub>; h←<sub>t</sub>] + b</li>
+      <li>Способы объединения: <strong>concat</strong> (стандарт, размер 2H), сумма, среднее, поэлементное произведение (в Keras — <code>merge_mode</code>)</li>
+      <li>Время ≈ ×2, но направления независимы → считаются параллельно</li>
     </ul>
-    <p><strong>Формула:</strong></p>
-    <pre><code>h_t = tanh(W_hh * h_{t-1} + W_xh * x_t + b_h)
-y_t = W_hy * h_t + b_y</code></pre>
   </div>
 
   <div class="block">
-    <h2>🔷 3. Простая RNN (PyTorch)</h2>
-    <pre><code>import torch
-import torch.nn as nn
-
-class SimpleRNN(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super().__init__()
-        self.hidden_size = hidden_size
-        
-        self.rnn = nn.RNN(
-            input_size=input_size,
-            hidden_size=hidden_size,
-            num_layers=1,
-            batch_first=True
-        )
-        
-        self.fc = nn.Linear(hidden_size, output_size)
-    
-    def forward(self, x):
-        # x: (batch_size, seq_len, input_size)
-        out, hidden = self.rnn(x)
-        # out: (batch_size, seq_len, hidden_size)
-        
-        # Берём последний выход
-        out = self.fc(out[:, -1, :])
-        return out
-
-model = SimpleRNN(input_size=10, hidden_size=128, output_size=1)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 4. LSTM (Long Short-Term Memory)</h2>
-    <p>Решение проблемы исчезающего градиента:</p>
-    <pre><code>class LSTMModel(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super().__init__()
-        
-        self.lstm = nn.LSTM(
-            input_size=input_size,
-            hidden_size=hidden_size,
-            num_layers=2,
-            batch_first=True,
-            dropout=0.2
-        )
-        
-        self.fc = nn.Linear(hidden_size, output_size)
-    
-    def forward(self, x):
-        out, (hidden, cell) = self.lstm(x)
-        out = self.fc(out[:, -1, :])
-        return out</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 5. GRU (Gated Recurrent Unit)</h2>
-    <p>Упрощённая версия LSTM:</p>
-    <pre><code>class GRUModel(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super().__init__()
-        
-        self.gru = nn.GRU(
-            input_size=input_size,
-            hidden_size=hidden_size,
-            num_layers=2,
-            batch_first=True,
-            dropout=0.2
-        )
-        
-        self.fc = nn.Linear(hidden_size, output_size)
-    
-    def forward(self, x):
-        out, hidden = self.gru(x)
-        out = self.fc(out[:, -1, :])
-        return out
-
-# GRU быстрее LSTM, но немного менее мощный</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 6. Сравнение RNN, LSTM, GRU</h2>
-    <table>
-      <tr><th>Модель</th><th>Скорость</th><th>Память</th><th>Градиент</th></tr>
-      <tr><td><strong>RNN</strong></td><td>⚡⚡⚡</td><td>Короткая</td><td>Исчезает</td></tr>
-      <tr><td><strong>LSTM</strong></td><td>⚡</td><td>Длинная</td><td>Стабильный</td></tr>
-      <tr><td><strong>GRU</strong></td><td>⚡⚡</td><td>Длинная</td><td>Стабильный</td></tr>
-    </table>
-  </div>
-
-  <div class="block">
-    <h2>🔷 7. Двунаправленные RNN</h2>
-    <pre><code># Bidirectional RNN
-class BiRNN(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super().__init__()
-        
-        self.lstm = nn.LSTM(
-            input_size=input_size,
-            hidden_size=hidden_size,
-            num_layers=2,
-            batch_first=True,
-            bidirectional=True,  # Ключевой параметр
-            dropout=0.2
-        )
-        
-        # hidden_size * 2 из-за bidirectional
-        self.fc = nn.Linear(hidden_size * 2, output_size)
-    
-    def forward(self, x):
-        out, _ = self.lstm(x)
-        out = self.fc(out[:, -1, :])
-        return out
-
-# Обрабатывает последовательность в обоих направлениях</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 8. Типы задач</h2>
-    <table>
-      <tr><th>Тип</th><th>Описание</th><th>Пример</th></tr>
-      <tr><td><strong>Many-to-One</strong></td><td>Последовательность → одно значение</td><td>Sentiment analysis</td></tr>
-      <tr><td><strong>One-to-Many</strong></td><td>Одно значение → последовательность</td><td>Image captioning</td></tr>
-      <tr><td><strong>Many-to-Many</strong></td><td>Последовательность → последовательность</td><td>Machine translation</td></tr>
-      <tr><td><strong>Seq2Seq</strong></td><td>Encoder-Decoder</td><td>Перевод текста</td></tr>
-    </table>
-  </div>
-
-  <div class="block">
-    <h2>🔷 9. Подготовка данных</h2>
-    <pre><code>import torch
-from torch.nn.utils.rnn import pad_sequence
-
-# Паддинг последовательностей разной длины
-sequences = [torch.tensor([1, 2, 3]),
-             torch.tensor([4, 5]),
-             torch.tensor([6, 7, 8, 9])]
-
-padded = pad_sequence(sequences, batch_first=True, padding_value=0)
-# Результат: [[1, 2, 3, 0],
-#             [4, 5, 0, 0],
-#             [6, 7, 8, 9]]
-
-# Создание батчей для RNN
-# Формат: (batch_size, seq_len, input_size)
-X = torch.randn(32, 50, 128)  # 32 сэмпла, 50 шагов, 128 признаков</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 10. Когда использовать</h2>
+    <h2>🔷 3. Когда можно, а когда нельзя</h2>
     <div class="good-vs-bad">
       <div class="good">
-        <h3>✅ Хорошо</h3>
+        <h3>Можно: вся последовательность известна</h3>
         <ul>
-          <li>Временные ряды</li>
-          <li>Анализ текста</li>
-          <li>Распознавание речи</li>
-          <li>Машинный перевод</li>
-          <li>Предсказание следующего элемента</li>
+          <li>NER, POS-тегирование, chunking</li>
+          <li>Классификация текста, тональность</li>
+          <li>Офлайн-распознавание речи, разметка аудио</li>
+          <li>Энкодер в seq2seq (декодер — однонаправленный)</li>
+          <li>Классификация/сегментация готовых временных рядов, биопоследовательностей</li>
         </ul>
       </div>
       <div class="bad">
-        <h3>❌ Плохо</h3>
+        <h3>Нельзя: будущего ещё нет</h3>
         <ul>
-          <li>Очень длинные последовательности (используйте Transformers)</li>
-          <li>Нужна параллелизация (RNN последовательны)</li>
-          <li>Табличные данные без временной зависимости</li>
+          <li>Прогноз ряда на следующий шаг — утечка будущего</li>
+          <li>Языковая модель / генерация слово за словом</li>
+          <li>Потоковое (онлайн) распознавание с малой задержкой</li>
+          <li>Декодер seq2seq</li>
+        </ul>
+      </div>
+    </div>
+    <p>Компромисс для потока: обратный проход по окну ограниченной длины (look-ahead несколько кадров) ценой задержки.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 4. PyTorch: формы выходов</h2>
+<pre><code>import torch
+import torch.nn as nn
+
+B, T, D, H, L = 4, 10, 16, 128, 2
+lstm = nn.LSTM(D, H, num_layers=L, batch_first=True,
+               bidirectional=True)
+x = torch.randn(B, T, D)
+output, (h_n, c_n) = lstm(x)
+
+print(output.shape)  # (4, 10, 256)  = (B, T, 2*H)
+print(h_n.shape)     # (4, 4, 128)  = (L*2, B, H)
+
+# разделить направления
+out = output.view(B, T, 2, H)
+fwd, bwd = out[..., 0, :], out[..., 1, :]
+
+h = h_n.view(L, 2, B, H)      # (слой, направление, B, H)
+h_fwd_last = h[-1, 0]         # forward последнего слоя: после x_T
+h_bwd_last = h[-1, 1]         # backward последнего слоя: после x_1 !
+sent = torch.cat([h_fwd_last, h_bwd_last], dim=-1)   # (B, 2H)</code></pre>
+    <ul>
+      <li><code>output[:, t]</code> = [fwd<sub>t</sub>; bwd<sub>t</sub>] — по шагам</li>
+      <li><code>h_n</code> — форма (num_layers·2, B, H), порядок: слой0-fwd, слой0-bwd, слой1-fwd, …</li>
+      <li><code>h_n</code> не зависит от <code>batch_first</code> — batch всегда второй</li>
+      <li>Следующий слой/Linear должен принимать <strong>2·H</strong></li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 5. Ловушка: финальное состояние</h2>
+    <p>Для обратного направления «конец» — это <strong>первый</strong> токен. Поэтому:</p>
+    <ul>
+      <li><code>output[:, -1, :H]</code> — forward после всей последовательности ✅</li>
+      <li><code>output[:, -1, H:]</code> — backward, видевший <strong>только последний</strong> токен ❌</li>
+      <li><code>output[:, 0, H:]</code> — backward после всей последовательности ✅</li>
+    </ul>
+    <p><strong>Правильно для классификации</strong>: cat(h_n последнего слоя обоих направлений), или пулинг по времени (mean/max) с учётом маски, или attention-пулинг.</p>
+    <p><strong>Padding</strong>: без <code>pack_padded_sequence</code> обратный проход начинается с PAD-токенов и «портит» состояние. С упаковкой <code>h_n</code> корректен для каждой длины.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 6. Классификатор с упаковкой</h2>
+<pre><code>from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
+class BiLSTMClassifier(nn.Module):
+    def __init__(self, vocab, emb=100, H=128, n_cls=2):
+        super().__init__()
+        self.emb = nn.Embedding(vocab, emb, padding_idx=0)
+        self.rnn = nn.LSTM(emb, H, batch_first=True,
+                           bidirectional=True, num_layers=2,
+                           dropout=0.3)
+        self.fc = nn.Linear(2 * H, n_cls)
+
+    def forward(self, ids, lengths):
+        e = self.emb(ids)
+        packed = pack_padded_sequence(e, lengths.cpu(), batch_first=True,
+                                      enforce_sorted=False)
+        _, (h_n, _) = self.rnn(packed)
+        h = torch.cat([h_n[-2], h_n[-1]], dim=-1)  # fwd и bwd последнего слоя
+        return self.fc(h)
+
+model = BiLSTMClassifier(vocab=5000)
+ids = torch.randint(1, 5000, (3, 12)); ids[1, 8:] = 0
+logits = model(ids, torch.tensor([12, 8, 12]))</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 7. Разметка последовательностей и BiLSTM-CRF</h2>
+    <p>Для тегирования (NER: B-PER, I-PER, O…) классификатор применяется к каждому <code>output[:, t]</code>. Но независимые решения дают невалидные цепочки (I-ORG после O).</p>
+    <ul>
+      <li><strong>BiLSTM-CRF</strong> (Huang et al., 2015; Lample et al., 2016): BiLSTM выдаёт emission-оценки для каждого тега, CRF-слой учит матрицу переходов между тегами</li>
+      <li><strong>Обучение</strong>: −log p(y|x) через forward-алгоритм</li>
+      <li><strong>Инференс</strong>: Витерби — лучшая цепочка тегов целиком</li>
+      <li>Часто + char-level BiLSTM/CNN для OOV-слов и морфологии</li>
+      <li>До BERT — SOTA в NER; и сейчас — лёгкий сильный бейзлайн</li>
+    </ul>
+<pre><code># emissions = self.fc(output)          # (B, T, n_tags)
+# pip install pytorch-crf
+from torchcrf import CRF
+crf = CRF(num_tags=9, batch_first=True)
+# loss = -crf(emissions, tags, mask=mask)
+# best = crf.decode(emissions, mask=mask)</code></pre>
+    <p>См. <a href="crf_conditional_random_fields_cheatsheet.html">CRF</a>, <a href="nlp_tasks_ner_classification_summarization_cheatsheet.html">NLP-задачи и NER</a>.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 8. ELMo и контекстные эмбеддинги</h2>
+    <ul>
+      <li><strong>ELMo</strong> (Peters et al., 2018): char-CNN + 2-слойный biLM</li>
+      <li>Два <strong>отдельных</strong> языковых моделирования: forward LM предсказывает следующее слово, backward LM — предыдущее (каждое направление не видит целевое слово)</li>
+      <li>Эмбеддинг слова = обучаемая взвешенная сумма слоёв: ELMo<sub>k</sub> = γ·Σ s<sub>j</sub>·h<sub>k,j</sub></li>
+      <li>Нижние слои — синтаксис, верхние — семантика</li>
+      <li>Отличие от BiLSTM-энкодера: там направления сразу объединяются для задачи; в ELMo они обучаются как LM раздельно, иначе слово «увидело бы себя»</li>
+      <li>Наследник — BERT: «глубокая» двунаправленность через self-attention и MLM</li>
+    </ul>
+    <p>См. <a href="word_embeddings_cheatsheet.html">Word Embeddings</a>, <a href="bert_language_models_cheatsheet.html">BERT</a>.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 9. Keras и глубокие BiRNN</h2>
+<pre><code>from tensorflow import keras
+from tensorflow.keras import layers
+
+model = keras.Sequential([
+    layers.Embedding(5000, 100, mask_zero=True),
+    layers.Bidirectional(layers.LSTM(128, return_sequences=True)),
+    layers.Bidirectional(layers.LSTM(64), merge_mode="concat"),
+    layers.Dense(2, activation="softmax"),
+])</code></pre>
+    <ul>
+      <li><strong>Стек</strong>: второй слой получает [fwd; bwd] первого — уже обе стороны контекста</li>
+      <li>2–3 слоя обычно достаточно; dropout между слоями</li>
+      <li><code>merge_mode</code>: "concat" | "sum" | "mul" | "ave" | None (вернуть два тензора)</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 10. Сравнение</h2>
+    <table>
+      <tr><th></th><th>Uni-RNN</th><th>Bi-RNN</th><th>Transformer-энкодер</th></tr>
+      <tr><td>Контекст</td><td>только прошлое</td><td>прошлое + будущее</td><td>весь, за 1 слой</td></tr>
+      <tr><td>Онлайн / генерация</td><td>да</td><td>нет</td><td>нет (нужен causal-декодер)</td></tr>
+      <tr><td>Параметры</td><td>P</td><td>≈2P</td><td>много</td></tr>
+      <tr><td>Параллельность по t</td><td>нет</td><td>нет (только по направлениям)</td><td>да</td></tr>
+      <tr><td>Малые данные</td><td>хорошо</td><td>хорошо</td><td>нужен предобученный</td></tr>
+    </table>
+  </div>
+
+  <div class="block">
+    <h2>🔷 11. Типичные ошибки</h2>
+    <div class="good-vs-bad">
+      <div class="bad">
+        <h3>Плохо</h3>
+        <ul>
+          <li>BiRNN для прогноза будущего — утечка, отличные метрики на валидации и провал в проде</li>
+          <li>Брать <code>output[:, -1]</code> как вектор предложения</li>
+          <li>Linear(H, …) вместо Linear(2H, …) — ошибка форм</li>
+          <li><code>h_n[-1]</code> вместо <code>h_n[-2:]</code> — потерять forward</li>
+          <li>Паддинг без упаковки/маски — обратный проход начинается с PAD</li>
+        </ul>
+      </div>
+      <div class="good">
+        <h3>Хорошо</h3>
+        <ul>
+          <li><code>pack_padded_sequence(..., enforce_sorted=False)</code></li>
+          <li>Разделять направления через <code>view(L, 2, B, H)</code></li>
+          <li>Для тегирования — CRF сверху</li>
+          <li>Пулинг по времени с маской вместо «последнего шага»</li>
         </ul>
       </div>
     </div>
   </div>
-
-  <div class="block">
-    <h2>🔷 11. Проблемы и решения</h2>
-    <table>
-      <tr><th>Проблема</th><th>Решение</th></tr>
-      <tr><td>Исчезающий градиент</td><td>Использовать LSTM/GRU</td></tr>
-      <tr><td>Взрывающийся градиент</td><td>Gradient clipping</td></tr>
-      <tr><td>Медленное обучение</td><td>Batch processing, GPU</td></tr>
-      <tr><td>Переобучение</td><td>Dropout, регуляризация</td></tr>
-      <tr><td>Длинные последовательности</td><td>Truncated BPTT, Attention</td></tr>
-    </table>
-
-    <pre><code># Gradient clipping
-torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 12. Чек-лист</h2>
-    <ul>
-      <li>[ ] Выбрать тип RNN (LSTM/GRU для большинства задач)</li>
-      <li>[ ] Нормализовать входные данные</li>
-      <li>[ ] Правильно подготовить последовательности (padding)</li>
-      <li>[ ] Использовать batch_first=True для удобства</li>
-      <li>[ ] Добавить dropout между слоями</li>
-      <li>[ ] Применить gradient clipping</li>
-      <li>[ ] Рассмотреть bidirectional для контекста</li>
-      <li>[ ] Для длинных последовательностей — Transformers</li>
-    </ul>
-
-    <h3>💡 Объяснение заказчику:</h3>
-    <blockquote>
-      «RNN работает как наша память: читая предложение слово за словом, мы помним предыдущие слова, чтобы понять смысл. Так же RNN запоминает предыдущие элементы последовательности для анализа текущего».
-    </blockquote>
-  </div>
-
-
 
 </div>
 </body>

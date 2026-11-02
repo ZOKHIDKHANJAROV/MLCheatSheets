@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EM-алгоритм Cheatsheet — 3 колонки</title>
+  <title>EM-алгоритм (Expectation-Maximization) Cheatsheet — 3 колонки</title>
   <style>
     @media screen {
       body {
@@ -206,422 +206,308 @@
 
 <div class="container">
 
-  <h1>🔄 EM-алгоритм</h1>
+  <h1>🔄 EM-алгоритм (Expectation-Maximization)</h1>
   <div class="subtitle">📅 Январь 2026</div>
 
   <div class="block">
-    <h2>🔷 1. Суть алгоритма</h2>
+    <h2>🔷 1. Суть</h2>
     <ul>
-      <li><strong>Задача</strong>: оценка параметров при наличии скрытых переменных</li>
-      <li><strong>Итеративный процесс</strong>: два шага (E и M)</li>
-      <li><strong>E-шаг</strong>: оценка скрытых переменных</li>
-      <li><strong>M-шаг</strong>: максимизация правдоподобия</li>
-      <li><strong>Гарантия</strong>: монотонное увеличение likelihood</li>
-      <li><strong>Применение</strong>: GMM, HMM, кластеризация, missing data</li>
+      <li><strong>Задача</strong>: оценка максимального правдоподобия (MLE) в моделях со скрытыми переменными Z или пропущенными данными</li>
+      <li><strong>Проблема</strong>: log p(X|θ) = log Σ_Z p(X, Z|θ) — сумма под логарифмом, замкнутых формул нет</li>
+      <li><strong>Идея</strong>: если бы Z были известны, полное правдоподобие log p(X, Z|θ) распалось бы на простые слагаемые → подставляем вместо Z их апостериорное ожидание</li>
+      <li><strong>E-шаг</strong>: оценить распределение скрытых переменных при текущих θ</li>
+      <li><strong>M-шаг</strong>: обновить θ, максимизируя ожидаемое полное правдоподобие</li>
+      <li><strong>Гарантия</strong>: правдоподобие не убывает; сходимость к локальному максимуму (или седловой точке)</li>
+      <li><strong>Применения</strong>: GMM, HMM, missing data, тематические модели</li>
     </ul>
-    <blockquote>
-      EM решает проблему курицы и яйца: нужны параметры чтобы найти скрытые переменные, и наоборот.
-    </blockquote>
+    <blockquote>EM решает проблему курицы и яйца: чтобы найти скрытые переменные, нужны параметры, а чтобы найти параметры — скрытые переменные.</blockquote>
+  </div>
 
-    </div>
-<div class="block">
-    <h2>🔷 2. Алгоритм (общий вид)</h2>
+  <div class="block">
+    <h2>🔷 2. Алгоритм и формулы</h2>
+    <pre><code>E-шаг:  q(Z) = P(Z | X, θ⁽ᵗ⁾)
+        Q(θ|θ⁽ᵗ⁾) = E_{Z|X,θ⁽ᵗ⁾}[ log P(X, Z|θ) ]
+M-шаг:  θ⁽ᵗ⁺¹⁾ = argmax_θ Q(θ|θ⁽ᵗ⁾)</code></pre>
     <ol>
-      <li><strong>Инициализация</strong>: задать начальные параметры θ⁰</li>
-      <li><strong>E-шаг</strong>: вычислить ожидание скрытых переменных при текущих θ</li>
-      <li><strong>M-шаг</strong>: найти θ, максимизирующие ожидаемое правдоподобие</li>
-      <li><strong>Проверка сходимости</strong>: если изменение мало, стоп</li>
-      <li><strong>Иначе</strong>: вернуться к шагу 2</li>
+      <li><strong>Инициализация</strong>: θ⁽⁰⁾ (k-means, несколько стартов)</li>
+      <li><strong>E-шаг</strong>: апостериорное распределение Z (для GMM — «ответственности»)</li>
+      <li><strong>M-шаг</strong>: максимизация Q по θ (часто в замкнутом виде)</li>
+      <li><strong>Проверка сходимости</strong>: прирост log-likelihood &lt; tol → стоп, иначе к шагу 2</li>
     </ol>
-    <pre><code># Псевдокод
-θ = initialize_parameters()
-while not converged:
-    # E-step
-    responsibilities = compute_expectations(X, θ)
-    
-    # M-step
-    θ_new = maximize_likelihood(X, responsibilities)
-    
-    # Check convergence
-    if |θ_new - θ| < tolerance:
-        break
-    θ = θ_new</code></pre>
+    <pre><code>θ = initialize()
+L_old = -inf
+while True:
+    resp = e_step(X, θ)        # E: q(Z)
+    θ = m_step(X, resp)        # M: argmax Q
+    L = log_likelihood(X, θ)
+    if L - L_old &lt; tol: break
+    L_old = L</code></pre>
   </div>
 
   <div class="block">
-    <h2>🔷 3. Gaussian Mixture Model (GMM)</h2>
-    <p>Классический пример применения EM:</p>
-    <pre><code>from sklearn.mixture import GaussianMixture
-import numpy as np
-
-# Генерация данных
-np.random.seed(42)
-X = np.concatenate([
-    np.random.normal(0, 1, (300, 2)),
-    np.random.normal(4, 1.5, (700, 2))
-])
-
-# GMM с EM алгоритмом
-gmm = GaussianMixture(
-    n_components=2,        # количество компонент
-    covariance_type='full', # тип ковариации
-    max_iter=100,          # макс. итераций
-    n_init=10,             # количество инициализаций
-    random_state=42
-)
-
-# Обучение (автоматически применяет EM)
-gmm.fit(X)
-
-# Предсказание кластеров
-labels = gmm.predict(X)
-
-# Вероятности принадлежности
-probabilities = gmm.predict_proba(X)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 4. E-шаг для GMM</h2>
-    <p>Вычисление ответственностей (responsibilities):</p>
-    <pre><code># Вероятность, что точка x принадлежит компоненте k
-# γ(z_nk) = π_k * N(x_n | μ_k, Σ_k) / Σ_j π_j * N(x_n | μ_j, Σ_j)
-
-from scipy.stats import multivariate_normal
-
-def e_step(X, means, covariances, weights):
-    """
-    X: данные (n_samples, n_features)
-    means: центры компонент (n_components, n_features)
-    covariances: ковариации (n_components, n_features, n_features)
-    weights: веса компонент (n_components,)
-    """
-    n_samples = X.shape[0]
-    n_components = len(weights)
-    
-    # Вычисление вероятностей для каждой компоненты
-    responsibilities = np.zeros((n_samples, n_components))
-    
-    for k in range(n_components):
-        responsibilities[:, k] = weights[k] * \
-            multivariate_normal.pdf(X, means[k], covariances[k])
-    
-    # Нормализация
-    responsibilities /= responsibilities.sum(axis=1, keepdims=True)
-    
-    return responsibilities</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 5. M-шаг для GMM</h2>
-    <p>Обновление параметров модели:</p>
-    <pre><code>def m_step(X, responsibilities):
-    """
-    Обновление параметров на основе responsibilities
-    """
-    n_samples, n_features = X.shape
-    n_components = responsibilities.shape[1]
-    
-    # Эффективное количество точек в каждой компоненте
-    N_k = responsibilities.sum(axis=0)  # (n_components,)
-    
-    # Обновление весов
-    weights = N_k / n_samples
-    
-    # Обновление центров
-    means = np.dot(responsibilities.T, X) / N_k[:, np.newaxis]
-    
-    # Обновление ковариаций
-    covariances = np.zeros((n_components, n_features, n_features))
-    for k in range(n_components):
-        diff = X - means[k]
-        covariances[k] = np.dot(
-            responsibilities[:, k] * diff.T, diff
-        ) / N_k[k]
-    
-    return means, covariances, weights</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 6. Полный EM для GMM</h2>
-    <pre><code>def fit_gmm_em(X, n_components, max_iter=100, tol=1e-4):
-    """Полная реализация EM для GMM"""
-    n_samples, n_features = X.shape
-    
-    # Инициализация (K-means++)
-    from sklearn.cluster import KMeans
-    kmeans = KMeans(n_clusters=n_components, random_state=42)
-    kmeans.fit(X)
-    
-    means = kmeans.cluster_centers_
-    covariances = np.array([np.cov(X.T) for _ in range(n_components)])
-    weights = np.ones(n_components) / n_components
-    
-    log_likelihood_old = -np.inf
-    
-    for iteration in range(max_iter):
-        # E-step
-        responsibilities = e_step(X, means, covariances, weights)
-        
-        # M-step
-        means, covariances, weights = m_step(X, responsibilities)
-        
-        # Вычисление log-likelihood
-        log_likelihood = compute_log_likelihood(
-            X, means, covariances, weights
-        )
-        
-        # Проверка сходимости
-        if abs(log_likelihood - log_likelihood_old) < tol:
-            print(f"Converged at iteration {iteration}")
-            break
-        
-        log_likelihood_old = log_likelihood
-    
-    return means, covariances, weights, responsibilities</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 7. Вычисление Log-Likelihood</h2>
-    <pre><code>def compute_log_likelihood(X, means, covariances, weights):
-    """
-    Вычисление log-likelihood для оценки качества
-    """
-    n_samples = X.shape[0]
-    n_components = len(weights)
-    
-    log_likelihood = 0
-    
-    for n in range(n_samples):
-        sample_likelihood = 0
-        for k in range(n_components):
-            sample_likelihood += weights[k] * \
-                multivariate_normal.pdf(
-                    X[n], means[k], covariances[k]
-                )
-        log_likelihood += np.log(sample_likelihood + 1e-10)
-    
-    return log_likelihood
-
-# Использование для выбора количества компонент
-bic_scores = []
-aic_scores = []
-
-for n_components in range(1, 11):
-    gmm = GaussianMixture(n_components=n_components)
-    gmm.fit(X)
-    bic_scores.append(gmm.bic(X))
-    aic_scores.append(gmm.aic(X))
-
-# Лучшая модель - минимальный BIC/AIC
-best_n = np.argmin(bic_scores) + 1</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 8. Применение: Missing Data</h2>
-    <p>EM отлично подходит для заполнения пропусков:</p>
-    <pre><code>from sklearn.impute import IterativeImputer
-
-# Данные с пропусками
-X_incomplete = X.copy()
-X_incomplete[np.random.rand(*X.shape) < 0.3] = np.nan
-
-# EM-based imputation
-imputer = IterativeImputer(
-    max_iter=10,
-    random_state=42,
-    verbose=0
-)
-
-X_filled = imputer.fit_transform(X_incomplete)
-
-# Или вручную с GMM
-def em_impute(X_incomplete, n_components=3):
-    """Заполнение пропусков через EM с GMM"""
-    X_filled = X_incomplete.copy()
-    
-    # Начальное заполнение (mean imputation)
-    from sklearn.impute import SimpleImputer
-    simple_imputer = SimpleImputer(strategy='mean')
-    X_filled = simple_imputer.fit_transform(X_filled)
-    
-    for iteration in range(10):
-        # Обучение GMM на текущих данных
-        gmm = GaussianMixture(n_components=n_components)
-        gmm.fit(X_filled)
-        
-        # Заполнение пропусков условными ожиданиями
-        mask = np.isnan(X_incomplete)
-        # ... (детальная имплементация)
-    
-    return X_filled</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 9. Параметры и настройка</h2>
-    <table>
-      <tr><th>Параметр</th><th>Описание</th><th>Рекомендации</th></tr>
-      <tr><td><code>n_components</code></td><td>Количество компонент</td><td>Использовать BIC/AIC</td></tr>
-      <tr><td><code>covariance_type</code></td><td>Тип ковариации</td><td>'full' - полная, 'diag' - быстрее</td></tr>
-      <tr><td><code>max_iter</code></td><td>Макс. итераций</td><td>100-200 обычно достаточно</td></tr>
-      <tr><td><code>n_init</code></td><td>Число инициализаций</td><td>10+ для стабильности</td></tr>
-      <tr><td><code>tol</code></td><td>Порог сходимости</td><td>1e-3 до 1e-6</td></tr>
-    </table>
-    <pre><code># Эксперименты с типами ковариации
-covariance_types = ['full', 'tied', 'diag', 'spherical']
-
-for cov_type in covariance_types:
-    gmm = GaussianMixture(
-        n_components=3,
-        covariance_type=cov_type
-    )
-    gmm.fit(X)
-    print(f"{cov_type}: BIC = {gmm.bic(X):.2f}")</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 10. Проблемы и решения</h2>
-    <div class="good-vs-bad">
-      <div class="bad">
-        <h3>⚠️ Проблемы</h3>
-        <ul>
-          <li>Локальные максимумы (зависит от инициализации)</li>
-          <li>Медленная сходимость</li>
-          <li>Сингулярные ковариационные матрицы</li>
-          <li>Чувствительность к выбросам</li>
-          <li>Переобучение при большом K</li>
-        </ul>
-      </div>
-      <div class="good">
-        <h3>✅ Решения</h3>
-        <ul>
-          <li>Множественные инициализации (n_init)</li>
-          <li>Хорошая инициализация (K-means++)</li>
-          <li>Регуляризация ковариаций</li>
-          <li>Использовать robustные версии</li>
-          <li>Выбор K через BIC/AIC</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <div class="block">
-    <h2>🔷 11. Визуализация сходимости</h2>
-    <pre><code>import matplotlib.pyplot as plt
-
-# Отслеживание log-likelihood
-log_likelihoods = []
-
-gmm = GaussianMixture(n_components=3, n_init=1)
-
-# Модифицированный fit для записи истории
-X_sample = X[:1000]  # для ускорения
-
-for i in range(50):
-    gmm.max_iter = i + 1
-    gmm.fit(X_sample)
-    log_likelihoods.append(gmm.score(X_sample) * len(X_sample))
-
-# График сходимости
-plt.figure(figsize=(10, 6))
-plt.plot(log_likelihoods)
-plt.xlabel('Iteration')
-plt.ylabel('Log-Likelihood')
-plt.title('EM Algorithm Convergence')
-plt.grid(True)
-plt.show()
-
-# Визуализация результатов
-plt.figure(figsize=(10, 6))
-plt.scatter(X[:, 0], X[:, 1], c=gmm.predict(X), 
-           cmap='viridis', alpha=0.5)
-plt.scatter(gmm.means_[:, 0], gmm.means_[:, 1],
-           c='red', marker='X', s=200, edgecolors='black')
-plt.title('GMM Clustering Result')
-plt.show()</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 12. Варианты EM</h2>
+    <h2>🔷 3. Почему работает: ELBO и монотонность</h2>
+    <p>Для любого распределения q(Z):</p>
+    <pre><code>log p(X|θ) = ELBO(q, θ) + KL(q(Z) ‖ p(Z|X,θ))
+ELBO(q, θ) = E_q[log p(X, Z|θ)] − E_q[log q(Z)]
+           = Q(θ|θ⁽ᵗ⁾) + H(q)</code></pre>
     <ul>
-      <li><strong>Hard EM</strong>: жесткое присвоение вместо вероятностей</li>
-      <li><strong>Stochastic EM</strong>: стохастический E-шаг для больших данных</li>
-      <li><strong>Variational EM</strong>: вариационный байесовский подход</li>
-      <li><strong>Incremental EM</strong>: онлайн обучение</li>
-      <li><strong>ECM (Expectation-Conditional-Maximization)</strong>: разбиение M-шага</li>
+      <li>KL ≥ 0 ⇒ ELBO — <strong>нижняя оценка</strong> log-правдоподобия</li>
+      <li><strong>E-шаг</strong>: q = p(Z|X,θ⁽ᵗ⁾) ⇒ KL = 0, оценка касается log p(X|θ⁽ᵗ⁾)</li>
+      <li><strong>M-шаг</strong>: максимизирует ELBO по θ (H(q) от θ не зависит)</li>
+      <li>Итог: L(θ⁽ᵗ⁺¹⁾) ≥ ELBO(q, θ⁽ᵗ⁺¹⁾) ≥ ELBO(q, θ⁽ᵗ⁾) = L(θ⁽ᵗ⁾)</li>
+      <li>EM = <strong>координатный подъём</strong> по ELBO: попеременно по q и по θ</li>
     </ul>
-    <pre><code># Hard EM (K-means - это частный случай)
+    <p>Если точный E-шаг невозможен — q ищут в простом семействе (<strong>Variational EM</strong>), и KL уже не обнуляется.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 4. EM для смеси гауссиан (GMM)</h2>
+    <p>Модель: p(x) = Σₖ πₖ N(x | μₖ, Σₖ), скрытая zᵢ ∈ {1..K} — номер компоненты.</p>
+    <p><strong>E-шаг</strong> — ответственности:</p>
+    <pre><code>γᵢₖ = P(zᵢ = k | xᵢ, θ) = πₖ N(xᵢ|μₖ, Σₖ) / Σⱼ πⱼ N(xᵢ|μⱼ, Σⱼ)</code></pre>
+    <p><strong>M-шаг</strong> — взвешенные MLE, где Nₖ = Σᵢ γᵢₖ (эффективный размер компоненты):</p>
+    <pre><code>πₖ = Nₖ / N
+μₖ = Σᵢ γᵢₖ xᵢ / Nₖ
+Σₖ = Σᵢ γᵢₖ (xᵢ − μₖ)(xᵢ − μₖ)ᵀ / Nₖ  (+ εI для устойчивости)</code></pre>
+    <p><strong>Log-likelihood</strong>: L = Σᵢ log Σₖ πₖ N(xᵢ|μₖ, Σₖ) — считать через log-sum-exp.</p>
+    <table>
+      <tr><th></th><th>k-means (hard EM)</th><th>GMM (soft EM)</th></tr>
+      <tr><td>Назначение</td><td>Жёсткое: точка в одном кластере</td><td>Мягкое: вероятности γᵢₖ</td></tr>
+      <tr><td>Форма кластеров</td><td>Сферы одинакового размера</td><td>Эллипсы разного размера и веса</td></tr>
+      <tr><td>Связь</td><td colspan="2">k-means — предел GMM при Σₖ = σ²I, σ → 0</td></tr>
+    </table>
+  </div>
+
+  <div class="block">
+    <h2>🔷 5. GMM с нуля (numpy)</h2>
+    <pre><code>import numpy as np
+from scipy.stats import multivariate_normal
+from scipy.special import logsumexp
 from sklearn.cluster import KMeans
 
-kmeans = KMeans(n_clusters=3)  # Hard EM
-kmeans.fit(X)
+class GaussianMixtureEM:
+    def __init__(self, K, max_iter=100, tol=1e-4, reg=1e-6):
+        self.K, self.max_iter, self.tol, self.reg = K, max_iter, tol, reg
 
-# Soft EM (GMM)
-gmm = GaussianMixture(n_components=3)  # Soft EM
-gmm.fit(X)
+    def _log_prob(self, X):  # (n, K): log πₖ + log N(x|μₖ,Σₖ)
+        return np.column_stack([
+            np.log(self.weights_[k]) +
+            multivariate_normal.logpdf(X, self.means_[k], self.covs_[k])
+            for k in range(self.K)])
 
-# Сравнение
-print("K-means (Hard):", kmeans.inertia_)
-print("GMM (Soft):", gmm.score(X))</code></pre>
+    def fit(self, X):
+        n, d = X.shape
+        lab = KMeans(self.K, n_init=10, random_state=0).fit_predict(X)
+        self.means_ = np.array([X[lab == k].mean(0) for k in range(self.K)])
+        self.covs_ = np.array([np.cov(X[lab == k].T) + self.reg * np.eye(d)
+                               for k in range(self.K)])
+        self.weights_ = np.bincount(lab, minlength=self.K) / n
+        L_old = -np.inf
+        for it in range(self.max_iter):
+            # E-шаг (в лог-пространстве)
+            lp = self._log_prob(X)
+            L = logsumexp(lp, axis=1).sum()
+            resp = np.exp(lp - logsumexp(lp, axis=1, keepdims=True))
+            # M-шаг
+            Nk = resp.sum(0)
+            self.weights_ = Nk / n
+            self.means_ = resp.T @ X / Nk[:, None]
+            for k in range(self.K):
+                diff = X - self.means_[k]
+                self.covs_[k] = (resp[:, k] * diff.T) @ diff / Nk[k] \
+                                + self.reg * np.eye(d)
+            if L - L_old &lt; self.tol:
+                break
+            L_old = L
+        self.n_iter_, self.log_likelihood_ = it + 1, L
+        return self
+
+    def predict_proba(self, X):
+        lp = self._log_prob(X)
+        return np.exp(lp - logsumexp(lp, axis=1, keepdims=True))</code></pre>
   </div>
 
   <div class="block">
-    <h2>🔷 13. Применения EM</h2>
+    <h2>🔷 6. sklearn: GaussianMixture и выбор K</h2>
+    <pre><code>import numpy as np
+from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
+
+rng = np.random.default_rng(42)
+X = np.vstack([rng.normal(0, 1, (300, 2)),
+               rng.normal(5, 1.5, (300, 2)),
+               rng.normal([2, 6], 0.5, (300, 2))])
+
+gmm = GaussianMixture(n_components=3, covariance_type='full',
+                      n_init=10, reg_covar=1e-6, random_state=42).fit(X)
+labels = gmm.predict(X)          # жёсткие метки
+probs = gmm.predict_proba(X)     # мягкие (γᵢₖ)
+print(gmm.weights_, gmm.means_, gmm.converged_, gmm.n_iter_)
+
+# Выбор K: likelihood растёт с K → нужен штраф
+bic = [GaussianMixture(k, n_init=5, random_state=0).fit(X).bic(X)
+       for k in range(1, 9)]
+best_k = int(np.argmin(bic)) + 1
+
+# Или байесовская смесь «выключает» лишние компоненты
+bgm = BayesianGaussianMixture(n_components=10,
+        weight_concentration_prior=0.01, random_state=0).fit(X)
+print(np.round(bgm.weights_, 2))</code></pre>
+    <table>
+      <tr><th>Параметр</th><th>Смысл</th><th>Рекомендации</th></tr>
+      <tr><td><code>n_components</code></td><td>Число компонент K</td><td>BIC/AIC, BayesianGaussianMixture</td></tr>
+      <tr><td><code>covariance_type</code></td><td>'full', 'tied', 'diag', 'spherical'</td><td>'full' — гибко; 'diag' — быстрее, меньше параметров</td></tr>
+      <tr><td><code>n_init</code></td><td>Число запусков</td><td>5–10+, берётся лучший по likelihood</td></tr>
+      <tr><td><code>init_params</code></td><td>Инициализация</td><td>'kmeans' (по умолчанию), 'k-means++'</td></tr>
+      <tr><td><code>max_iter</code>, <code>tol</code></td><td>Остановка</td><td>100–200; tol 1e-3…1e-6</td></tr>
+      <tr><td><code>reg_covar</code></td><td>+εI к ковариациям</td><td>Увеличить при сингулярности</td></tr>
+    </table>
+    <p>BIC = −2 log L + p·log N, AIC = −2 log L + 2p (p — число параметров); меньше — лучше.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 7. EM для пропущенных данных</h2>
+    <p>Многомерная нормаль N(μ, Σ) с пропусками: скрытые переменные — пропущенные значения.</p>
+    <ul>
+      <li><strong>E-шаг</strong>: для строки i пропуски m при наблюдаемых o заменяются условным ожиданием: E[xₘ|xₒ] = μₘ + Σₘₒ Σₒₒ⁻¹ (xₒ − μₒ); условная ковариация Σₘₘ − Σₘₒ Σₒₒ⁻¹ Σₒₘ добавляется к Σ на M-шаге</li>
+      <li><strong>M-шаг</strong>: μ и Σ пересчитываются по заполненным данным (с поправкой ковариации)</li>
+      <li>Предполагается MAR (missing at random)</li>
+    </ul>
+    <pre><code>import numpy as np
+
+def em_impute_gaussian(X, max_iter=100, tol=1e-6):
+    X = X.astype(float)
+    miss = np.isnan(X)
+    Xf = np.where(miss, np.nanmean(X, axis=0), X)   # старт: средние
+    for _ in range(max_iter):
+        mu = Xf.mean(0)
+        C = np.zeros((X.shape[1],) * 2)              # поправка ковариации
+        S = np.cov(Xf.T, bias=True)
+        X_old = Xf.copy()
+        for i in np.where(miss.any(1))[0]:
+            m, o = miss[i], ~miss[i]
+            S_oo_inv = np.linalg.pinv(S[np.ix_(o, o)])
+            S_mo = S[np.ix_(m, o)]
+            Xf[i, m] = mu[m] + S_mo @ S_oo_inv @ (Xf[i, o] - mu[o])  # E
+            C[np.ix_(m, m)] += S[np.ix_(m, m)] - S_mo @ S_oo_inv @ S_mo.T
+        S = np.cov(Xf.T, bias=True) + C / len(X)                    # M
+        if np.abs(Xf - X_old).max() &lt; tol:
+            break
+    return Xf, Xf.mean(0), S
+
+# Практичная альтернатива в sklearn (итеративная, не строго EM):
+from sklearn.experimental import enable_iterative_imputer  # noqa
+from sklearn.impute import IterativeImputer
+X_filled = IterativeImputer(max_iter=10, random_state=0).fit_transform(X_with_nan)</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 8. EM для HMM (Baum-Welch)</h2>
+    <ul>
+      <li><strong>Скрытые</strong>: последовательность состояний s₁..s_T</li>
+      <li><strong>E-шаг</strong>: Forward-Backward → P(s_t = i | X) и P(s_t = i, s_t+1 = j | X)</li>
+      <li><strong>M-шаг</strong>: стартовые вероятности, матрица переходов, параметры эмиссий — нормированные ожидаемые счётчики</li>
+      <li><strong>Декодирование</strong>: Viterbi — наиболее вероятная последовательность состояний</li>
+    </ul>
+    <pre><code>import numpy as np
+from hmmlearn import hmm
+
+X = np.random.randn(500, 2)                # наблюдения (T, d)
+model = hmm.GaussianHMM(n_components=3, covariance_type="full",
+                        n_iter=100, random_state=0)
+model.fit(X)                               # Baum-Welch = EM
+print(model.startprob_, model.transmat_, model.means_)
+log_prob, states = model.decode(X)         # Viterbi
+print(model.monitor_.converged)</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 9. Сходимость, инициализация, проблемы</h2>
+    <table>
+      <tr><th>Критерий остановки</th><th>Формула</th></tr>
+      <tr><td>Log-likelihood (основной)</td><td>|L⁽ᵗ⁺¹⁾ − L⁽ᵗ⁾| &lt; ε</td></tr>
+      <tr><td>Относительное изменение</td><td>|ΔL| / |L| &lt; ε</td></tr>
+      <tr><td>Параметры</td><td>‖θ⁽ᵗ⁺¹⁾ − θ⁽ᵗ⁾‖ &lt; ε</td></tr>
+      <tr><td>Лимит</td><td>t &gt; max_iter</td></tr>
+    </table>
+    <table>
+      <tr><th>Проблема</th><th>Решение</th></tr>
+      <tr><td>Локальные максимумы, зависимость от старта</td><td>n_init, инициализация k-means / иерархической кластеризацией, prior knowledge</td></tr>
+      <tr><td>Коллапс компоненты на точку: Σ → 0, L → ∞</td><td>reg_covar (+εI), минимальная дисперсия, байесовский prior</td></tr>
+      <tr><td>Медленная сходимость (перекрытые компоненты)</td><td>Лучшая инициализация, ускорения (ниже), лимит итераций</td></tr>
+      <tr><td>Выбросы</td><td>Смесь t-распределений, удаление выбросов</td></tr>
+      <tr><td>Переобучение при большом K</td><td>BIC/AIC, проверка likelihood на отложенных данных</td></tr>
+      <tr><td>Underflow плотностей</td><td>Вычисления в лог-пространстве (log-sum-exp)</td></tr>
+    </table>
+    <p>Плохие старты: одинаковые начальные значения (компоненты не разойдутся), экстремальные значения, случайный старт без нескольких запусков.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 10. Варианты и ускорение EM</h2>
+    <table>
+      <tr><th>Вариант</th><th>Идея</th><th>Когда</th></tr>
+      <tr><td>Hard EM</td><td>Жёсткое назначение (argmax) вместо γ</td><td>k-means, Viterbi training</td></tr>
+      <tr><td>Generalized EM (GEM)</td><td>M-шаг лишь увеличивает Q (напр. шаг градиента)</td><td>M-шаг не решается в замкнутом виде</td></tr>
+      <tr><td>ECM</td><td>M-шаг разбит на условные максимизации</td><td>Много связанных параметров</td></tr>
+      <tr><td>Stochastic / Monte Carlo EM</td><td>E-шаг через сэмплирование Z</td><td>E-шаг невычислим точно</td></tr>
+      <tr><td>Online / Incremental EM</td><td>Обновление достаточных статистик по мини-батчам со сглаживанием</td><td>Большие данные, поток</td></tr>
+      <tr><td>Variational EM</td><td>q(Z) из простого семейства, максимизация ELBO</td><td>Байесовские модели, LDA, VAE</td></tr>
+    </table>
+    <p><strong>Ускорение:</strong> параллельный/разреженный E-шаг, Newton-Raphson или сопряжённые градиенты в M-шаге, 'diag'-ковариации, подвыборка для инициализации.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 11. Применения и сравнение</h2>
     <table>
       <tr><th>Задача</th><th>Применение EM</th></tr>
-      <tr><td>Кластеризация</td><td>GMM для soft clustering</td></tr>
-      <tr><td>Missing data</td><td>Заполнение пропусков</td></tr>
-      <tr><td>HMM</td><td>Baum-Welch алгоритм</td></tr>
-      <tr><td>Рекомендации</td><td>Matrix factorization с missing</td></tr>
-      <tr><td>Semi-supervised</td><td>Обучение с неполной разметкой</td></tr>
-      <tr><td>Topic modeling</td><td>LDA (Latent Dirichlet Allocation)</td></tr>
+      <tr><td>Кластеризация</td><td>GMM, soft clustering, density estimation</td></tr>
+      <tr><td>Временные ряды, речь, NLP</td><td>HMM (Baum-Welch), POS tagging, выравнивание слов</td></tr>
+      <tr><td>Missing data</td><td>Оценка параметров и импутация</td></tr>
+      <tr><td>Тематические модели</td><td>pLSA (EM), LDA (variational EM)</td></tr>
+      <tr><td>Semi-supervised</td><td>Неразмеченные метки как скрытые переменные (Co-EM)</td></tr>
+      <tr><td>CV, биоинформатика</td><td>Сегментация изображений, motif finding</td></tr>
     </table>
-  </div>
-
-  <div class="block">
-    <h2>🔷 14. Сравнение с альтернативами</h2>
     <table>
       <tr><th>Метод</th><th>Плюсы</th><th>Минусы</th></tr>
-      <tr><td><strong>EM</strong></td><td>Гарантия улучшения, теория</td><td>Локальные максимумы</td></tr>
-      <tr><td><strong>Gradient Descent</strong></td><td>Прямая оптимизация</td><td>Выбор learning rate</td></tr>
-      <tr><td><strong>Variational Bayes</strong></td><td>Регуляризация, uncertainty</td><td>Сложнее реализовать</td></tr>
-      <tr><td><strong>MCMC</strong></td><td>Точная выборка</td><td>Очень медленно</td></tr>
+      <tr><td><strong>EM</strong></td><td>Монотонность, нет learning rate, замкнутые M-шаги</td><td>Локальные максимумы, медленный хвост</td></tr>
+      <tr><td><strong>Gradient Descent</strong></td><td>Универсален, мини-батчи</td><td>Выбор lr, ограничения (Σ ≻ 0, Σπ = 1)</td></tr>
+      <tr><td><strong>Variational Bayes</strong></td><td>Регуляризация, неопределённость</td><td>Сложнее, приближённый</td></tr>
+      <tr><td><strong>MCMC</strong></td><td>Полная апостериорная выборка</td><td>Очень медленно</td></tr>
     </table>
   </div>
 
   <div class="block">
-    <h2>🔷 15. Best Practices</h2>
+    <h2>🔷 12. Плюсы, минусы, чек-лист</h2>
+    <div class="good-vs-bad">
+      <div class="good">
+        <h3>✅ Плюсы</h3>
+        <ul>
+          <li>Гарантия неубывания likelihood</li>
+          <li>Простая реализация, интерпретируемость</li>
+          <li>Естественно работает с пропусками</li>
+        </ul>
+      </div>
+      <div class="bad">
+        <h3>❌ Минусы</h3>
+        <ul>
+          <li>Только локальный максимум, зависимость от инициализации</li>
+          <li>Медленная сходимость</li>
+          <li>Нужно задать вероятностную модель</li>
+        </ul>
+      </div>
+    </div>
     <ul>
-      <li>[ ] Использовать несколько инициализаций (n_init ≥ 10)</li>
-      <li>[ ] Нормализовать/стандартизовать данные</li>
-      <li>[ ] Выбирать K через BIC/AIC или cross-validation</li>
-      <li>[ ] Проверять сходимость (log-likelihood)</li>
-      <li>[ ] Регуляризировать ковариации (добавить диагональ)</li>
-      <li>[ ] Визуализировать результаты</li>
-      <li>[ ] Рассмотреть альтернативы (K-means для hard clustering)</li>
-      <li>[ ] Удалять выбросы перед обучением</li>
+      <li>[ ] Данные стандартизованы, выбросы обработаны</li>
+      <li>[ ] K выбрано по BIC/AIC; сравнены типы ковариаций</li>
+      <li>[ ] n_init ≥ 5–10, random_state задан</li>
+      <li>[ ] reg_covar &gt; 0, вычисления в лог-пространстве</li>
+      <li>[ ] Проверены converged_ и кривая log-likelihood</li>
+      <li>[ ] Результаты визуализированы, проверены на отложенных данных</li>
     </ul>
-  </div>
-
-  <div class="block">
-    <h2>🔷 16. Чек-лист</h2>
-    <ul>
-      <li>[ ] Данные нормализованы/стандартизованы</li>
-      <li>[ ] Выбрано количество компонент (BIC/AIC)</li>
-      <li>[ ] Установлен random_state для воспроизводимости</li>
-      <li>[ ] Используется достаточно инициализаций</li>
-      <li>[ ] Проверена сходимость алгоритма</li>
-      <li>[ ] Визуализированы результаты кластеризации</li>
-      <li>[ ] Сравнены разные типы ковариаций</li>
-      <li>[ ] Обработаны выбросы</li>
-    </ul>
-
     <h3>💡 Объяснение заказчику:</h3>
     <blockquote>
-      «EM-алгоритм решает задачи, где есть скрытая информация. Например, мы видим данные клиентов, но не знаем, к какой группе они относятся. EM итеративно угадывает группы и уточняет их параметры, пока не найдет наилучшее разбиение».
+      «Мы видим клиентов, но не знаем, к какой группе каждый относится. EM по очереди угадывает группы и уточняет описание групп, пока картина не перестанет меняться».
     </blockquote>
   </div>
-
-
 
 </div>
 </body>

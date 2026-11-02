@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="gan dcgan_conditional_gan">
+<title>GAN в одномерном пространстве — интерактив</title>
+<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="lab.css?v=2">
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 GAN в одномерном пространстве</h1><a href="../cheatsheets/gan_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead">Генератор G — маленькая нейросеть 1 → 16 → 16 → 1, превращающая шум z в число x. Дискриминатор D (1 → 24 → 24 → 1) учится
+    отличать настоящие x от сгенерированных, а G — обманывать D. Обе сети обучаются попеременно прямо в браузере (backprop и Adam написаны вручную).
+    Внизу холста видно, куда G переносит каждую точку шума: линии соединяют z с G(z).</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="plane"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>настоящая плотность p<sub>data</sub></span><span><i style="background:var(--c-b)"></i>сгенерированные G(z): гистограмма и KDE</span><span><i style="background:var(--c-ok)"></i>D(x) — «вероятность, что x настоящий» (шкала справа)</span><span>внизу: отображение z → x = G(z)</span></div>
+    </div>
+    <div class="card controls">
+      <div class="buttons"><button class="primary" id="play">▶ Обучать</button><button id="step">+10 итераций</button><button id="reset">Сброс</button></div>
+      <div class="stats" style="margin-bottom:14px">
+        <span>Итерация</span><b id="it">0</b>
+        <span>L<sub>D</sub> / L<sub>G</sub> (средн. за 50)</span><b id="loss">—</b>
+        <span>D(настоящих) / D(G(z))</span><b id="dd">—</b>
+        <span>‖∇<sub>θ</sub> L<sub>G</sub>‖ (средн. за 50)</span><b id="grad">—</b>
+        <span>Среднее / σ у G(z)</span><b id="msd">—</b>
+        <span>Расстояние W₁ до данных</span><b id="w1">—</b>
+        <span id="modesLbl">Покрыто мод</span><b id="modes">—</b>
+      </div>
+      <h3>Данные</h3>
+      <div class="ctl"><label>Настоящее распределение</label><select id="dist"><option value="normal">Нормальное N(1.5, 0.5²)</option><option value="mix2">Смесь двух гауссиан (±2)</option><option value="mix3">Смесь трёх гауссиан (−2.6, 0, 2.6)</option><option value="uniform">Равномерное U(−2, 2)</option></select></div>
+      <div class="ctl"><label>Шум z</label><select id="noise"><option value="normal">z ~ N(0, 1)</option><option value="uniform">z ~ U(−1, 1)</option></select></div>
+      <h3>Обучение</h3>
+      <div class="ctl"><label>Лосс генератора</label><select id="loss_kind"><option value="ns">non-saturating: min −log D(G(z))</option><option value="minimax">исходный minimax: min log(1 − D(G(z)))</option></select></div>
+      <div class="ctl"><label>Оптимизатор</label><select id="opt"><option value="adam">Adam (β₁ = 0.5, β₂ = 0.999)</option><option value="sgd">SGD + momentum 0.9</option></select></div>
+      <div class="ctl"><label for="lrG">Learning rate G <output for="lrG"></output></label><input id="lrG" type="range" min="0" max="8" step="1" value="1"></div>
+      <div class="ctl"><label for="lrD">Learning rate D <output for="lrD"></output></label><input id="lrD" type="range" min="0" max="8" step="1" value="4"></div>
+      <div class="ctl"><label for="kD">Шагов D на один шаг G <output for="kD"></output></label><input id="kD" type="range" min="1" max="5" step="1" value="1"></div>
+      <div class="ctl"><label for="batch">Размер батча <output for="batch"></output></label><input id="batch" type="range" min="0" max="3" step="1" value="2"></div>
+      <div class="ctl"><label for="seed">Seed (инициализация и батчи) <output for="seed"></output></label><input id="seed" type="range" min="1" max="20" step="1" value="1"></div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Лоссы по итерациям (сглажено)</h3><canvas id="curve"></canvas>
+      <div class="legend"><span><i style="background:var(--c-a)"></i>L<sub>D</sub></span><span><i style="background:var(--c-b)"></i>L<sub>G</sub></span><span>┄ значения в равновесии: L<sub>D</sub> = 2·ln 2 ≈ 1.386, L<sub>G</sub> = ±ln 2</span></div></div>
+    <div class="card hint"><h3>Что попробовать</h3><ul>
+      <li><b>Нормальное</b>, настройки по умолчанию (lr G 2·10⁻⁴, lr D 2·10⁻³, seed 1): к ~500-й итерации G накрывает настоящую плотность (среднее 1.44), к 2000-й W₁ ≈ 0.03.
+        D(x) становится ≈ 0.5 везде, где плотности совпали: D больше не может отличить подделку, L<sub>D</sub> → 2·ln 2, L<sub>G</sub> → ln 2. Это и есть равновесие.</li>
+      <li><b>Смесь трёх гауссиан</b> с теми же настройками: G — непрерывная функция одномерного шума, ей трудно «перепрыгнуть» пустоты. К ~2500-й итерации
+        средняя мода почти пуста (в ней 6–9% выборки вместо 33%) — «покрыто мод: 2 из 3». Это частичный <b>mode collapse</b>.</li>
+      <li>Та же смесь, но lr G 2·10⁻³, lr D 5·10⁻⁴ (D медленнее G): генератор раз за разом схлопывается в одну моду — счётчик «покрыто мод»
+        то и дело падает до 1 из 3, а на итерациях 1050, 1950, 2550 все 100% выборки сидят в центральной моде. Потом G расползается и схлопывается снова:
+        медленный D не успевает наказать за коллапс.</li>
+      <li><b>Большой lr</b>: нормальное, lr G = lr D = 10⁻²: распределение G не успокаивается — его среднее гуляет от 1.0 до 2.3 (при настоящем 1.5), W₁ скачет между 0.26 и 0.82 вместо ~0.03.</li>
+      <li><b>Исходный minimax-лосс</b> на нормальном: в начале D уверенно отличает подделки (D(G(z)) ≈ 0.35), а там, где D мало, градиент log(1 − D) почти плоский —
+        на итерациях 300–500 ‖∇L<sub>G</sub>‖ ≈ 0.3–0.4 против 2.5–7 у non-saturating. К 500-й итерации W₁ ≈ 1.04 против 0.22, среднее G — 0.44 против 1.44:
+        генератор ползёт к данным заметно медленнее.</li>
+    </ul></div>
+  </div>
+</div>
+
+<script src="lab.js?v=2"></script>
+<script>
+// ---------- ядро: распределения, MLP, оптимизаторы, шаг GAN (без DOM) ----------
+const DISTS = {
+  normal: { comps: [[1, 1.5, 0.5]] },                                   // [вес, среднее, σ]
+  mix2: { comps: [[0.5, -2, 0.4], [0.5, 2, 0.4]] },
+  mix3: { comps: [[1 / 3, -2.6, 0.35], [1 / 3, 0, 0.35], [1 / 3, 2.6, 0.35]] },
+  uniform: { lo: -2, hi: 2 },
+};
+function sampleReal(d, r) {
+  if (d.lo !== undefined) return d.lo + (d.hi - d.lo) * r();
+  let u = r(), c = d.comps[0];
+  for (const k of d.comps) { c = k; if ((u -= k[0]) < 0) break; }
+  return c[1] + c[2] * r.normal();
+}
+function realPdf(d, x) {
+  if (d.lo !== undefined) return x >= d.lo && x <= d.hi ? 1 / (d.hi - d.lo) : 0;
+  return d.comps.reduce((s, [w, m, sd]) => s + w * Math.exp(-0.5 * ((x - m) / sd) ** 2) / (sd * Math.sqrt(2 * Math.PI)), 0);
+}
+const sampleZ = (kind, r) => kind === "uniform" ? 2 * r() - 1 : r.normal();
+
+// Полносвязная сеть 1 → H → H → 1 с tanh, линейный выход. Батч хранится плоским массивом B × n.
+function mlp(sizes, r) {
+  return sizes.slice(1).map((nOut, i) => {
+    const nIn = sizes[i], s = Math.sqrt(1 / nIn);
+    return { nIn, nOut, W: Float64Array.from({ length: nIn * nOut }, () => r.normal() * s), b: new Float64Array(nOut) };
+  });
+}
+function forward(net, X, B) {
+  const A = [X];
+  net.forEach((ly, l) => {
+    const prev = A[l], out = new Float64Array(B * ly.nOut), last = l === net.length - 1;
+    for (let n = 0; n < B; n++) for (let j = 0; j < ly.nOut; j++) {
+      let z = ly.b[j];
+      for (let k = 0; k < ly.nIn; k++) z += ly.W[j * ly.nIn + k] * prev[n * ly.nIn + k];
+      out[n * ly.nOut + j] = last ? z : Math.tanh(z);
+    }
+    A.push(out);
+  });
+  return A;
+}
+// Обратный проход: градиенты параметров и градиент по входу dX (нужен, чтобы пропустить сигнал D в G).
+function backward(net, A, dOut, B) {
+  const grads = net.map(ly => ({ W: new Float64Array(ly.W.length), b: new Float64Array(ly.nOut) }));
+  let d = dOut;
+  for (let l = net.length - 1; l >= 0; l--) {
+    const ly = net[l], prev = A[l], g = grads[l], dPrev = new Float64Array(B * ly.nIn);
+    for (let n = 0; n < B; n++) for (let j = 0; j < ly.nOut; j++) {
+      const dj = d[n * ly.nOut + j];
+      if (dj === 0) continue;
+      g.b[j] += dj;
+      for (let k = 0; k < ly.nIn; k++) { g.W[j * ly.nIn + k] += dj * prev[n * ly.nIn + k]; dPrev[n * ly.nIn + k] += ly.W[j * ly.nIn + k] * dj; }
+    }
+    if (l > 0) for (let i = 0; i < dPrev.length; i++) dPrev[i] *= 1 - prev[i] * prev[i];   // производная tanh
+    d = dPrev;
+  }
+  return { grads, dX: d };
+}
+const gradNorm = grads => Math.sqrt(grads.reduce((s, g) => s + g.W.reduce((a, v) => a + v * v, 0) + g.b.reduce((a, v) => a + v * v, 0), 0));
+
+// Adam (β₁ = 0.5, как обычно для GAN) или SGD с momentum 0.9 — реализованы вручную.
+function optInit(net) { return { t: 0, m: net.map(ly => [new Float64Array(ly.W.length), new Float64Array(ly.nOut)]), v: net.map(ly => [new Float64Array(ly.W.length), new Float64Array(ly.nOut)]) }; }
+function optStep(net, st, grads, lr, kind) {
+  st.t++;
+  const b1 = 0.5, b2 = 0.999, c1 = 1 - b1 ** st.t, c2 = 1 - b2 ** st.t;
+  net.forEach((ly, l) => [[ly.W, grads[l].W], [ly.b, grads[l].b]].forEach(([p, g], q) => {
+    const m = st.m[l][q], v = st.v[l][q];
+    for (let i = 0; i < p.length; i++) {
+      if (kind === "sgd") { m[i] = 0.9 * m[i] + g[i]; p[i] -= lr * m[i]; continue; }
+      m[i] = b1 * m[i] + (1 - b1) * g[i]; v[i] = b2 * v[i] + (1 - b2) * g[i] * g[i];
+      p[i] -= lr * (m[i] / c1) / (Math.sqrt(v[i] / c2) + 1e-8);
+    }
+  }));
+}
+
+const HG = 16, HD = 24, XS = 3;                               // ширина скрытых слоёв; D видит x / XS
+const sigm = s => 1 / (1 + Math.exp(-s));
+const logSig = s => s >= 0 ? -Math.log1p(Math.exp(-s)) : s - Math.log1p(Math.exp(s));   // log σ(s) без переполнения
+
+function ganInit(seed, cfg) {
+  const r = Lab.rng(seed);
+  const st = { G: mlp([1, HG, HG, 1], r), D: mlp([1, HD, HD, 1], r), r: Lab.rng(seed * 7919 + 13), it: 0, hist: [] };
+  st.oG = optInit(st.G); st.oD = optInit(st.D);
+  // фиксированные z для рисования отображения z → x и оценки качества
+  const rz = Lab.rng(seed + 500);
+  st.zShow = Float64Array.from({ length: 1000 }, () => sampleZ(cfg.noise, rz)).sort();
+  const rr = Lab.rng(seed + 900);
+  st.realRef = Float64Array.from({ length: 1000 }, () => sampleReal(DISTS[cfg.dist], rr)).sort();
+  return st;
+}
+const Dlogits = (st, x, B) => { const X = Float64Array.from(x, v => v / XS); const A = forward(st.D, X, B); return { A, s: A[A.length - 1] }; };
+const generate = (st, z, B) => { const A = forward(st.G, z, B); return { A, x: A[A.length - 1] }; };
+const Dprob = (st, x) => sigm(Dlogits(st, [x], 1).s[0]);
+
+// Одна итерация: k шагов D, затем шаг G.
+function ganStep(st, cfg) {
+  const B = cfg.batch, d = DISTS[cfg.dist];
+  let lossD = 0;
+  for (let k = 0; k < cfg.kD; k++) {
+    const x = new Float64Array(2 * B);
+    for (let i = 0; i < B; i++) x[i] = sampleReal(d, st.r);
+    const z = Float64Array.from({ length: B }, () => sampleZ(cfg.noise, st.r)), xf = generate(st, z, B).x;
+    x.set(xf, B);
+    const { A, s } = Dlogits(st, x, 2 * B), dOut = new Float64Array(2 * B);
+    lossD = 0;
+    for (let i = 0; i < 2 * B; i++) {
+      const p = sigm(s[i]), real = i < B;
+      lossD -= (real ? logSig(s[i]) : logSig(-s[i])) / B;          // −log D(x) − log(1 − D(G(z)))
+      dOut[i] = (real ? p - 1 : p) / B;
+    }
+    optStep(st.D, st.oD, backward(st.D, A, dOut, 2 * B).grads, cfg.lrD, cfg.opt);
+  }
+  // шаг генератора: градиент идёт через D (её веса не меняются) в G
+  const z = Float64Array.from({ length: B }, () => sampleZ(cfg.noise, st.r)), g = generate(st, z, B);
+  const { A, s } = Dlogits(st, g.x, B), dOut = new Float64Array(B);
+  let lossG = 0, dFake = 0;
+  for (let i = 0; i < B; i++) {
+    const p = sigm(s[i]);
+    dFake += p / B;
+    if (cfg.loss === "minimax") { lossG += logSig(-s[i]) / B; dOut[i] = -p / B; }          // min log(1 − D(G(z)))
+    else { lossG -= logSig(s[i]) / B; dOut[i] = (p - 1) / B; }                              // min −log D(G(z))
+  }
+  const dX = backward(st.D, A, dOut, B).dX.map(v => v / XS);
+  const gb = backward(st.G, g.A, dX, B);
+  const gn = gradNorm(gb.grads);
+  optStep(st.G, st.oG, gb.grads, cfg.lrG, cfg.opt);
+  st.it++;
+  st.hist.push([lossD, lossG, gn, dFake]);
+}
+
+// Метрики по фиксированным z: W₁ между выборками, D на реальных/фейковых, покрытие мод
+function ganMetrics(st, cfg) {
+  const N = st.zShow.length, xg = generate(st, st.zShow, N).x, sorted = Float64Array.from(xg).sort();
+  let w1 = 0;
+  for (let i = 0; i < N; i++) w1 += Math.abs(sorted[i] - st.realRef[i]) / N;
+  const sr = Dlogits(st, st.realRef, N).s, sf = Dlogits(st, xg, N).s;
+  let dr = 0, df = 0;
+  for (let i = 0; i < N; i++) { dr += sigm(sr[i]) / N; df += sigm(sf[i]) / N; }
+  const d = DISTS[cfg.dist];
+  let modes = null;
+  if (d.comps && d.comps.length > 1) {
+    const frac = d.comps.map(([, m, sd]) => xg.filter(v => Math.abs(v - m) < 2.5 * sd).length / N);
+    modes = { covered: frac.filter(f => f > 0.1).length, total: d.comps.length, frac };
+  }
+  return { xg, w1, dr, df, modes };
+}
+
+// ---------- интерфейс ----------
+const LRS = [1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2], BATCHES = [16, 32, 64, 128];
+const fmtLr = i => { const v = LRS[i], e = Math.floor(Math.log10(v) + 1e-9), m = Math.round(v / 10 ** e); return (m === 1 ? "" : m + "·") + "10" + String(e).replace("-", "⁻").replace(/\d/g, c => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c]); };
+const $ = id => document.getElementById(id);
+const lrG = Lab.slider("lrG", () => {}, fmtLr), lrD = Lab.slider("lrD", () => {}, fmtLr);
+const kD = Lab.slider("kD", () => {}, v => v), batch = Lab.slider("batch", () => {}, i => BATCHES[i]);
+const seedS = Lab.slider("seed", () => reset(), v => v);
+const cfg = () => ({ dist: $("dist").value, noise: $("noise").value, loss: $("loss_kind").value, opt: $("opt").value,
+  lrG: LRS[lrG.value], lrD: LRS[lrD.value], kD: kD.value, batch: BATCHES[batch.value] });
+
+let st = null, met = null;
+const plane = Lab.canvas($("plane"), 0.78, drawPlane);
+const curve = Lab.canvas($("curve"), 0.5, drawCurve);
+
+function drawPlane(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!st) return;
+  const c = cfg(), d = DISTS[c.dist], top = 18, bot = Math.round(h * 0.6), L = 34, R = w - 34;
+  const sx = Lab.frame(-5, 5, L, R);
+  // настоящая плотность, гистограмма и KDE сгенерированных точек
+  const N = met.xg.length, nb = 80, hist = new Float64Array(nb), bw = 10 / nb;
+  met.xg.forEach(v => { const b = Math.floor((v + 5) / bw); if (b >= 0 && b < nb) hist[b]++; });
+  const mean = met.xg.reduce((a, b) => a + b, 0) / N, sd = Math.sqrt(met.xg.reduce((a, b) => a + (b - mean) ** 2, 0) / N);
+  const kh = Math.max(0.03, 1.06 * sd * N ** -0.2), xs = [], kde = [], pd = [];
+  for (let i = 0; i <= 240; i++) {
+    const x = -5 + 10 * i / 240; xs.push(x); pd.push(realPdf(d, x));
+    let s = 0; for (let j = 0; j < N; j++) { const u = (x - met.xg[j]) / kh; if (u * u < 16) s += Math.exp(-0.5 * u * u); }
+    kde.push(s / (N * kh * Math.sqrt(2 * Math.PI)));
+  }
+  const ymax = Math.min(3, Math.max(...pd, ...kde, ...Array.from(hist, v => v / (N * bw))) * 1.08);
+  const sy = Lab.frame(0, ymax, bot, top);
+  const tk = ymax > 1.5 ? [0, 1, 2] : ymax > 0.6 ? [0, 0.5, 1] : [0, 0.2, 0.4];
+  Lab.axes(ctx, sx, sy, { xTicks: [-4, -2, 0, 2, 4], yTicks: tk.filter(t => t < ymax), yLabel: "плотность" });
+  ctx.save(); ctx.beginPath(); ctx.rect(L, top, R - L, bot - top); ctx.clip();
+  ctx.fillStyle = Lab.color("c-a"); ctx.globalAlpha = 0.16; ctx.beginPath(); ctx.moveTo(sx(-5), sy(0));
+  xs.forEach((x, i) => ctx.lineTo(sx(x), sy(pd[i]))); ctx.lineTo(sx(5), sy(0)); ctx.fill();
+  ctx.globalAlpha = 1; ctx.strokeStyle = Lab.color("c-a"); ctx.lineWidth = 2; ctx.beginPath();
+  xs.forEach((x, i) => i ? ctx.lineTo(sx(x), sy(pd[i])) : ctx.moveTo(sx(x), sy(pd[i]))); ctx.stroke();
+  ctx.fillStyle = Lab.color("c-b"); ctx.globalAlpha = 0.28;
+  hist.forEach((v, b) => { if (v) { const y = sy(v / (N * bw)); ctx.fillRect(sx(-5 + b * bw) + 0.5, y, sx(bw - 5) - sx(-5) - 1, bot - y); } });
+  ctx.globalAlpha = 1; ctx.strokeStyle = Lab.color("c-b"); ctx.lineWidth = 2.5; ctx.beginPath();
+  xs.forEach((x, i) => i ? ctx.lineTo(sx(x), sy(kde[i])) : ctx.moveTo(sx(x), sy(kde[i]))); ctx.stroke();
+  // D(x) на своей шкале 0…1
+  const sd01 = Lab.frame(0, 1, bot, top + 4);
+  ctx.strokeStyle = Lab.color("c-ok"); ctx.setLineDash([3, 4]); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(L, sd01(0.5)); ctx.lineTo(R, sd01(0.5)); ctx.stroke(); ctx.setLineDash([]);
+  const X = Float64Array.from(xs), dv = Dlogits(st, X, X.length).s;
+  ctx.lineWidth = 2.5; ctx.beginPath();
+  xs.forEach((x, i) => { const y = sd01(sigm(dv[i])); i ? ctx.lineTo(sx(x), y) : ctx.moveTo(sx(x), y); }); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = Lab.color("c-ok"); ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "left";
+  [0, 0.5, 1].forEach(t => ctx.fillText(t === 0.5 ? "0.5" : String(t), R + 5, sd01(t) + 4));
+  ctx.textAlign = "right"; ctx.fillText("D(x)", R - 4, sd01(1) - 4);
+  // отображение z → G(z): верхняя линия — ось x, нижняя — ось z
+  const yx = bot + 30, yz = h - 22, zr = c.noise === "uniform" ? 1 : 3, sz = Lab.frame(-zr, zr, L + (R - L) * 0.2, R - (R - L) * 0.2);
+  ctx.strokeStyle = Lab.color("axis"); ctx.lineWidth = 1;
+  [[yx, sx, -5, 5], [yz, sz, -zr, zr]].forEach(([y, s, a, b]) => { ctx.beginPath(); ctx.moveTo(s(a), y); ctx.lineTo(s(b), y); ctx.stroke(); });
+  const K = 48, ca = Lab.color("c-a"), cb = Lab.color("c-b");
+  for (let i = 0; i < K; i++) {
+    const j = Math.floor((i + 0.5) * N / K), z = st.zShow[j], gx = met.xg[j];
+    if (Math.abs(z) > zr) continue;
+    ctx.strokeStyle = i % 2 ? ca : cb; ctx.globalAlpha = 0.55; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(sz(z), yz); ctx.lineTo(sx(Math.max(-5.2, Math.min(5.2, gx))), yx); ctx.stroke();
+    ctx.globalAlpha = 1; Lab.dot(ctx, sz(z), yz, 2, ctx.strokeStyle);
+  }
+  ctx.fillStyle = Lab.color("muted"); ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "left";
+  ctx.fillText("x = G(z)", 2, yx + 4); ctx.fillText("z", 14, yz + 4);
+  ctx.textAlign = "center";
+  [-zr, 0, zr].forEach(t => ctx.fillText(String(t), sz(t), yz + 15));
+}
+
+function drawCurve(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!st || !st.hist.length) return;
+  // усредняем по корзинам, чтобы на графике было не больше ~300 точек
+  const n = st.hist.length, bins = Math.min(n, 300), per = n / bins, pts = [];
+  for (let b = 0; b < bins; b++) {
+    const a = Math.floor(b * per), e = Math.max(a + 1, Math.floor((b + 1) * per));
+    let ld = 0, lg = 0; for (let i = a; i < e; i++) { ld += st.hist[i][0]; lg += st.hist[i][1]; }
+    pts.push([(a + e) / 2, ld / (e - a), lg / (e - a)]);
+  }
+  const vals = pts.flatMap(p => [p[1], p[2]]), lo = Math.min(0, ...vals), hi = Math.max(1.6, ...vals);
+  const cx = Lab.frame(0, Math.max(100, n), 36, w - 22), cy = Lab.frame(lo, hi, h - 22, 8);
+  const ticks = [lo, 0, hi].map(v => +v.toFixed(1)).filter((v, i, a) => a.indexOf(v) === i);
+  Lab.axes(ctx, cx, cy, { xTicks: [0, Math.max(100, n)], yTicks: ticks, xLabel: "итерация" });
+  const minimax = cfg().loss === "minimax";
+  [[2 * Math.LN2, "c-a"], [minimax ? -Math.LN2 : Math.LN2, "c-b"]].forEach(([v, col]) => {
+    ctx.strokeStyle = Lab.color(col); ctx.globalAlpha = 0.6; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx(0), cy(v)); ctx.lineTo(cx(Math.max(100, n)), cy(v)); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+  });
+  [[1, "c-a"], [2, "c-b"]].forEach(([k, col]) => {
+    ctx.strokeStyle = Lab.color(col); ctx.lineWidth = 2; ctx.beginPath();
+    pts.forEach((p, i) => i ? ctx.lineTo(cx(p[0]), cy(p[k])) : ctx.moveTo(cx(p[0]), cy(p[k]))); ctx.stroke();
+  });
+}
+
+function show() {
+  met = ganMetrics(st, cfg());
+  const tail = st.hist.slice(-50), avg = k => tail.reduce((s, e) => s + e[k], 0) / tail.length;
+  $("it").textContent = st.it;
+  $("loss").textContent = tail.length ? `${avg(0).toFixed(3)} / ${avg(1).toFixed(3)}` : "—";
+  $("dd").textContent = `${met.dr.toFixed(2)} / ${met.df.toFixed(2)}`;
+  $("grad").textContent = tail.length ? avg(2).toFixed(avg(2) < 1 ? 3 : 2) : "—";
+  $("w1").textContent = met.w1.toFixed(3);
+  const N = met.xg.length, mu = met.xg.reduce((x, y) => x + y, 0) / N;
+  $("msd").textContent = `${mu.toFixed(2)} / ${Math.sqrt(met.xg.reduce((x, y) => x + (y - mu) ** 2, 0) / N).toFixed(2)}`;
+  $("modes").textContent = met.modes ? `${met.modes.covered} из ${met.modes.total} (${met.modes.frac.map(f => Math.round(100 * f) + "%").join(" · ")})` : "—";
+  plane.redraw(); curve.redraw();
+}
+
+let running = false;
+function loop() {
+  if (!running) return;
+  const t0 = performance.now(), c = cfg();
+  do ganStep(st, c); while (performance.now() - t0 < 14);      // столько итераций, сколько помещается в кадр
+  show();
+  requestAnimationFrame(loop);
+}
+function setRunning(on) { running = on; $("play").textContent = on ? "⏸ Пауза" : "▶ Обучать"; if (on) loop(); }
+function reset() { st = ganInit(seedS.value, cfg()); show(); }
+
+$("play").onclick = () => setRunning(!running);
+$("step").onclick = () => { setRunning(false); const c = cfg(); for (let i = 0; i < 10; i++) ganStep(st, c); show(); };
+$("reset").onclick = () => { setRunning(false); reset(); };
+["dist", "noise"].forEach(id => $(id).onchange = reset);
+["loss_kind", "opt"].forEach(id => $(id).onchange = () => curve.redraw());
+reset();
+</script>
+</body>
+</html>

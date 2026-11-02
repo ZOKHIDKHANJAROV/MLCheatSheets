@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mlcs-topics" content="regularization ridge_lasso_elasticnet regularization_methods feature_selection">
+<title>Геометрия L1 и L2 — интерактив</title>
+<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="lab.css?v=2">
+<style>
+  :root { --f3: #8f7ad6; --f6: #8c96a3; --f7: #b38b4d; --f8: #3f9fb5; }
+  :root[data-theme="dark"] { --f3: #b3a2f0; --f6: #a9b3c0; --f7: #d8b073; --f8: #6cc4d8; }
+  #geo { cursor: grab; }
+  #path { cursor: col-resize; }
+</style>
+</head>
+<body>
+<div class="lab">
+  <header><h1>🎮 Геометрия L1 и L2: почему Lasso обнуляет веса</h1><a href="../cheatsheets/ridge_lasso_elasticnet_cheatsheet.html">📘 Шпаргалка</a></header>
+  <p class="lead"><b>Часть 1.</b> Линейная регрессия с двумя весами. Эллипсы — линии уровня квадратичной функции потерь, их центр — МНК-решение w*
+    (<b>перетащите его мышью</b>). Регуляризация эквивалентна ограничению: веса должны лежать в ромбе (L1), круге (L2) или в их смеси (Elastic Net).
+    Решение — точка области, где потери минимальны: там, где эллипс впервые касается границы. У ромба есть острые углы на осях — и касание часто
+    приходится ровно в угол, то есть один вес становится <b>нулём</b>.</p>
+
+  <div class="grid">
+    <div class="card stage"><canvas id="geo"></canvas>
+      <div class="legend"><span><i style="background:var(--c-b)"></i>МНК-решение w* (тащите)</span><span><i style="background:var(--c-ok)"></i>решение с ограничением ŵ</span><span><i style="background:var(--region-a);border:1px solid var(--accent)"></i>допустимая область</span><span>жирный эллипс — линия уровня, касающаяся области</span></div>
+    </div>
+    <div class="card controls">
+      <h3>Ограничение</h3>
+      <div class="ctl"><label for="geoType">Штраф</label><select id="geoType"><option value="1">L1 — ромб |w₁| + |w₂| ≤ t (Lasso)</option><option value="0">L2 — круг w₁² + w₂² ≤ t² (Ridge)</option><option value="en">Elastic Net — смесь</option></select></div>
+      <div class="ctl" id="geoAlphaBox"><label for="geoAlpha">Доля L1 в Elastic Net, α <output for="geoAlpha"></output></label><input id="geoAlpha" type="range" min="0.05" max="0.95" step="0.05" value="0.5"></div>
+      <div class="ctl"><label for="budget">Размер области t (меньше t ⇔ больше λ) <output for="budget"></output></label><input id="budget" type="range" min="0.2" max="3" step="0.05" value="1"></div>
+      <h3>Функция потерь</h3>
+      <div class="ctl"><label for="theta">Наклон эллипсов <output for="theta"></output></label><input id="theta" type="range" min="0" max="180" step="1" value="30"></div>
+      <div class="ctl"><label for="elong">Вытянутость (корреляция признаков) <output for="elong"></output></label><input id="elong" type="range" min="1" max="5" step="0.1" value="2.5"></div>
+      <div class="buttons"><button id="centerReset">Вернуть w* = (2, 1.2)</button></div>
+      <div class="stats">
+        <span>w* (МНК)</span><b id="gWs">—</b>
+        <span>ŵ (с ограничением)</span><b id="gW">—</b>
+        <span>Нулевой вес</span><b id="gZero">—</b>
+        <span>Потери L(ŵ) − L(w*)</span><b id="gLoss">—</b>
+        <span>Один вес = 0 при случайном w*</span><b id="gFrac">—</b>
+      </div>
+      <p class="muted" style="font-size:13px;color:var(--muted);margin:8px 0 0">Последняя строка: доля из 1500 случайных положений w* в квадрате [−3, 3]² вне области, при которых решение попадает на ось (при текущих форме эллипсов и области).</p>
+    </div>
+  </div>
+
+  <h2 style="margin:26px 0 6px">Часть 2: путь коэффициентов</h2>
+  <p class="lead">60 наблюдений, 8 стандартизованных признаков: y = 3·x₁ − 2·x₂ + 1.5·x₄ + 1.5·x₅ + шум. Признаки x₃, x₆, x₇, x₈ бесполезны,
+    а x₅ — почти копия x₄ (корреляция ≈ 0.98). Минимизируем (1/2n)‖y − Xw‖² + λ·(α‖w‖₁ + (1−α)/2·‖w‖₂²): Lasso (α = 1) — покоординатным спуском,
+    Ridge (α = 0) — по формуле w = (XᵀX/n + λI)⁻¹Xᵀy/n. Кликните по графику или двигайте ползунок λ.</p>
+  <div class="grid">
+    <div class="card stage"><canvas id="path"></canvas>
+      <div class="legend" id="pathLegend"></div>
+    </div>
+    <div class="card controls">
+      <div class="ctl"><label for="pathType">Модель</label><select id="pathType"><option value="1">Lasso (L1)</option><option value="0">Ridge (L2)</option><option value="en">Elastic Net</option></select></div>
+      <div class="ctl" id="pathAlphaBox"><label for="pathAlpha">Доля L1, α <output for="pathAlpha"></output></label><input id="pathAlpha" type="range" min="0.05" max="0.95" step="0.05" value="0.5"></div>
+      <div class="ctl"><label for="lam">λ (логарифмическая шкала) <output for="lam"></output></label><input id="lam" type="range" min="-3" max="1.5" step="0.05" value="-1"></div>
+      <div class="buttons"><button id="regen">Новые данные</button></div>
+      <div class="stats">
+        <span>Нулевых весов</span><b id="pZeros">—</b>
+        <span>‖w‖₁</span><b id="pL1">—</b>
+        <span>MSE на обучении</span><b id="pTr">—</b>
+        <span>MSE на тесте (1000 точек)</span><b id="pTe">—</b>
+        <span>Без регуляризации (МНК): тест</span><b id="pOls">—</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <div class="card stage"><h3 style="margin:4px 6px 6px">Веса при текущем λ</h3><canvas id="bars"></canvas>
+      <div class="legend"><span>столбик — найденный вес</span><span>— черта — истинный коэффициент</span><span>«0» — вес ровно ноль</span></div></div>
+    <div class="card hint"><h3>Что попробовать</h3><ul>
+      <li>Часть 1, L1, w* по умолчанию: решение ŵ = (1, 0) — точно в углу ромба, w₂ = 0. Переключите на L2: ŵ ≈ (0.86, 0.50), оба веса ненулевые. Нижняя строка статистики: при этой форме эллипсов ромб даёт ноль в ≈ 57% случайных положений w*, Elastic Net (α = 0.5) — в ≈ 12%, круг — никогда (0%).</li>
+      <li>Таскайте w* при L1: целые «секторы» положений w* притягиваются к одному и тому же углу. Увеличьте t, пока w* не окажется внутри области, — ограничение перестаёт действовать, ŵ = w*.</li>
+      <li>Часть 2, Lasso: при λ ≈ 0.2 (log = −0.7) ровно 5 нулей — все четыре бесполезных признака и x₄; тестовая MSE ≈ 3.9 против 4.2 у МНК. При λ ≥ 3.9 (это λ_max = max|xⱼᵀy|/n) обнуляется всё.</li>
+      <li>Ridge: веса плавно сжимаются к нулю, но нулей нет ни при каком λ — даже при λ = 30 все 8 весов ненулевые.</li>
+      <li>Коррелированная пара: без регуляризации (λ = 0.001) веса x₄ и x₅ неустойчивы — ≈ −1.1 и +3.9 (их сумма ≈ 3 — истинный суммарный эффект). Lasso уже с λ ≈ 0.03 <b>выбирает один</b>: x₄ = 0, x₅ ≈ 2.8. Ridge и Elastic Net (α = 0.5) при λ ≈ 0.3 <b>делят вес</b>: ≈ 1.1/1.4 и 0.9/1.6.</li>
+      <li>«Новые данные» генерируют другую выборку: какой из пары x₄/x₅ оставит Lasso — дело случая, а числа выше относятся к исходным данным.</li>
+    </ul></div>
+  </div>
+</div>
+
+<script src="lab.js?v=2"></script>
+<script>
+// CORE START
+// ---------- часть 1: геометрия ограничения для двух весов ----------
+// Потери L(w) = (w − w*)ᵀ A (w − w*), A = R·diag(1, 1/e²)·Rᵀ: эллипсы с центром в МНК-решении w*.
+function quadForm(theta, e) {
+  const c = Math.cos(theta), s = Math.sin(theta), a1 = 1, a2 = 1 / (e * e);
+  return [a1 * c * c + a2 * s * s, (a1 - a2) * c * s, a1 * s * s + a2 * c * c];
+}
+function lossAt(A, ws, w) {
+  const d0 = w[0] - ws[0], d1 = w[1] - ws[1];
+  return A[0] * d0 * d0 + 2 * A[1] * d0 * d1 + A[2] * d1 * d1;
+}
+// Штраф области: α‖w‖₁ + (1 − α)‖w‖₂² / s ≤ s. При α = 1 — ромб |w₁| + |w₂| ≤ s, при α = 0 — круг радиуса s,
+// между ними — Elastic Net; граница при любом α проходит через (±s, 0) и (0, ±s).
+function penalty(w, alpha, s) { return alpha * (Math.abs(w[0]) + Math.abs(w[1])) + (1 - alpha) * (w[0] * w[0] + w[1] * w[1]) / s; }
+// Расстояние до границы области вдоль направления φ.
+function radius(phi, alpha, s) {
+  const n1 = Math.abs(Math.cos(phi)) + Math.abs(Math.sin(phi));
+  if (alpha >= 1) return s / n1;
+  if (alpha <= 0) return s;
+  return s * (-alpha * n1 + Math.sqrt(alpha * alpha * n1 * n1 + 4 * (1 - alpha))) / (2 * (1 - alpha));
+}
+// Решение задачи min L(w) при штрафе ≤ s. Если w* внутри — это и есть ответ; иначе минимум лежит на границе:
+// перебираем её по углу (сетка содержит углы ромба) и уточняем золотым сечением.
+function constrainedSolution(A, ws, alpha, s) {
+  if (penalty(ws, alpha, s) <= s) return { w: ws.slice(), inside: true };
+  const pt = phi => { const r = radius(phi, alpha, s); return [r * Math.cos(phi), r * Math.sin(phi)]; };
+  const f = phi => lossAt(A, ws, pt(phi));
+  const N = 1440, h = 2 * Math.PI / N;
+  let best = 0, bv = Infinity;
+  for (let i = 0; i < N; i++) { const v = f(i * h); if (v < bv) { bv = v; best = i * h; } }
+  let a = best - h, b = best + h;
+  const g = (Math.sqrt(5) - 1) / 2;
+  let x1 = b - g * (b - a), x2 = a + g * (b - a), f1 = f(x1), f2 = f(x2);
+  for (let it = 0; it < 80; it++) {
+    if (f1 <= f2) { b = x2; x2 = x1; f2 = f1; x1 = b - g * (b - a); f1 = f(x1); }
+    else { a = x1; x1 = x2; f1 = f2; x2 = a + g * (b - a); f2 = f(x2); }
+  }
+  let phi = (a + b) / 2;
+  if (f(best) <= f(phi)) phi = best;
+  const w = pt(phi);
+  // угол ромба: координата меньше 1e-9·s — это численный ноль, а не «почти ноль»
+  return { w: w.map(v => Math.abs(v) < 1e-9 * s ? 0 : v), inside: false };
+}
+
+// ---------- часть 2: путь коэффициентов ----------
+const P = 8, TRUE_W = [3, -2, 0, 1.5, 1.5, 0, 0, 0];
+// x₄ и x₅ — почти копии друг друга (корреляция ≈ 0.95); x₃, x₆, x₇, x₈ не влияют на y.
+function makeData(n, seed) {
+  const r = Lab.rng(seed), X = [], y = [];
+  for (let i = 0; i < n; i++) {
+    const x = Array.from({ length: P }, () => r.normal());
+    x[4] = x[3] + 0.2 * r.normal();
+    X.push(x); y.push(x.reduce((s, v, j) => s + v * TRUE_W[j], 0) + 2 * r.normal());
+  }
+  return { X, y };
+}
+// Стандартизация по обучающей выборке (среднее 0, дисперсия 1), y — центрируется.
+function standardize(train, test) {
+  const n = train.X.length, mu = [], sd = [];
+  for (let j = 0; j < P; j++) {
+    mu[j] = train.X.reduce((s, x) => s + x[j], 0) / n;
+    sd[j] = Math.sqrt(train.X.reduce((s, x) => s + (x[j] - mu[j]) ** 2, 0) / n);
+  }
+  const my = train.y.reduce((a, b) => a + b, 0) / n;
+  const f = d => ({ X: d.X.map(x => x.map((v, j) => (v - mu[j]) / sd[j])), y: d.y.map(v => v - my) });
+  return [f(train), f(test)];
+}
+// Целевая функция: (1/2n)‖y − Xw‖² + λ·(α‖w‖₁ + (1 − α)/2·‖w‖₂²).  α = 1 — Lasso, α = 0 — Ridge.
+// Ridge решаем аналитически: w = (XᵀX/n + λI)⁻¹ Xᵀy/n.
+function ridge(d, lam) {
+  const n = d.X.length, M = Array.from({ length: P }, () => new Array(P + 1).fill(0));
+  d.X.forEach((x, i) => { for (let a = 0; a < P; a++) { for (let b = 0; b < P; b++) M[a][b] += x[a] * x[b] / n; M[a][P] += x[a] * d.y[i] / n; } });
+  for (let a = 0; a < P; a++) M[a][a] += lam;
+  for (let c = 0; c < P; c++) {                 // метод Гаусса (матрица положительно определена — без перестановок)
+    for (let r = c + 1; r < P; r++) { const k = M[r][c] / M[c][c]; for (let q = c; q <= P; q++) M[r][q] -= k * M[c][q]; }
+  }
+  const w = new Array(P).fill(0);
+  for (let r = P - 1; r >= 0; r--) { let s = M[r][P]; for (let q = r + 1; q < P; q++) s -= M[r][q] * w[q]; w[r] = s / M[r][r]; }
+  return w;
+}
+// Lasso / Elastic Net: покоординатный спуск с мягким порогом. Признаки стандартизованы, поэтому xⱼᵀxⱼ/n = 1.
+const softThr = (z, t) => z > t ? z - t : z < -t ? z + t : 0;
+function coordDescent(d, lam, alpha, w0) {
+  const n = d.X.length, w = w0 ? w0.slice() : new Array(P).fill(0);
+  const res = d.y.map((v, i) => v - d.X[i].reduce((s, x, j) => s + x * w[j], 0));
+  let sweeps = 0;
+  for (; sweeps < 5000; sweeps++) {
+    let maxd = 0;
+    for (let j = 0; j < P; j++) {
+      let rho = 0;
+      for (let i = 0; i < n; i++) rho += d.X[i][j] * res[i];
+      rho = rho / n + w[j];
+      const nw = softThr(rho, lam * alpha) / (1 + lam * (1 - alpha)), dw = nw - w[j];
+      if (dw !== 0) { for (let i = 0; i < n; i++) res[i] -= d.X[i][j] * dw; w[j] = nw; maxd = Math.max(maxd, Math.abs(dw)); }
+    }
+    if (maxd < 1e-11) break;
+  }
+  return { w, sweeps };
+}
+function fitAt(d, lam, alpha, w0) { return alpha <= 0 ? ridge(d, lam) : coordDescent(d, lam, alpha, w0).w; }
+// Путь по сетке λ от большого к малому с тёплым стартом.
+function path(d, alpha, logs) {
+  const out = new Array(logs.length);
+  let w = null;
+  for (let i = logs.length - 1; i >= 0; i--) { w = fitAt(d, Math.pow(10, logs[i]), alpha, w); out[i] = w.slice(); }
+  return out;
+}
+function mse(d, w) { return d.y.reduce((s, v, i) => s + (v - d.X[i].reduce((a, x, j) => a + x * w[j], 0)) ** 2, 0) / d.y.length; }
+// CORE END
+
+// =============== интерфейс, часть 1 ===============
+const WS0 = [2, 1.2];
+let ws = WS0.slice(), geoSol = null, A = null, fracJob = 0, dragging = false;
+const geoType = document.getElementById("geoType");
+const geoAlpha = Lab.slider("geoAlpha", () => updateGeo(), v => v.toFixed(2));
+const budget = Lab.slider("budget", () => updateGeo(), v => v.toFixed(2));
+const theta = Lab.slider("theta", () => updateGeo(), v => v + "°");
+const elong = Lab.slider("elong", () => updateGeo(), v => v.toFixed(1) + "×");
+const geo = Lab.canvas(document.getElementById("geo"), 0.8, drawGeo);
+const alphaGeo = () => geoType.value === "en" ? geoAlpha.value : +geoType.value;
+const fmtW = w => `(${w[0].toFixed(3)}, ${w[1].toFixed(3)})`;
+
+function updateGeo() {
+  document.getElementById("geoAlphaBox").style.display = geoType.value === "en" ? "" : "none";
+  A = quadForm(theta.value * Math.PI / 180, elong.value);
+  geoSol = constrainedSolution(A, ws, alphaGeo(), budget.value);
+  const w = geoSol.w, z = w.map(v => v === 0);
+  document.getElementById("gWs").textContent = fmtW(ws);
+  document.getElementById("gW").textContent = fmtW(w);
+  document.getElementById("gZero").textContent = geoSol.inside ? "нет (w* внутри области)" : z[0] ? "w₁ = 0" : z[1] ? "w₂ = 0" : "нет";
+  document.getElementById("gLoss").textContent = lossAt(A, ws, w).toFixed(3);
+  geo.redraw();
+  // Доля случайных w*, дающих нулевой вес, — расчёт тяжелее, делаем его в следующем кадре и только для последнего запроса.
+  const job = ++fracJob;
+  requestAnimationFrame(() => {
+    if (job !== fracJob) return;
+    const r = Lab.rng(7), al = alphaGeo(), s = budget.value;
+    let out = 0, zeros = 0;
+    for (let i = 0; i < 1500; i++) {
+      const p = [r() * 6 - 3, r() * 6 - 3], sol = constrainedSolution(A, p, al, s);
+      if (sol.inside) continue;
+      out++; if (sol.w[0] === 0 || sol.w[1] === 0) zeros++;
+    }
+    document.getElementById("gFrac").textContent = out ? Math.round(100 * zeros / out) + "%" : "—";
+  });
+}
+
+function geoFrames(w, h) {
+  const xr = 3.2, yr = xr * h / w;
+  return [Lab.frame(-xr, xr, 0, w), Lab.frame(-yr, yr, h, 0)];
+}
+// Линия уровня L(w) = c: полуоси √c вдоль (cos θ, sin θ) и √c·e поперёк.
+function ellipse(ctx, sx, sy, c) {
+  const th = theta.value * Math.PI / 180, u = [Math.cos(th), Math.sin(th)], v = [-u[1], u[0]], a = Math.sqrt(c), b = Math.sqrt(c) * elong.value;
+  ctx.beginPath();
+  for (let i = 0; i <= 120; i++) {
+    const t = i / 120 * 2 * Math.PI, x = ws[0] + a * Math.cos(t) * u[0] + b * Math.sin(t) * v[0], y = ws[1] + a * Math.cos(t) * u[1] + b * Math.sin(t) * v[1];
+    if (i) ctx.lineTo(sx(x), sy(y)); else ctx.moveTo(sx(x), sy(y));
+  }
+  ctx.stroke();
+}
+function drawGeo(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!geoSol) return;
+  const [sx, sy] = geoFrames(w, h), al = alphaGeo(), s = budget.value;
+  Lab.axes(ctx, sx, sy, { xTicks: [-3, -2, -1, 0, 1, 2, 3], yTicks: [-2, -1, 0, 1, 2], xLabel: "w₁", yLabel: "w₂" });
+  ctx.strokeStyle = Lab.color("axis"); ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(sx(0), 0); ctx.lineTo(sx(0), h); ctx.moveTo(0, sy(0)); ctx.lineTo(w, sy(0)); ctx.stroke();
+  // допустимая область
+  ctx.beginPath();
+  for (let i = 0; i <= 720; i++) {
+    const phi = i / 720 * 2 * Math.PI, r = radius(phi, al, s);
+    if (i) ctx.lineTo(sx(r * Math.cos(phi)), sy(r * Math.sin(phi))); else ctx.moveTo(sx(r), sy(0));
+  }
+  ctx.closePath(); ctx.fillStyle = Lab.color("region-a"); ctx.fill(); ctx.strokeStyle = Lab.color("accent"); ctx.lineWidth = 2; ctx.stroke();
+  // линии уровня
+  const lstar = lossAt(A, ws, geoSol.w), base = lstar > 1e-9 ? lstar : 0.5;
+  ctx.strokeStyle = Lab.color("muted"); ctx.lineWidth = 1; ctx.globalAlpha = .55;
+  [0.15, 0.4, 0.7, 1.5, 2.3, 3.3, 4.6].forEach(k => ellipse(ctx, sx, sy, base * k * k));
+  ctx.globalAlpha = 1;
+  if (lstar > 1e-9) { ctx.strokeStyle = Lab.color("c-b"); ctx.lineWidth = 2.5; ellipse(ctx, sx, sy, lstar); }
+  // точки
+  const g = geoSol.w;
+  Lab.dot(ctx, sx(ws[0]), sy(ws[1]), 7, Lab.color("c-b"), Lab.color("panel"));
+  Lab.dot(ctx, sx(g[0]), sy(g[1]), 6.5, Lab.color("c-ok"), Lab.color("panel"));
+  ctx.font = "bold 13px system-ui, sans-serif"; ctx.fillStyle = Lab.color("text"); ctx.textAlign = "left";
+  ctx.fillText("w*", sx(ws[0]) + 9, sy(ws[1]) - 8);
+  const zero = g[0] === 0 ? "  (w₁ = 0)" : g[1] === 0 ? "  (w₂ = 0)" : "";
+  ctx.fillStyle = Lab.color("c-ok"); ctx.fillText("ŵ" + zero, sx(g[0]) + 9, sy(g[1]) + 17);
+}
+
+const geoEl = document.getElementById("geo");
+function dragTo(ev) {
+  const p = Lab.pointer(geoEl, ev), [sx, sy] = geoFrames(geo.w, geo.h);
+  ws = [Math.max(-3.1, Math.min(3.1, sx.invert(p.x))), Math.max(sy.invert(geo.h - 4), Math.min(sy.invert(4), sy.invert(p.y)))];
+  updateGeo();
+}
+geoEl.addEventListener("pointerdown", ev => { dragging = true; geoEl.setPointerCapture(ev.pointerId); dragTo(ev); });
+geoEl.addEventListener("pointermove", ev => { if (dragging) dragTo(ev); });
+geoEl.addEventListener("pointerup", () => { dragging = false; });
+geoEl.addEventListener("pointercancel", () => { dragging = false; });
+geoType.onchange = updateGeo;
+document.getElementById("centerReset").onclick = () => { ws = WS0.slice(); updateGeo(); };
+
+// =============== интерфейс, часть 2 ===============
+const FCOL = ["c-a", "c-b", "f3", "c-ok", "c-bad", "f6", "f7", "f8"], USELESS = [2, 5, 6, 7], SUB = "₁₂₃₄₅₆₇₈";
+const LOGS = []; for (let i = 0; i <= 90; i++) LOGS.push(-3 + i * 0.05);
+let dataSeed = 4, train = null, test = null, paths = null, cur = null, pathJob = 0, pDrag = false;
+const pathType = document.getElementById("pathType");
+const pathAlpha = Lab.slider("pathAlpha", () => recomputePath(), v => v.toFixed(2));
+const lam = Lab.slider("lam", () => updateCurrent(), v => fmtLam(Math.pow(10, v)));
+const pathView = Lab.canvas(document.getElementById("path"), 0.6, drawPath);
+const barsView = Lab.canvas(document.getElementById("bars"), 0.5, drawBars);
+const alphaPath = () => pathType.value === "en" ? pathAlpha.value : +pathType.value;
+function fmtLam(v) { return v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(2) : v >= 0.01 ? v.toFixed(3) : v.toFixed(4); }
+document.getElementById("pathLegend").innerHTML = FCOL.map((c, j) => `<span><i style="background:var(--${c})"></i>x${SUB[j]}${USELESS.includes(j) ? " (бесполезный)" : ""}</span>`).join("") + "<span>┄ пунктир — бесполезные признаки; вертикаль — текущее λ</span>";
+
+function makeSets() {
+  [train, test] = standardize(makeData(60, dataSeed), makeData(1000, dataSeed + 1000));
+  document.getElementById("pOls").textContent = mse(test, ridge(train, 0)).toFixed(2);
+}
+function recomputePath() {
+  document.getElementById("pathAlphaBox").style.display = pathType.value === "en" ? "" : "none";
+  const job = ++pathJob;
+  requestAnimationFrame(() => { if (job !== pathJob) return; paths = path(train, alphaPath(), LOGS); updateCurrent(); });
+}
+function updateCurrent() {
+  if (!paths) return;
+  const i = Math.max(0, Math.min(LOGS.length - 1, Math.round((lam.value + 3) / 0.05)));
+  cur = fitAt(train, Math.pow(10, lam.value), alphaPath(), paths[i]);
+  document.getElementById("pZeros").textContent = `${cur.filter(v => v === 0).length} из ${P}`;
+  document.getElementById("pL1").textContent = cur.reduce((s, v) => s + Math.abs(v), 0).toFixed(2);
+  document.getElementById("pTr").textContent = mse(train, cur).toFixed(2);
+  document.getElementById("pTe").textContent = mse(test, cur).toFixed(2);
+  pathView.redraw(); barsView.redraw();
+}
+function pathFrames(w, h) {
+  let lo = -1, hi = 1;
+  paths.forEach(row => row.forEach(v => { lo = Math.min(lo, v); hi = Math.max(hi, v); }));
+  return [Lab.frame(-3, 1.5, 44, w - 12), Lab.frame(Math.floor(lo), Math.ceil(hi), h - 24, 10)];
+}
+function drawPath(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!paths) return;
+  const [sx, sy] = pathFrames(w, h), yt = [];
+  for (let v = Math.ceil(sy.invert(h - 24)); v <= sy.invert(10); v++) yt.push(v);
+  Lab.axes(ctx, sx, sy, { yTicks: yt, xLabel: "λ", yLabel: "вес" });
+  ctx.fillStyle = Lab.color("muted"); ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.strokeStyle = Lab.color("grid"); ctx.lineWidth = 1;
+  [-3, -2, -1, 0, 1].forEach(e => { const x = Math.round(sx(e)) + .5; ctx.beginPath(); ctx.moveTo(x, 10); ctx.lineTo(x, h - 24); ctx.stroke(); ctx.fillText(fmtLam(Math.pow(10, e)), x, h - 10); });
+  ctx.strokeStyle = Lab.color("axis"); ctx.beginPath(); ctx.moveTo(sx(-3), sy(0)); ctx.lineTo(sx(1.5), sy(0)); ctx.stroke();
+  for (let j = 0; j < P; j++) {
+    const useless = USELESS.includes(j);
+    ctx.strokeStyle = Lab.color(FCOL[j]); ctx.lineWidth = useless ? 1.5 : 2.2; ctx.setLineDash(useless ? [5, 4] : []);
+    ctx.beginPath();
+    paths.forEach((row, i) => { if (i) ctx.lineTo(sx(LOGS[i]), sy(row[j])); else ctx.moveTo(sx(LOGS[i]), sy(row[j])); });
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.strokeStyle = Lab.color("text"); ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(sx(lam.value), 10); ctx.lineTo(sx(lam.value), h - 24); ctx.stroke();
+  if (cur) cur.forEach((v, j) => Lab.dot(ctx, sx(lam.value), sy(v), 3.5, Lab.color(FCOL[j]), Lab.color("panel")));
+}
+function drawBars(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  if (!cur || !paths) return;
+  let lo = -1, hi = 1;
+  paths[0].concat(TRUE_W).forEach(v => { lo = Math.min(lo, v); hi = Math.max(hi, v); });
+  const sy = Lab.frame(Math.floor(lo), Math.ceil(hi), h - 24, 12), bw = (w - 50) / P, yt = [];
+  for (let v = Math.floor(lo); v <= Math.ceil(hi); v++) yt.push(v);
+  const sx = Lab.frame(0, 1, 40, w - 8);
+  Lab.axes(ctx, sx, sy, { yTicks: yt });
+  ctx.strokeStyle = Lab.color("axis"); ctx.beginPath(); ctx.moveTo(40, sy(0)); ctx.lineTo(w - 8, sy(0)); ctx.stroke();
+  ctx.font = "12px system-ui, sans-serif"; ctx.textAlign = "center";
+  cur.forEach((v, j) => {
+    const x = 44 + j * bw, cx = x + bw / 2;
+    ctx.fillStyle = Lab.color(FCOL[j]);
+    ctx.fillRect(x + bw * 0.18, Math.min(sy(0), sy(v)), bw * 0.64, Math.abs(sy(v) - sy(0)));
+    ctx.strokeStyle = Lab.color("text"); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x + bw * 0.08, sy(TRUE_W[j])); ctx.lineTo(x + bw * 0.92, sy(TRUE_W[j])); ctx.stroke();
+    ctx.fillStyle = Lab.color("muted"); ctx.fillText("x" + SUB[j], cx, h - 8);
+    ctx.fillStyle = Lab.color("text");
+    ctx.fillText(v === 0 ? "0" : v.toFixed(2), cx, v >= 0 ? sy(Math.max(v, TRUE_W[j], 0)) - 5 : sy(Math.min(v, TRUE_W[j])) + 14);
+  });
+}
+const pathEl = document.getElementById("path");
+function pathPick(ev) {
+  if (!paths) return;
+  const [sx] = pathFrames(pathView.w, pathView.h), v = sx.invert(Lab.pointer(pathEl, ev).x);
+  lam.value = Math.max(-3, Math.min(1.5, Math.round(v / 0.05) * 0.05));
+}
+pathEl.addEventListener("pointerdown", ev => { pDrag = true; pathEl.setPointerCapture(ev.pointerId); pathPick(ev); });
+pathEl.addEventListener("pointermove", ev => { if (pDrag) pathPick(ev); });
+pathEl.addEventListener("pointerup", () => { pDrag = false; });
+pathEl.addEventListener("pointercancel", () => { pDrag = false; });
+pathType.onchange = recomputePath;
+document.getElementById("regen").onclick = () => { dataSeed++; makeSets(); recomputePath(); };
+
+updateGeo();
+makeSets(); recomputePath();
+</script>
+</body>
+</html>

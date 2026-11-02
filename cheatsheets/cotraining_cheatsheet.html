@@ -206,344 +206,283 @@
 
 <div class="container">
 
-  <h1>🤝 Co-training</h1>
+  <h1>🤝 Co-training (со-обучение)</h1>
   <div class="subtitle">📅 Январь 2026</div>
 
   <div class="block">
     <h2>🔷 1. Суть</h2>
+    <p><strong>Co-training</strong> (Blum &amp; Mitchell, 1998) — метод полуконтролируемого обучения: два классификатора, обученные на разных «взглядах» (views) на данные, размечают друг для друга неразмеченные примеры.</p>
     <ul>
-      <li><strong>Полуконтролируемое обучение</strong>: использует размеченные и неразмеченные данные</li>
-      <li><strong>Несколько представлений (views)</strong>: данные описаны разными наборами признаков</li>
-      <li><strong>Взаимное обучение</strong>: модели обучают друг друга на неразмеченных данных</li>
-      <li><strong>Цель</strong>: улучшить качество при малом количестве размеченных примеров</li>
-      <li><strong>Ключевая идея</strong>: разные представления дополняют друг друга</li>
+      <li><strong>Полуконтролируемое обучение</strong>: мало размеченных (L) и много неразмеченных (U) данных</li>
+      <li><strong>Несколько представлений (views)</strong>: объект описан двумя разными наборами признаков x = (x¹, x²)</li>
+      <li><strong>Взаимное обучение</strong>: уверенные предсказания одной модели становятся метками для другой</li>
+      <li><strong>Ключевая идея</strong>: ошибки моделей на разных views слабо коррелированы, поэтому одна может исправлять другую</li>
+      <li><strong>Классический пример</strong>: веб-страницы — view 1 = текст страницы, view 2 = текст ссылок, ведущих на неё</li>
     </ul>
-
-    </div>
-<div class="block">
-    <h2>🔷 2. Основной алгоритм</h2>
-    <p><strong>Шаги co-training:</strong></p>
-    <ol>
-      <li>Разделить признаки на два независимых набора (view1, view2)</li>
-      <li>Обучить две модели на размеченных данных</li>
-      <li>Каждая модель предсказывает метки для неразмеченных данных</li>
-      <li>Выбрать наиболее уверенные предсказания</li>
-      <li>Добавить их в обучающую выборку другой модели</li>
-      <li>Повторять до сходимости или исчерпания данных</li>
-    </ol>
   </div>
 
   <div class="block">
-    <h2>🔷 3. Требования к представлениям</h2>
+    <h2>🔷 2. Предположения и выбор views</h2>
     <ul>
-      <li><strong>Достаточность (Sufficiency)</strong>: каждое представление должно быть достаточным для обучения</li>
-      <li><strong>Условная независимость</strong>: представления независимы при заданной метке класса</li>
-      <li><strong>Избыточность (Redundancy)</strong>: содержат перекрывающуюся информацию</li>
-      <li><strong>Баланс</strong>: примерно одинаковая предсказательная способность</li>
+      <li><strong>Достаточность (sufficiency)</strong>: каждый view сам по себе позволяет классифицировать</li>
+      <li><strong>Условная независимость</strong>: P(x¹, x² | y) = P(x¹ | y)·P(x² | y)</li>
+      <li><strong>Совместимость (compatibility)</strong>: целевые функции на разных views согласуются — f₁(x¹) = f₂(x²) почти всегда</li>
+      <li><strong>Баланс</strong>: views примерно одинаково информативны (слабый view портит сильный)</li>
     </ul>
-    
-    <p><strong>Примеры разделения:</strong></p>
     <table>
       <tr><th>Задача</th><th>View 1</th><th>View 2</th></tr>
       <tr><td>Веб-страницы</td><td>Текст страницы</td><td>Текст ссылок</td></tr>
-      <tr><td>Видео</td><td>Изображения</td><td>Аудио</td></tr>
-      <tr><td>Email</td><td>Тело письма</td><td>Заголовок</td></tr>
-      <tr><td>Документы</td><td>Содержание</td><td>Метаданные</td></tr>
+      <tr><td>Видео</td><td>Кадры (spatial)</td><td>Аудио / динамика (temporal)</td></tr>
+      <tr><td>Email</td><td>Тело письма</td><td>Заголовок, метаданные</td></tr>
+      <tr><td>Статьи с фото</td><td>Текст</td><td>Изображения</td></tr>
+      <tr><td>Object detection</td><td>Внешний вид объекта</td><td>Контекст сцены</td></tr>
     </table>
+    <p><strong>Нет естественных views?</strong> Искусственные: случайное разбиение признаков, разбиение по типам признаков, разные алгоритмы/архитектуры или разный preprocessing на одних признаках. Гарантии слабеют, если views сильно зависимы.</p>
   </div>
 
   <div class="block">
-    <h2>🔷 4. Базовый код</h2>
+    <h2>🔷 3. Алгоритм</h2>
+    <pre><code>Вход: L (размеченные), U (неразмеченные), k
+Обучить h1 на view 1 из L, h2 на view 2 из L
+
+Повторять:
+  1. h1 размечает U → k самых уверенных → L1
+  2. h2 размечает U → k самых уверенных → L2
+  3. Переобучить h1 на L ∪ L2, h2 на L ∪ L1
+     (каждая модель учится на метках ДРУГОЙ)
+  4. Удалить L1, L2 из U
+Пока U не пусто / нет уверенных примеров / лимит итераций
+
+Предсказание: среднее P(y|x¹) и P(y|x²)</code></pre>
+    <ul>
+      <li><strong>k</strong>: число добавляемых за итерацию примеров (обычно 1–10 на класс, с сохранением пропорций классов)</li>
+      <li><strong>Малое k</strong> (1–5): консервативно, меньше ошибок, но больше итераций</li>
+      <li><strong>Большое k</strong> (&gt;10): быстрее использует U, но приносит менее уверенные метки</li>
+      <li>Вместо фиксированного k можно использовать <strong>порог уверенности</strong> (например, P &gt; 0.95)</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 4. Почему работает: теория</h2>
+    <ul>
+      <li><strong>PAC-гарантии</strong> (Blum &amp; Mitchell): при достаточности и условной независимости views задача PAC-обучаема по слабому начальному классификатору и неразмеченным данным</li>
+      <li><strong>Независимость → «случайные» примеры</strong>: уверенные примеры, отобранные по view 1, для модели на view 2 выглядят как случайная выборка из своего класса — шум меток не концентрируется</li>
+      <li><strong>Согласие как сигнал</strong>: ошибку каждой модели можно ограничить сверху через долю несогласия между views (Dasgupta et al., 2001) — минимизация несогласия на U уменьшает ошибку</li>
+      <li><strong>Против confirmation bias</strong>: в self-training модель учится на собственных ошибках; в co-training метка от другой модели — новая информация</li>
+    </ul>
+    <p><strong>Условия успеха:</strong> views действительно слабо зависимы, каждый информативен, начальных меток хватает, чтобы модели были лучше случайных.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 5. Стратегии выбора примеров</h2>
+    <ul>
+      <li><strong>Максимальная уверенность</strong>: max P(y|x)</li>
+      <li><strong>Margin</strong>: P(y₍₁₎|x) − P(y₍₂₎|x) — разница топ-2 классов</li>
+      <li><strong>Entropy</strong>: наименьшая энтропия H = −Σ p·log p</li>
+      <li><strong>Agreement</strong>: брать только примеры, где оба view согласны</li>
+      <li><strong>Сбалансированный выбор</strong>: равное (или пропорциональное) число из каждого класса</li>
+      <li><strong>Динамический порог</strong>: адаптивный порог по итерациям вместо фиксированного k</li>
+    </ul>
     <pre><code>import numpy as np
-from sklearn.naive_bayes import GaussianNB
-from sklearn.model_selection import train_test_split
+
+def select_by_margin(proba, k):
+    """k примеров с наибольшим margin"""
+    s = np.sort(proba, axis=1)
+    margins = s[:, -1] - s[:, -2]
+    return np.argsort(margins)[-k:]
+
+def select_by_entropy(proba, k):
+    """k примеров с наименьшей энтропией"""
+    entropy = -np.sum(proba * np.log(proba + 1e-10), axis=1)
+    return np.argsort(entropy)[:k]
+
+def select_balanced(proba, k_per_class):
+    """top-k по уверенности внутри каждого класса"""
+    pred, conf = proba.argmax(1), proba.max(1)
+    idx = []
+    for c in np.unique(pred):
+        ic = np.where(pred == c)[0]
+        idx.extend(ic[np.argsort(conf[ic])[-k_per_class:]])
+    return np.array(idx)</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 6. Реализация на Python</h2>
+    <pre><code>import numpy as np
 
 class CoTraining:
     def __init__(self, clf1, clf2, k=5, max_iter=10):
-        self.clf1 = clf1  # Модель для view 1
-        self.clf2 = clf2  # Модель для view 2
-        self.k = k        # Примеров для добавления на итерацию
-        self.max_iter = max_iter
-    
-    def fit(self, X1_labeled, X2_labeled, y_labeled,
-            X1_unlabeled, X2_unlabeled):
-        
-        # Инициализация
-        X1_l, X2_l, y_l = X1_labeled.copy(), X2_labeled.copy(), y_labeled.copy()
-        X1_u, X2_u = X1_unlabeled.copy(), X2_unlabeled.copy()
-        
-        for iteration in range(self.max_iter):
-            # Обучение на текущих размеченных данных
+        self.clf1, self.clf2 = clf1, clf2  # модели для view 1 и view 2
+        self.k, self.max_iter = k, max_iter
+
+    def fit(self, X1_l, X2_l, y_l, X1_u, X2_u):
+        X1_l, X2_l, y_l = X1_l.copy(), X2_l.copy(), y_l.copy()
+        X1_u, X2_u = X1_u.copy(), X2_u.copy()
+        for _ in range(self.max_iter):
             self.clf1.fit(X1_l, y_l)
             self.clf2.fit(X2_l, y_l)
-            
-            # Предсказания на неразмеченных
-            proba1 = self.clf1.predict_proba(X1_u)
-            proba2 = self.clf2.predict_proba(X2_u)
-            
-            # Выбор наиболее уверенных
-            conf1 = np.max(proba1, axis=1)
-            conf2 = np.max(proba2, axis=1)
-            
-            # Топ-k от каждой модели
-            idx1 = np.argsort(conf1)[-self.k:]
-            idx2 = np.argsort(conf2)[-self.k:]
-            
-            # Добавление в обучающую выборку
-            X1_l = np.vstack([X1_l, X1_u[idx2]])
-            X2_l = np.vstack([X2_l, X2_u[idx2]])
-            y_l = np.hstack([y_l, self.clf2.predict(X2_u[idx2])])
-            
-            X1_l = np.vstack([X1_l, X1_u[idx1]])
-            X2_l = np.vstack([X2_l, X2_u[idx1]])
-            y_l = np.hstack([y_l, self.clf1.predict(X1_u[idx1])])
-            
-            # Удаление использованных неразмеченных
+            p1 = self.clf1.predict_proba(X1_u)
+            p2 = self.clf2.predict_proba(X2_u)
+            idx1 = np.argsort(p1.max(1))[-self.k:]  # уверенные у h1
+            idx2 = np.argsort(p2.max(1))[-self.k:]  # уверенные у h2
+            # метки h1 → в выборку, метки h2 → в выборку
+            y1 = self.clf1.classes_[p1[idx1].argmax(1)]
+            y2 = self.clf2.classes_[p2[idx2].argmax(1)]
+            new = np.concatenate([idx1, idx2])
+            X1_l = np.vstack([X1_l, X1_u[new]])
+            X2_l = np.vstack([X2_l, X2_u[new]])
+            y_l = np.concatenate([y_l, y1, y2])
             mask = np.ones(len(X1_u), dtype=bool)
-            mask[np.concatenate([idx1, idx2])] = False
-            X1_u = X1_u[mask]
-            X2_u = X2_u[mask]
-            
-            if len(X1_u) < self.k:
+            mask[new] = False
+            X1_u, X2_u = X1_u[mask], X2_u[mask]
+            if len(X1_u) &lt; 2 * self.k:
                 break
-        
-        # Финальное обучение
         self.clf1.fit(X1_l, y_l)
         self.clf2.fit(X2_l, y_l)
-        
+        return self
+
+    def predict_proba(self, X1, X2):
+        return (self.clf1.predict_proba(X1) + self.clf2.predict_proba(X2)) / 2
+
     def predict(self, X1, X2):
-        # Комбинирование предсказаний
-        pred1 = self.clf1.predict_proba(X1)
-        pred2 = self.clf2.predict_proba(X2)
-        return np.argmax((pred1 + pred2) / 2, axis=1)</code></pre>
+        return self.clf1.classes_[self.predict_proba(X1, X2).argmax(1)]</code></pre>
+    <p>Упрощение: общая выборка L для обеих моделей. В классическом варианте у каждой модели своя выборка, пополняемая только метками другой.</p>
   </div>
 
   <div class="block">
-    <h2>🔷 5. Пример использования</h2>
-    <pre><code># Генерация данных
-from sklearn.datasets import make_classification
-
-X, y = make_classification(n_samples=1000, n_features=20, 
-                           n_informative=15, random_state=42)
-
-# Разделение на два представления
-X_view1 = X[:, :10]
-X_view2 = X[:, 10:]
-
-# Малая часть размеченных, остальное - неразмеченное
-labeled_size = 50
-X1_labeled = X_view1[:labeled_size]
-X2_labeled = X_view2[:labeled_size]
-y_labeled = y[:labeled_size]
-
-X1_unlabeled = X_view1[labeled_size:]
-X2_unlabeled = X_view2[labeled_size:]
-
-# Co-training
-clf1 = GaussianNB()
-clf2 = GaussianNB()
-
-cotrainer = CoTraining(clf1, clf2, k=10, max_iter=20)
-cotrainer.fit(X1_labeled, X2_labeled, y_labeled,
-              X1_unlabeled, X2_unlabeled)
-
-# Тестирование
-# Используем оставшиеся данные для теста
+    <h2>🔷 7. Пример использования</h2>
+    <pre><code>from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score
-y_pred = cotrainer.predict(X_view1[labeled_size:], 
-                          X_view2[labeled_size:])
-print(f"Accuracy: {accuracy_score(y[labeled_size:], y_pred)}")</code></pre>
+
+X, y = make_classification(n_samples=2000, n_features=20,
+                           n_informative=15, random_state=42)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3,
+                                          random_state=42)
+V1, V2 = slice(0, 10), slice(10, 20)  # два view
+n_lab = 50                            # мало меток
+
+ct = CoTraining(GaussianNB(), GaussianNB(), k=10, max_iter=20)
+ct.fit(X_tr[:n_lab, V1], X_tr[:n_lab, V2], y_tr[:n_lab],
+       X_tr[n_lab:, V1], X_tr[n_lab:, V2])
+
+baseline = GaussianNB().fit(X_tr[:n_lab], y_tr[:n_lab])
+print("baseline:", accuracy_score(y_te, baseline.predict(X_te)))
+print("co-training:", accuracy_score(y_te, ct.predict(X_te[:, V1], X_te[:, V2])))</code></pre>
   </div>
 
   <div class="block">
-    <h2>🔷 6. Варианты и расширения</h2>
-    <p><strong>Democratic Co-Learning:</strong></p>
+    <h2>🔷 8. Варианты и Deep Co-training</h2>
     <ul>
-      <li>Несколько классификаторов голосуют</li>
-      <li>Добавляются примеры с консенсусом</li>
+      <li><strong>Democratic Co-learning</strong>: &gt;2 разных классификаторов голосуют, добавляются примеры с консенсусом</li>
+      <li><strong>Tri-training</strong>: три классификатора на одних признаках (разнообразие через bootstrap); если два согласны — учат третьего</li>
+      <li><strong>Co-EM</strong>: вероятностные (мягкие) метки вместо жёстких. E-шаг: P(y|x) по каждому view; M-шаг: обновить параметры другой модели, взвешивая примеры по P(y|x)</li>
+      <li><strong>Multi-view learning</strong>: обобщение на &gt;2 views</li>
+      <li><strong>Self-training</strong>: частный случай с одним view (модель учит сама себя)</li>
     </ul>
-    
-    <p><strong>Tri-training:</strong></p>
-    <ul>
-      <li>Три классификатора</li>
-      <li>Два согласных обучают третьего</li>
-    </ul>
-    
-    <p><strong>Co-EM:</strong></p>
-    <ul>
-      <li>Вероятностные метки вместо жёстких</li>
-      <li>EM-алгоритм для уточнения</li>
-    </ul>
-    
-    <p><strong>Self-training с разделением:</strong></p>
-    <ul>
-      <li>Одна модель, разные входы</li>
-      <li>Упрощённый вариант co-training</li>
-    </ul>
+    <p><strong>Deep Co-training</strong> — views задаются нейросетями: разные архитектуры (CNN + RNN), разные модальности (vision + text), adversarial-примеры для поддержания разнообразия views.</p>
+    <pre><code>import torch
+import torch.nn.functional as F
+
+def co_step(net1, net2, x1, x2, opt, thr=0.95):
+    """Один шаг на неразмеченном батче: каждая сеть
+    учится на уверенных псевдометках другой."""
+    with torch.no_grad():
+        p1, p2 = F.softmax(net1(x1), 1), F.softmax(net2(x2), 1)
+    c1, y1 = p1.max(1)
+    c2, y2 = p2.max(1)
+    m1, m2 = c1 &gt; thr, c2 &gt; thr          # маски уверенности
+    loss = 0.0
+    if m2.any():
+        loss = loss + F.cross_entropy(net1(x1[m2]), y2[m2])
+    if m1.any():
+        loss = loss + F.cross_entropy(net2(x2[m1]), y1[m1])
+    if torch.is_tensor(loss):
+        opt.zero_grad(); loss.backward(); opt.step()
+    return loss</code></pre>
   </div>
 
   <div class="block">
-    <h2>🔷 7. Проблемы и решения</h2>
+    <h2>🔷 9. Проблемы и решения</h2>
     <table>
       <tr><th>Проблема</th><th>Решение</th></tr>
-      <tr><td>Ошибки накапливаются</td><td>Порог уверенности, валидация</td></tr>
-      <tr><td>Представления не независимы</td><td>PCA, случайное разбиение</td></tr>
-      <tr><td>Дисбаланс классов</td><td>Балансированный выбор примеров</td></tr>
-      <tr><td>Модели расходятся</td><td>Ограничить количество итераций</td></tr>
-      <tr><td>Нет естественных view</td><td>Случайное разбиение признаков</td></tr>
+      <tr><td>Накопление ошибок (error propagation)</td><td>Строгий порог уверенности, валидация, периодическое удаление шумных меток</td></tr>
+      <tr><td>Views слишком похожи / зависимы</td><td>Проверить корреляцию views, другое разбиение признаков, регуляризация на разнообразие</td></tr>
+      <tr><td>Слабый view портит сильный</td><td>Выше порог и меньше k для слабой модели или один сильный view</td></tr>
+      <tr><td>Дисбаланс классов в уверенных примерах</td><td>Сбалансированный отбор по классам</td></tr>
+      <tr><td>Модели расходятся / качество падает</td><td>Ограничить число итераций, early stopping по валидации</td></tr>
+      <tr><td>Начальные модели почти случайны</td><td>Больше меток на старте; иначе модели уверенно обмениваются ошибками</td></tr>
     </table>
   </div>
 
   <div class="block">
-    <h2>🔷 8. Стратегии выбора примеров</h2>
+    <h2>🔷 10. Метрики, мониторинг и остановка</h2>
     <ul>
-      <li><strong>Максимальная уверенность</strong>: выбирать с max P(y|x)</li>
-      <li><strong>Margin sampling</strong>: разница между топ-2 классами</li>
-      <li><strong>Entropy</strong>: наименьшая энтропия предсказаний</li>
-      <li><strong>Сбалансированный выбор</strong>: равное число из каждого класса</li>
-      <li><strong>Динамический порог</strong>: адаптивный выбор по итерациям</li>
+      <li><strong>Качество на валидации/тесте</strong>: каждой модели и их комбинации</li>
+      <li><strong>Agreement</strong>: доля совпадающих предсказаний двух views</li>
+      <li><strong>Динамика</strong>: качество и распределение confidence по итерациям</li>
+      <li><strong>Объём псевдоразметки</strong>: сколько примеров добавлено</li>
+      <li><strong>Остановка</strong>: agreement или валидационное качество падают, либо нет уверенных примеров</li>
     </ul>
-    
-    <pre><code># Пример с margin sampling
-def select_by_margin(proba, k):
-    """Выбрать k примеров с наибольшим margin"""
-    sorted_proba = np.sort(proba, axis=1)
-    margins = sorted_proba[:, -1] - sorted_proba[:, -2]
-    return np.argsort(margins)[-k:]
+    <pre><code>from sklearn.metrics import accuracy_score
 
-# Пример с entropy
-def select_by_entropy(proba, k):
-    """Выбрать k примеров с наименьшей энтропией"""
-    entropy = -np.sum(proba * np.log(proba + 1e-10), axis=1)
-    return np.argsort(entropy)[:k]</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 9. Метрики и валидация</h2>
-    <ul>
-      <li><strong>Качество на тесте</strong>: основная метрика</li>
-      <li><strong>Согласованность моделей</strong>: % совпадений предсказаний</li>
-      <li><strong>Динамика обучения</strong>: качество по итерациям</li>
-      <li><strong>Размер псевдо-размеченных</strong>: сколько добавлено примеров</li>
-    </ul>
-    
-    <pre><code>def evaluate_cotraining(cotrainer, X1_test, X2_test, y_test):
-    # Предсказания каждой модели
-    pred1 = cotrainer.clf1.predict(X1_test)
-    pred2 = cotrainer.clf2.predict(X2_test)
-    pred_combined = cotrainer.predict(X1_test, X2_test)
-    
-    # Метрики
-    from sklearn.metrics import accuracy_score
-    acc1 = accuracy_score(y_test, pred1)
-    acc2 = accuracy_score(y_test, pred2)
-    acc_comb = accuracy_score(y_test, pred_combined)
-    
-    # Согласованность
-    agreement = np.mean(pred1 == pred2)
-    
+def evaluate_cotraining(ct, X1, X2, y):
+    p1, p2 = ct.clf1.predict(X1), ct.clf2.predict(X2)
     return {
-        'acc_view1': acc1,
-        'acc_view2': acc2,
-        'acc_combined': acc_comb,
-        'agreement': agreement
+        'acc_view1': accuracy_score(y, p1),
+        'acc_view2': accuracy_score(y, p2),
+        'acc_combined': accuracy_score(y, ct.predict(X1, X2)),
+        'agreement': np.mean(p1 == p2),
     }</code></pre>
   </div>
 
   <div class="block">
-    <h2>🔷 10. Когда использовать</h2>
+    <h2>🔷 11. Сравнение и когда использовать</h2>
+    <table>
+      <tr><th>Метод</th><th>Особенности</th><th>Когда лучше</th></tr>
+      <tr><td>Co-training</td><td>Два view, взаимная коррекция ошибок</td><td>Есть естественные независимые views</td></tr>
+      <tr><td>Self-training</td><td>Один view, может усиливать свои ошибки</td><td>Разделения нет</td></tr>
+      <tr><td>Ансамбль 2 моделей</td><td>Обучаются независимо на L, только объединяют прогнозы</td><td>Меток достаточно</td></tr>
+      <tr><td>Label propagation</td><td>Граф похожести, views не нужны</td><td>Кластерная структура данных</td></tr>
+      <tr><td>S3VM</td><td>Граница через области низкой плотности U</td><td>Разделимые кластеры</td></tr>
+      <tr><td>Semi-supervised GAN</td><td>Генератор + дискриминатор</td><td>Изображения</td></tr>
+    </table>
     <div class="good-vs-bad">
       <div class="good">
         <h3>✅ Хорошо</h3>
         <ul>
-          <li>Мало размеченных данных</li>
-          <li>Много неразмеченных данных</li>
-          <li>Естественные view (текст+метаданные)</li>
-          <li>Разметка дорогая</li>
-          <li>Мультимодальные данные</li>
+          <li>Мало меток, много неразмеченных данных, разметка дорогая</li>
+          <li>Естественные views: текст + метаданные, мультимодальность</li>
+          <li>NLP (NER, классификация текстов), web mining, video</li>
         </ul>
       </div>
       <div class="bad">
         <h3>❌ Плохо</h3>
         <ul>
           <li>Достаточно размеченных данных</li>
-          <li>Невозможно разделить признаки</li>
-          <li>Представления сильно коррелированы</li>
-          <li>Нужна высокая точность</li>
+          <li>Признаки не делятся на достаточные views</li>
+          <li>Views сильно коррелированы</li>
         </ul>
       </div>
     </div>
   </div>
 
   <div class="block">
-    <h2>🔷 11. Продвинутые техники</h2>
-    <p><strong>Co-training с глубоким обучением:</strong></p>
-    <pre><code>from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-
-def create_view_network(input_dim):
-    model = Sequential([
-        Dense(64, activation='relu', input_dim=input_dim),
-        Dense(32, activation='relu'),
-        Dense(2, activation='softmax')
-    ])
-    model.compile(optimizer='adam', 
-                  loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy'])
-    return model
-
-# Две нейросети для разных view
-model1 = create_view_network(X_view1.shape[1])
-model2 = create_view_network(X_view2.shape[1])
-
-# Co-training цикл
-for epoch in range(10):
-    model1.fit(X1_labeled, y_labeled, epochs=1, verbose=0)
-    model2.fit(X2_labeled, y_labeled, epochs=1, verbose=0)
-    
-    # Псевдо-метки с высокой уверенностью
-    proba1 = model1.predict(X1_unlabeled)
-    conf_mask = np.max(proba1, axis=1) > 0.95
-    
-    if conf_mask.sum() > 0:
-        X2_labeled = np.vstack([X2_labeled, X2_unlabeled[conf_mask]])
-        y_labeled = np.hstack([y_labeled, 
-                               np.argmax(proba1[conf_mask], axis=1)])</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 12. Сравнение с другими методами</h2>
-    <table>
-      <tr><th>Метод</th><th>Особенности</th><th>Когда лучше</th></tr>
-      <tr><td>Co-training</td><td>Два view</td><td>Естественные view</td></tr>
-      <tr><td>Self-training</td><td>Один view</td><td>Нет разделения</td></tr>
-      <tr><td>Label propagation</td><td>Граф</td><td>Похожие объекты</td></tr>
-      <tr><td>Semi-supervised GAN</td><td>Генератор</td><td>Изображения</td></tr>
-    </table>
-  </div>
-
-  <div class="block">
-    <h2>🔷 13. Чек-лист</h2>
+    <h2>🔷 12. Чек-лист</h2>
     <ul>
-      <li>[ ] Проверить достаточность каждого view</li>
-      <li>[ ] Убедиться в условной независимости</li>
-      <li>[ ] Выбрать стратегию отбора примеров</li>
-      <li>[ ] Установить порог уверенности</li>
-      <li>[ ] Ограничить число итераций</li>
-      <li>[ ] Мониторить качество на валидации</li>
-      <li>[ ] Проверить согласованность моделей</li>
-      <li>[ ] Сравнить с baseline (только размеченные данные)</li>
+      <li>[ ] Проверить достаточность каждого view (качество модели на одном view)</li>
+      <li>[ ] Оценить зависимость views</li>
+      <li>[ ] Выбрать стратегию отбора и порог уверенности / k</li>
+      <li>[ ] Балансировать классы при отборе</li>
+      <li>[ ] Ограничить число итераций, мониторить валидацию и agreement</li>
+      <li>[ ] Сравнить с baseline (только размеченные данные) и self-training</li>
     </ul>
-
     <h3>💡 Объяснение заказчику:</h3>
     <blockquote>
-      «Co-training — это когда две модели обучают друг друга. Представьте двух учителей: 
-      один знает математику, другой — физику. Они по очереди решают задачи и помогают друг другу. 
-      Так можно обучиться с меньшим количеством готовых решений, используя неразмеченные данные».
+      «Co-training — две модели, которые смотрят на данные с разных сторон и обучают друг друга. Как два эксперта: один читает текст письма, другой смотрит на отправителя; в чём один уверен, тому учится другой. Так нужно меньше вручную размеченных примеров».
     </blockquote>
   </div>
-
-
 
 </div>
 </body>

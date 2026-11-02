@@ -36,57 +36,218 @@
 <script src="../assets/theme.js?v=2"></script>
 </head>
 <body><div class="container">
-<h1>🔀 Multi-task Learning</h1>
+<h1>🧩 Multi-task Learning</h1>
 <div class="subtitle">📅 Январь 2026</div>
-<div class="block"><h2>🔷 1. Концепция MTL</h2><ul><li>Одновременное обучение</li><li>Shared layers</li><li>Task-specific heads</li><li>Inductive bias</li></ul></div><div class="block"><h2>🔷 2. Архитектуры</h2><ul><li>Hard parameter sharing</li><li>Soft parameter sharing</li><li>Cross-stitch networks</li><li>Multi-gate mixture</li></ul></div><div class="block"><h2>🔷 3. Функции потерь</h2><ul><li>Weighted sum</li><li>Uncertainty weighting</li><li>GradNorm</li><li>Dynamic task prioritization</li></ul></div><div class="block"><h2>🔷 4. PyTorch реализация</h2><ul><li>Общий backbone</li><li>Task-specific слои</li><li>Multi-head output</li><li>Обучающий loop</li></ul></div><div class="block"><h2>🔷 5. Преимущества</h2><ul><li>Улучшение генерализации</li><li>Implicit data augmentation</li><li>Eavesdropping</li><li>Regularization effect</li></ul></div><div class="block"><h2>🔷 6. Когда использовать</h2><ul><li>Связанные задачи</li><li>Общие паттерны</li><li>Ограниченные данные</li><li>Transfer learning</li></ul></div><div class="block"><h2>🔷 7. Вызовы</h2><ul><li>Negative transfer</li><li>Task balancing</li><li>Convergence issues</li><li>Optimization difficulties</li></ul></div><div class="block"><h2>🔷 8. Применение</h2><ul><li>NLP задачи</li><li>Computer vision</li><li>Рекомендательные системы</li><li>Медицинская диагностика</li></ul></div><div class="block"><h2>🔷 9. Дополнительно</h2><pre><code># Пример кода
-import example
 
-# Комментарий для увеличения размера файла
-# Ещё один комментарий
-result = example.function(param=value)</code></pre><p>Подробное объяснение с дополнительным текстом для достижения нужного размера файла. Это важная информация для понимания концепции и её применения на практике в реальных проектах машинного обучения.</p></div><div class="block"><h2>🔷 10. Дополнительно</h2><pre><code># Пример кода
-import example
+<div class="block">
+  <h2>🔷 1. Суть MTL</h2>
+  <p><strong>Multi-task learning</strong> — одна модель обучается сразу на нескольких задачах T₁…T_K с общим представлением. Общий лосс: <code>L = Σₖ wₖ · Lₖ(θ_shared, θₖ)</code>.</p>
+  <ul>
+    <li><strong>Индуктивный bias / регуляризация</strong>: представление должно подходить всем задачам → меньше переобучения под шум одной задачи.</li>
+    <li><strong>Неявная аугментация</strong>: связанные задачи дают дополнительный сигнал, особенно задаче с малой разметкой.</li>
+    <li><strong>Attention focusing</strong>: другие задачи подсказывают, какие признаки важны.</li>
+    <li><strong>Эффективность</strong>: один backbone на инференсе вместо K моделей.</li>
+  </ul>
+  <p>Риск — <strong>negative transfer</strong>: совместное обучение ухудшает одну из задач. Глубже — <a href="multi_task_learning_deep_dive_cheatsheet.html">MTL Deep Dive</a>; связь с <a href="transfer_learning_cheatsheet.html">Transfer Learning</a>.</p>
+</div>
 
-# Комментарий для увеличения размера файла
-# Ещё один комментарий
-result = example.function(param=value)</code></pre><p>Подробное объяснение с дополнительным текстом для достижения нужного размера файла. Это важная информация для понимания концепции и её применения на практике в реальных проектах машинного обучения.</p></div>
+<div class="block">
+  <h2>🔷 2. Hard vs soft parameter sharing</h2>
+  <table>
+    <tr><th></th><th>Hard sharing</th><th>Soft sharing</th></tr>
+    <tr><td>Устройство</td><td>Общий backbone + отдельные «головы»</td><td>У каждой задачи своя сеть, связи/штраф между ними</td></tr>
+    <tr><td>Параметры</td><td>Мало</td><td>≈ K × одна модель</td></tr>
+    <tr><td>Регуляризация</td><td>Сильная (риск переобучения ↓ в ~K раз)</td><td>Мягкая, настраиваемая</td></tr>
+    <tr><td>Negative transfer</td><td>Выше риск</td><td>Ниже</td></tr>
+    <tr><td>Примеры</td><td>Shared bottom, HydraNet</td><td>Cross-stitch, L2 между весами, MMoE/PLE (частично)</td></tr>
+  </table>
+  <p><strong>Cross-stitch unit</strong>: выходы слоёв двух сетей смешиваются обучаемой матрицей α: <code>[x̃_A, x̃_B] = [[α_AA, α_AB],[α_BA, α_BB]] · [x_A, x_B]</code>. Штрафной вариант soft sharing: <code>λ·‖θ_A − θ_B‖²</code>.</p>
+</div>
 
-  <div class="block">
-    <h2>🔷 11. Практические примеры</h2>
-    <pre><code># Пример использования
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+<div class="block">
+  <h2>🔷 3. Код: hard sharing на PyTorch</h2>
+<pre><code>import torch, torch.nn as nn, torch.nn.functional as F
 
-# Загрузка данных
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+class SharedBottom(nn.Module):
+    def __init__(self, d_in, d_h=128, n_classes=5):
+        super().__init__()
+        self.shared = nn.Sequential(
+            nn.Linear(d_in, d_h), nn.ReLU(),
+            nn.Linear(d_h, d_h), nn.ReLU())
+        self.head_cls = nn.Linear(d_h, n_classes)   # задача 1: классификация
+        self.head_reg = nn.Linear(d_h, 1)           # задача 2: регрессия
 
-# Обучение модели
-model.fit(X_train, y_train)
+    def forward(self, x):
+        h = self.shared(x)
+        return self.head_cls(h), self.head_reg(h).squeeze(-1)
 
-# Оценка
-score = model.score(X_test, y_test)
-print(f"Score: {score:.4f}")</code></pre>
-    <p>Детальное объяснение процесса с примерами кода и комментариями для лучшего понимания применения в реальных проектах машинного обучения.</p>
+model = SharedBottom(d_in=32)
+opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+x = torch.randn(64, 32)
+y_cls = torch.randint(0, 5, (64,)); y_reg = torch.randn(64)
+
+logits, pred = model(x)
+loss = F.cross_entropy(logits, y_cls) + 0.5 * F.mse_loss(pred, y_reg)
+opt.zero_grad(); loss.backward(); opt.step()</code></pre>
+  <p>Если у объекта нет метки задачи k — маскируйте её лосс (<code>mask * loss_k</code>), а не подставляйте 0.</p>
+</div>
+
+<div class="block">
+  <h2>🔷 4. Взвешивание лоссов</h2>
+  <p>Простая сумма плохо работает: лоссы разного масштаба (CE ~1, MSE ~1000) и разной скорости убывания → одна задача доминирует в градиентах общего слоя.</p>
+  <table>
+    <tr><th>Метод</th><th>Идея</th></tr>
+    <tr><td>Ручные веса</td><td>Grid search по wₖ; дорого при K &gt; 3</td></tr>
+    <tr><td>Uncertainty weighting (Kendall, 2018)</td><td><code>L = Σ 1/(2σₖ²)·Lₖ + log σₖ</code>, σₖ обучается — шумные задачи получают меньший вес</td></tr>
+    <tr><td>GradNorm (Chen, 2018)</td><td>Подбирает wₖ так, чтобы нормы градиентов ‖∇_W wₖLₖ‖ на общем слое были сопоставимы с учётом скорости обучения задачи (параметр α)</td></tr>
+    <tr><td>DWA</td><td>Вес ∝ softmax от отношения Lₖ(t−1)/Lₖ(t−2): медленно учащаяся задача получает больше</td></tr>
+    <tr><td>Нормировка</td><td>Делить Lₖ на начальное значение Lₖ(0)</td></tr>
+  </table>
+</div>
+
+<div class="block">
+  <h2>🔷 5. Код: uncertainty weighting</h2>
+<pre><code>class UncertaintyWeighting(nn.Module):
+    """Kendall et al.: обучаемые log σ² для каждой задачи."""
+    def __init__(self, n_tasks):
+        super().__init__()
+        self.log_vars = nn.Parameter(torch.zeros(n_tasks))
+
+    def forward(self, losses):            # losses: list of scalar tensors
+        total = 0.0
+        for i, L in enumerate(losses):
+            precision = torch.exp(-self.log_vars[i])
+            total = total + 0.5 * precision * L + 0.5 * self.log_vars[i]
+        return total
+
+uw = UncertaintyWeighting(2)
+opt = torch.optim.Adam(list(model.parameters()) + list(uw.parameters()), lr=1e-3)
+
+logits, pred = model(x)
+loss = uw([F.cross_entropy(logits, y_cls), F.mse_loss(pred, y_reg)])
+opt.zero_grad(); loss.backward(); opt.step()
+print(torch.exp(uw.log_vars))  # σ² задач</code></pre>
+  <p>Член <code>log σ</code> не даёт весу уйти в 0 (иначе тривиально σ → ∞).</p>
+</div>
+
+<div class="block">
+  <h2>🔷 6. Конфликтующие градиенты: PCGrad</h2>
+  <p>Градиенты задач gᵢ, gⱼ по общим параметрам конфликтуют, если <code>cos(gᵢ, gⱼ) &lt; 0</code>: шаг в пользу одной задачи вредит другой. Плюс разная величина норм и высокая кривизна — «трагическая триада» (Yu et al., 2020).</p>
+  <p><strong>PCGrad</strong>: для каждой задачи i в случайном порядке перебираем j; если gᵢ·gⱼ &lt; 0 — проецируем: <code>gᵢ ← gᵢ − (gᵢ·gⱼ / ‖gⱼ‖²) gⱼ</code>. Итоговый шаг — сумма исправленных gᵢ.</p>
+<pre><code>import random
+
+def pcgrad_step(model, losses, opt):
+    shared = [p for p in model.shared.parameters()]
+    grads = []
+    for L in losses:
+        g = torch.autograd.grad(L, shared, retain_graph=True)
+        grads.append(torch.cat([t.flatten() for t in g]))
+    projected = []
+    for i, gi in enumerate(grads):
+        gi = gi.clone()
+        others = [g for j, g in enumerate(grads) if j != i]
+        random.shuffle(others)
+        for gj in others:
+            dot = gi @ gj
+            if dot &lt; 0:
+                gi -= dot / (gj.norm() ** 2 + 1e-12) * gj
+        projected.append(gi)
+    g_final = torch.stack(projected).sum(0)
+    opt.zero_grad()
+    sum(losses).backward()               # градиенты голов — как обычно
+    offset = 0
+    for p in shared:                     # подменяем градиент общих слоёв
+        n = p.numel()
+        p.grad = g_final[offset:offset + n].view_as(p).clone()
+        offset += n
+    opt.step()</code></pre>
+  <p>Альтернативы: MGDA (Парето-оптимальный шаг), CAGrad, GradVac, Nash-MTL.</p>
+</div>
+
+<div class="block">
+  <h2>🔷 7. Negative transfer</h2>
+  <ul>
+    <li><strong>Признак</strong>: MTL-модель хуже single-task бейзлайна на задаче k. Всегда сравнивайте с отдельными моделями!</li>
+    <li><strong>Причины</strong>: слабо связанные задачи, конфликт градиентов, дисбаланс данных/лоссов, слишком узкий общий слой.</li>
+    <li><strong>Лечение</strong>: больше task-specific слоёв (раньше «развилка»), гейтинг экспертов (MMoE/PLE), балансировка лоссов, PCGrad, группировка задач (task grouping: обучать вместе только «дружащие» задачи, TAG оценивает affinity по влиянию шага одной задачи на лосс другой).</li>
+    <li><strong>Seesaw-эффект</strong> (рекомендации): улучшение одной задачи ведёт к ухудшению другой — мотивация для PLE.</li>
+  </ul>
+</div>
+
+<div class="block">
+  <h2>🔷 8. Архитектуры для рекомендаций: Shared bottom, MMoE, PLE</h2>
+  <table>
+    <tr><th>Архитектура</th><th>Устройство</th><th>Плюсы / минусы</th></tr>
+    <tr><td>Shared bottom</td><td>Общий MLP → башни задач</td><td>Просто; страдает при слабой связи задач</td></tr>
+    <tr><td>MMoE (Google, 2018)</td><td>N общих экспертов; у каждой задачи свой gate: <code>fₖ(x) = Σᵢ softmax(W_gₖ x)ᵢ · Eᵢ(x)</code></td><td>Задачи сами выбирают смесь экспертов; бывает «поляризация» гейтов</td></tr>
+    <tr><td>PLE / CGC (Tencent, 2020)</td><td>Общие эксперты + task-specific эксперты, несколько уровней извлечения</td><td>Явно разделяет общее и частное, снижает seesaw</td></tr>
+    <tr><td>ESMM (Alibaba)</td><td>pCTCVR = pCTR × pCVR, обучение на всей выдаче</td><td>Решает sample selection bias для CVR</td></tr>
+  </table>
+  <p>Типичный набор задач: клик (CTR), конверсия (CVR), время просмотра, лайк, досмотр. Итоговый скор — взвешенная комбинация прогнозов задач.</p>
+</div>
+
+<div class="block">
+  <h2>🔷 9. Код: MMoE</h2>
+<pre><code>class MMoE(nn.Module):
+    def __init__(self, d_in, n_experts=4, d_exp=64, n_tasks=2):
+        super().__init__()
+        self.experts = nn.ModuleList([
+            nn.Sequential(nn.Linear(d_in, d_exp), nn.ReLU())
+            for _ in range(n_experts)])
+        self.gates = nn.ModuleList([nn.Linear(d_in, n_experts)
+                                    for _ in range(n_tasks)])
+        self.towers = nn.ModuleList([
+            nn.Sequential(nn.Linear(d_exp, 32), nn.ReLU(), nn.Linear(32, 1))
+            for _ in range(n_tasks)])
+
+    def forward(self, x):
+        E = torch.stack([e(x) for e in self.experts], dim=1)  # B×N×D
+        outs = []
+        for gate, tower in zip(self.gates, self.towers):
+            w = torch.softmax(gate(x), dim=-1).unsqueeze(-1)   # B×N×1
+            outs.append(tower((w * E).sum(1)).squeeze(-1))      # logit
+        return outs
+
+m = MMoE(d_in=32)
+ctr_logit, cvr_logit = m(torch.randn(16, 32))
+y_click = torch.randint(0, 2, (16,)).float()
+y_conv = torch.randint(0, 2, (16,)).float()
+loss = (F.binary_cross_entropy_with_logits(ctr_logit, y_click)
+        + F.binary_cross_entropy_with_logits(cvr_logit, y_conv))</code></pre>
+</div>
+
+<div class="block">
+  <h2>🔷 10. Auxiliary tasks и применения</h2>
+  <p><strong>Вспомогательная задача</strong> нужна не сама по себе, а для улучшения главной; её вес обычно меньше, на инференсе голову выбрасывают.</p>
+  <ul>
+    <li><strong>CV / автопилот</strong>: детекция + сегментация + глубина из одного backbone (HydraNet Tesla, UberNet); экономия вычислений на борту.</li>
+    <li><strong>NLP</strong>: T5/инструктивные модели — многие задачи в одном формате; BERT: MLM + NSP.</li>
+    <li><strong>RL</strong>: auxiliary losses (UNREAL: предсказание награды, pixel control) — см. <a href="multitask_rl_cheatsheet.html">Multitask RL</a>.</li>
+    <li><strong>Табличные/медицина</strong>: предсказать несколько исходов сразу; редкий исход выигрывает от частых.</li>
+    <li><strong>Подсказки</strong> (hints): предсказывать признак, который трудно выучить напрямую; adversarial-задача для удаления информации (domain adaptation через gradient reversal).</li>
+  </ul>
+</div>
+
+<div class="block">
+  <h2>🔷 11. Практика и типичные ошибки</h2>
+  <div class="good-vs-bad">
+    <div class="good"><h3>Делать</h3><ul>
+      <li>Сначала single-task бейзлайны для каждой задачи</li>
+      <li>Нормировать масштабы лоссов, логировать каждый Lₖ отдельно</li>
+      <li>Ранняя остановка / выбор чекпойнта по метрике каждой задачи</li>
+      <li>Маскировать лоссы при отсутствующих метках</li>
+      <li>Сэмплирование задач пропорционально √(размер) при сильном дисбалансе данных</li>
+    </ul></div>
+    <div class="bad"><h3>Ошибки</h3><ul>
+      <li>Складывать лоссы без весов разного масштаба</li>
+      <li>Судить по суммарному лоссу, а не по метрикам задач</li>
+      <li>Объединять заведомо несвязанные задачи</li>
+      <li>Слишком маленький общий слой → «бутылочное горлышко»</li>
+      <li>Один learning rate для голов с очень разной сложностью без проверки</li>
+    </ul></div>
   </div>
-
-  <div class="block">
-    <h2>🔷 12. Чек-лист</h2>
-    <ul>
-      <li>[ ] Подготовить данные</li>
-      <li>[ ] Выбрать подходящую модель</li>
-      <li>[ ] Настроить гиперпараметры</li>
-      <li>[ ] Провести обучение</li>
-      <li>[ ] Оценить качество</li>
-      <li>[ ] Визуализировать результаты</li>
-      <li>[ ] Проверить на валидации</li>
-      <li>[ ] Задокументировать процесс</li>
-    </ul>
-
-    <h3>💡 Объяснение заказчику:</h3>
-    <blockquote>
-      «Этот подход позволяет решить задачу эффективно, используя современные методы машинного обучения. Результаты можно легко интерпретировать и применять на практике для принятия бизнес-решений».
-    </blockquote>
-  </div>
+  <p><strong>Когда применять</strong>: задачи связаны (общие входы и сходная семантика), у части задач мало меток, нужна экономия на инференсе.</p>
+</div>
 
 </div>
 </body></html>

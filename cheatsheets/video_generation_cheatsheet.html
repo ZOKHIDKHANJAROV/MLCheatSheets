@@ -170,349 +170,177 @@
 
 <div class="container">
 
-  <h1>🎯 Генерация видео</h1>
+  <h1>🎬 Генерация видео</h1>
   <div class="subtitle">📅 Январь 2026</div>
 
   <div class="block">
-    <h2>🔷 1. Что такое генерация видео?</h2>
-    <p><strong>Генерация видео</strong> — создание видеоконтента с помощью генеративных моделей.</p>
-<ul>
-  <li><strong>Цель</strong>: обнаружение проблем с моделью</li>
-  <li><strong>Performance drift</strong>: ухудшение метрик</li>
-  <li><strong>Data drift</strong>: изменение распределения данных</li>
-  <li><strong>Concept drift</strong>: изменение отношений в данных</li>
-</ul>
-<blockquote>💡 "Модели деградируют со временем — нужен постоянный мониторинг"</blockquote>
+    <h2>🔷 1. Задачи</h2>
+    <ul>
+      <li><strong>Text-to-video (T2V)</strong>: промпт → клип (Sora, Veo, CogVideoX, HunyuanVideo, Wan)</li>
+      <li><strong>Image-to-video (I2V)</strong>: оживление картинки, первый кадр задан (Stable Video Diffusion)</li>
+      <li><strong>Предсказание кадров</strong> (video prediction): по прошлым кадрам — будущие; для роботов и world models</li>
+      <li><strong>Интерполяция кадров</strong> и повышение FPS; <strong>video super-resolution</strong></li>
+      <li><strong>Video-to-video</strong>: перенос стиля, редактирование по тексту, управление позой/глубиной (ControlNet-подобные)</li>
+      <li><strong>Безусловная генерация</strong>: исследовательская постановка (UCF-101, SkyTimelapse)</li>
+    </ul>
+    <p>Видео — тензор T×H×W×3: 5 секунд 720p при 24 fps — это 120 кадров ≈ 330 млн чисел.</p>
+  </div>
 
+  <div class="block">
+    <h2>🔷 2. Временная согласованность</h2>
+    <p>Главная трудность: кадр по отдельности — изображение, но вместе они должны сохранять <strong>идентичность объектов</strong>, форму, освещение и давать <strong>правдоподобное движение</strong>.</p>
+    <ul>
+      <li><strong>Покадровая генерация</strong> image-моделью → мерцание (flicker), «плывущие» текстуры, объекты меняются</li>
+      <li><strong>Temporal attention / 3D-свёртки</strong> связывают кадры внутри модели</li>
+      <li><strong>Совместная генерация всего клипа</strong> (а не кадр за кадром) — шум денойзится сразу для всех кадров</li>
+      <li><strong>Пространственно-временной VAE</strong>: латенты сжаты и по времени, декодер сглаживает переходы</li>
+      <li><strong>Длинные видео</strong>: генерация окнами с перекрытием, условие на последние кадры, иерархия «ключевые кадры → интерполяция»</li>
+    </ul>
+    <blockquote>Модель учит статистику пикселей, а не законы физики: объекты проходят друг сквозь друга, появляются и исчезают, число пальцев меняется.</blockquote>
+  </div>
+
+  <div class="block">
+    <h2>🔷 3. Эволюция подходов</h2>
+    <table>
+      <tr><th>Подход</th><th>Идея</th><th>Примеры</th></tr>
+      <tr><td>GAN-видео</td><td>генератор кадров + дискриминаторы по кадру и по клипу; разделение контента и движения</td><td>VGAN, TGAN, MoCoGAN, DVD-GAN, StyleGAN-V</td></tr>
+      <tr><td>Авторегрессия по токенам</td><td>VQ-VAE/VQGAN кодирует видео в дискретные токены, трансформер предсказывает следующий</td><td>VideoGPT, CogVideo, Phenaki, VideoPoet</td></tr>
+      <tr><td>Пиксельная видео-диффузия</td><td>3D U-Net с факторизованным вниманием, каскад апсемплеров</td><td>VDM, Imagen Video, Make-A-Video</td></tr>
+      <tr><td>Латентная видео-диффузия</td><td>диффузия в латентах VAE; часто дообучение T2I-модели временными слоями</td><td>Video LDM, AnimateDiff, Stable Video Diffusion</td></tr>
+      <tr><td>Диффузионные трансформеры (DiT)</td><td>видео → пространственно-временные патчи → трансформер; flow matching</td><td>Sora, CogVideoX, HunyuanVideo, Wan, Open-Sora</td></tr>
+    </table>
+    <p>GAN — быстро, но нестабильно и мало разнообразия; авторегрессия — долгий инференс и накопление ошибок; диффузия — текущий стандарт качества. См. <a href="diffusion_models_cheatsheet.html">диффузионные модели</a>, <a href="gan_cheatsheet.html">GAN</a>.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 4. Видео-диффузия: архитектура</h2>
+    <ul>
+      <li><strong>3D U-Net</strong> (VDM): 2D-свёртки 3×3 «раздуваются» в 1×3×3 (пространство), добавляются временные слои; внимание по пространству внутри кадра + по времени для каждой позиции</li>
+      <li><strong>Inflation</strong>: веса берутся из T2I-модели, временные слои инициализируются так, чтобы сначала быть тождественными (zero-init выхода)</li>
+      <li><strong>Совместное обучение</strong> на картинках (как видео из 1 кадра) и видео — больше разнообразия контента</li>
+      <li><strong>Каскад</strong>: базовая модель низкого разрешения/FPS → временной апсемплинг → пространственный SR</li>
+      <li><strong>Условия</strong>: текст (T5/CLIP через cross-attention), первый кадр (конкатенация латента), FPS и «сила движения» как скалярные эмбеддинги</li>
+    </ul>
+    <p>Цель как у обычной диффузии: ‖ε − ε<sub>θ</sub>(x<sub>t</sub>, t, c)‖² (или v-prediction / flow matching), но x — латент всего клипа.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 5. Внимание: полное vs факторизованное</h2>
+    <table>
+      <tr><th>Вариант</th><th>Сложность</th><th>Свойства</th></tr>
+      <tr><td>Полное 3D</td><td>O((T·H·W)²)</td><td>лучше моделирует сложное движение; очень дорого</td></tr>
+      <tr><td>Факторизованное (spatial → temporal)</td><td>O(T·(HW)² + HW·T²)</td><td>дёшево, легко дообучить T2I; хуже для сложных пространственно-временных связей</td></tr>
+      <tr><td>Окно / разреженное</td><td>между ними</td><td>локальные окна по пространству-времени</td></tr>
+    </table>
+    <p>Современные DiT (CogVideoX, HunyuanVideo) используют полное 3D-внимание + 3D RoPE на сильно сжатых латентах, опираясь на FlashAttention и параллелизм по последовательности.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 6. Латенты и патчи: считаем токены</h2>
+    <p>Пример CogVideoX: 49 кадров 480×720. 3D VAE сжимает в 4× по времени и 8× по пространству:</p>
+    <ul>
+      <li>латент: (1 + 48/4) × 60 × 90 = 13 × 60 × 90</li>
+      <li>патчи 2×2: 13 × 30 × 45 = <strong>17 550 токенов</strong></li>
+      <li>без VAE было бы ≈ 17 млн пикселей на канал — диффузия напрямую неподъёмна</li>
+    </ul>
+    <p>Приёмы удешевления: сильное сжатие VAE (до 4×16×16), низкое разрешение + апсемплинг, меньше FPS + интерполяция, дистилляция в несколько шагов, tiling при декодировании.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 7. Код: image-to-video (diffusers)</h2>
+<pre><code>import torch
+from diffusers import StableVideoDiffusionPipeline
+from diffusers.utils import load_image, export_to_video
+
+pipe = StableVideoDiffusionPipeline.from_pretrained(
+    "stabilityai/stable-video-diffusion-img2vid-xt",
+    torch_dtype=torch.float16, variant="fp16")
+pipe.enable_model_cpu_offload()          # экономия видеопамяти
+
+image = load_image("input.jpg").resize((1024, 576))
+generator = torch.manual_seed(42)
+frames = pipe(image,
+              decode_chunk_size=8,       # меньше = меньше памяти
+              motion_bucket_id=127,      # больше = больше движения
+              noise_aug_strength=0.02,
+              generator=generator).frames[0]
+export_to_video(frames, "generated.mp4", fps=7)
+</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 8. Код: text-to-video (diffusers)</h2>
+<pre><code>import torch
+from diffusers import CogVideoXPipeline
+from diffusers.utils import export_to_video
+
+pipe = CogVideoXPipeline.from_pretrained(
+    "THUDM/CogVideoX-2b", torch_dtype=torch.float16)
+pipe.enable_model_cpu_offload()
+pipe.vae.enable_tiling()                 # декодирование тайлами
+
+video = pipe(
+    prompt="A panda playing guitar in a bamboo forest, cinematic",
+    num_frames=49,
+    num_inference_steps=50,
+    guidance_scale=6.0,
+    generator=torch.Generator(device="cuda").manual_seed(42),
+).frames[0]
+export_to_video(video, "panda.mp4", fps=8)
+</code></pre>
+    <p>Реальный бюджет: десятки секунд — минуты на клип на одной GPU; длинные подробные промпты работают лучше коротких.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 9. Метрики</h2>
+    <table>
+      <tr><th>Метрика</th><th>Что измеряет</th></tr>
+      <tr><td><strong>FVD</strong> (Fréchet Video Distance)</td><td>расстояние Фреше между гауссианами признаков I3D реальных и сгенерированных клипов; меньше — лучше. Чувствительна к качеству кадров сильнее, чем к движению</td></tr>
+      <tr><td>FID по кадрам / IS</td><td>качество отдельных кадров, без учёта времени</td></tr>
+      <tr><td>CLIPSIM / CLIP score</td><td>соответствие кадров промпту</td></tr>
+      <tr><td>VBench</td><td>набор осей: согласованность субъекта и фона, плавность и динамика движения, эстетика, соответствие тексту</td></tr>
+      <tr><td>PSNR / SSIM / LPIPS</td><td>для предсказания кадров и SR, когда есть эталон</td></tr>
+      <tr><td>Человеческая оценка</td><td>side-by-side сравнения; ловит нарушения физики, которые FVD пропускает</td></tr>
+    </table>
+    <p>FVD зависит от числа клипов, длины и разрешения — сравнивайте только при одинаковом протоколе.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 10. Данные и вычисления</h2>
+    <ul>
+      <li><strong>Датасеты</strong>: WebVid-10M (снят с публичного доступа), Panda-70M, HD-VILA-100M, InternVid, UCF-101, Kinetics</li>
+      <li><strong>Курация важнее объёма</strong>: нарезка по сменам сцен, фильтр статичных клипов (optical flow), водяных знаков, текста на экране, низкой эстетики</li>
+      <li><strong>Переописание</strong>: подробные подписи от VLM сильно улучшают следование промпту</li>
+      <li><strong>Обучение поэтапно</strong>: картинки → короткие низкого разрешения видео → длинные HD</li>
+      <li><strong>Вычисления</strong>: тысячи GPU для фронтир-моделей; дообучение (LoRA, AnimateDiff-модули) — на одной-нескольких GPU</li>
+      <li><strong>Этика</strong>: дипфейки, согласие людей в кадре, авторские права на обучающие видео, водяные знаки/C2PA</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 11. Типичные ошибки</h2>
+    <div class="good-vs-bad">
+      <div class="bad">
+        <h3>Плохо</h3>
+        <ul>
+          <li>Генерировать кадры независимо image-моделью</li>
+          <li>Сравнивать FVD из разных статей с разным протоколом</li>
+          <li>Оценивать только по метрикам без просмотра</li>
+          <li>Сразу учить HD и длинные клипы</li>
+        </ul>
+      </div>
+      <div class="good">
+        <h3>Хорошо</h3>
+        <ul>
+          <li>Временные слои, генерация всего клипа в латенте</li>
+          <li>Фиксированный протокол FVD + VBench + люди</li>
+          <li>Отдельно проверять физику, идентичность, мерцание</li>
+          <li>Прогрессивное обучение и курация данных</li>
+        </ul>
+      </div>
     </div>
-<div class="block">
-    <h2>🔷 2. Метрики для мониторинга</h2>
-    <table>
-  <tr><th>Категория</th><th>Метрики</th></tr>
-  <tr><td><strong>Performance</strong></td><td>Accuracy, F1, AUC, MAE, latency</td></tr>
-  <tr><td><strong>Data quality</strong></td><td>Missing values, outliers, schema violations</td></tr>
-  <tr><td><strong>Data drift</strong></td><td>KL divergence, PSI, KS test</td></tr>
-  <tr><td><strong>Infrastructure</strong></td><td>CPU, memory, throughput, errors</td></tr>
-  <tr><td><strong>Business</strong></td><td>Revenue, conversion, user satisfaction</td></tr>
-</table>
+    <p>См. также: <a href="video_audio_models_cheatsheet.html">модели для видео и аудио</a>, <a href="vae_cheatsheet.html">VAE</a>.</p>
   </div>
-
-  <div class="block">
-    <h2>🔷 3. Data drift detection</h2>
-    <pre><code>from scipy.stats import ks_2samp
-import numpy as np
-
-def detect_data_drift(reference_data, current_data, threshold=0.05):
-    """
-    Kolmogorov-Smirnov тест для drift detection
-    """
-    results = {}
-    
-    for column in reference_data.columns:
-        # KS test
-        statistic, pvalue = ks_2samp(
-            reference_data[column],
-            current_data[column]
-        )
-        
-        # Drift detected если p-value < threshold
-        drift = pvalue < threshold
-        
-        results[column] = {
-            'statistic': statistic,
-            'pvalue': pvalue,
-            'drift_detected': drift
-        }
-    
-    return results
-
-# PSI (Population Stability Index)
-def calculate_psi(expected, actual, bins=10):
-    """
-    PSI = sum((actual% - expected%) * ln(actual% / expected%))
-    """
-    # Бинирование
-    breakpoints = np.linspace(expected.min(), expected.max(), bins + 1)
-    
-    expected_percents = np.histogram(expected, breakpoints)[0] / len(expected)
-    actual_percents = np.histogram(actual, breakpoints)[0] / len(actual)
-    
-    # Avoid division by zero
-    expected_percents = np.where(expected_percents == 0, 0.0001, expected_percents)
-    actual_percents = np.where(actual_percents == 0, 0.0001, actual_percents)
-    
-    psi = np.sum((actual_percents - expected_percents) * np.log(actual_percents / expected_percents))
-    
-    return psi
-
-# Интерпретация PSI
-# PSI < 0.1: no significant change
-# 0.1 < PSI < 0.2: moderate change
-# PSI > 0.2: significant change</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 4. Performance monitoring</h2>
-    <pre><code>import mlflow
-from sklearn.metrics import accuracy_score, f1_score
-
-class ModelMonitor:
-    def __init__(self, model_name, threshold=0.05):
-        self.model_name = model_name
-        self.threshold = threshold
-        self.baseline_metrics = {}
-    
-    def set_baseline(self, y_true, y_pred):
-        """Установить baseline метрики"""
-        self.baseline_metrics = {
-            'accuracy': accuracy_score(y_true, y_pred),
-            'f1': f1_score(y_true, y_pred, average='weighted')
-        }
-    
-    def check_performance(self, y_true, y_pred):
-        """Проверить текущую performance"""
-        current_metrics = {
-            'accuracy': accuracy_score(y_true, y_pred),
-            'f1': f1_score(y_true, y_pred, average='weighted')
-        }
-        
-        # Сравнение с baseline
-        alerts = []
-        for metric_name in current_metrics:
-            baseline = self.baseline_metrics.get(metric_name)
-            current = current_metrics[metric_name]
-            
-            if baseline and (baseline - current) > self.threshold:
-                alerts.append({
-                    'metric': metric_name,
-                    'baseline': baseline,
-                    'current': current,
-                    'degradation': baseline - current
-                })
-        
-        # Log в MLflow
-        with mlflow.start_run():
-            for metric_name, value in current_metrics.items():
-                mlflow.log_metric(metric_name, value)
-        
-        return {'metrics': current_metrics, 'alerts': alerts}</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 5. Prometheus & Grafana</h2>
-    <pre><code># Экспорт метрик в Prometheus
-from prometheus_client import Counter, Histogram, Gauge
-
-# Метрики
-predictions_total = Counter('model_predictions_total', 'Total predictions')
-prediction_latency = Histogram('model_latency_seconds', 'Prediction latency')
-model_accuracy = Gauge('model_accuracy', 'Current model accuracy')
-
-# В коде модели
-@prediction_latency.time()
-def predict(data):
-    predictions_total.inc()
-    result = model.predict(data)
-    return result
-
-# Обновление accuracy
-def update_metrics(accuracy_value):
-    model_accuracy.set(accuracy_value)</code></pre>
-
-<p><strong>Grafana dashboard</strong>:</p>
-<ul>
-  <li>Predictions per second: rate(predictions_total[1m])</li>
-  <li>P95 latency: histogram_quantile(0.95, prediction_latency)</li>
-  <li>Accuracy trend: model_accuracy</li>
-</ul>
-  </div>
-
-  <div class="block">
-    <h2>🔷 6. Alerting strategies</h2>
-    <pre><code># Настройка алертов
-from datetime import datetime, timedelta
-
-class AlertManager:
-    def __init__(self):
-        self.alert_rules = []
-        self.alert_history = []
-    
-    def add_rule(self, name, condition, severity='warning'):
-        """Добавить правило алерта"""
-        self.alert_rules.append({
-            'name': name,
-            'condition': condition,
-            'severity': severity
-        })
-    
-    def check_alerts(self, metrics):
-        """Проверить условия алертов"""
-        alerts = []
-        
-        for rule in self.alert_rules:
-            if rule['condition'](metrics):
-                alert = {
-                    'name': rule['name'],
-                    'severity': rule['severity'],
-                    'timestamp': datetime.now(),
-                    'metrics': metrics
-                }
-                alerts.append(alert)
-                self.alert_history.append(alert)
-                
-                # Отправка уведомления
-                self.send_notification(alert)
-        
-        return alerts
-    
-    def send_notification(self, alert):
-        """Отправить уведомление (Slack, email, PagerDuty)"""
-        # Slack webhook
-        import requests
-        webhook_url = "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
-        
-        message = {
-            'text': f"🚨 Alert: {alert['name']}",
-            'attachments': [{
-                'color': 'danger' if alert['severity'] == 'critical' else 'warning',
-                'fields': [
-                    {'title': 'Severity', 'value': alert['severity']},
-                    {'title': 'Time', 'value': str(alert['timestamp'])}
-                ]
-            }]
-        }
-        
-        requests.post(webhook_url, json=message)
-
-# Пример использования
-monitor = AlertManager()
-
-# Добавляем правила
-monitor.add_rule(
-    'Low Accuracy',
-    lambda m: m.get('accuracy', 1.0) < 0.85,
-    severity='critical'
-)
-
-monitor.add_rule(
-    'High Latency',
-    lambda m: m.get('latency_p95', 0) > 1.0,
-    severity='warning'
-)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 7. Logging predictions</h2>
-    <pre><code>import logging
-import json
-
-# Настройка logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('model_predictions.log'),
-        logging.StreamHandler()
-    ]
-)
-
-class PredictionLogger:
-    def __init__(self, model_version):
-        self.logger = logging.getLogger('model_predictions')
-        self.model_version = model_version
-    
-    def log_prediction(self, input_data, prediction, probability=None):
-        """Логировать каждое предсказание"""
-        log_entry = {
-            'model_version': self.model_version,
-            'timestamp': datetime.now().isoformat(),
-            'input': input_data.tolist() if hasattr(input_data, 'tolist') else input_data,
-            'prediction': int(prediction),
-            'probability': float(probability) if probability else None
-        }
-        
-        self.logger.info(json.dumps(log_entry))
-    
-    def log_batch(self, inputs, predictions, metadata=None):
-        """Логировать batch предсказаний"""
-        for i, (inp, pred) in enumerate(zip(inputs, predictions)):
-            self.log_prediction(inp, pred)
-
-# Использование
-logger = PredictionLogger(model_version='v1.2.0')
-
-# При каждом предсказании
-result = model.predict(input_data)
-logger.log_prediction(input_data, result)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 8. Model retraining triggers</h2>
-    <pre><code>class RetrainingManager:
-    def __init__(self):
-        self.should_retrain = False
-        self.retrain_reasons = []
-    
-    def check_retrain_conditions(self, metrics, drift_results):
-        """Проверить условия для ретренинга"""
-        reasons = []
-        
-        # 1. Performance degradation
-        if metrics.get('accuracy', 1.0) < 0.85:
-            reasons.append('accuracy_drop')
-        
-        # 2. Data drift
-        drift_count = sum(1 for r in drift_results.values() if r['drift_detected'])
-        if drift_count > len(drift_results) * 0.3:  # >30% features drifted
-            reasons.append('data_drift')
-        
-        # 3. Time-based (30 days since last training)
-        days_since_training = (datetime.now() - self.last_training_date).days
-        if days_since_training > 30:
-            reasons.append('time_based')
-        
-        # 4. Volume (enough new data)
-        if self.new_data_count > 10000:
-            reasons.append('new_data_available')
-        
-        if reasons:
-            self.should_retrain = True
-            self.retrain_reasons = reasons
-            self.trigger_retraining()
-        
-        return {'should_retrain': self.should_retrain, 'reasons': reasons}
-    
-    def trigger_retraining(self):
-        """Запустить процесс ретренинга"""
-        print(f"Triggering retraining: {', '.join(self.retrain_reasons)}")
-        # Запуск ML pipeline
-        # trigger_airflow_dag('model_retraining')
-        # или
-        # trigger_kubeflow_pipeline('retrain_model_v2')</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 9. Tools для monitoring</h2>
-    <table>
-  <tr><th>Tool</th><th>Назначение</th></tr>
-  <tr><td><strong>Evidently AI</strong></td><td>Data & model drift detection</td></tr>
-  <tr><td><strong>WhyLabs</strong></td><td>ML observability platform</td></tr>
-  <tr><td><strong>Arize AI</strong></td><td>ML monitoring & explainability</td></tr>
-  <tr><td><strong>Fiddler</strong></td><td>ML model performance monitoring</td></tr>
-  <tr><td><strong>Neptune.ai</strong></td><td>Experiment tracking & monitoring</td></tr>
-  <tr><td><strong>Weights & Biases</strong></td><td>Experiment tracking + production monitoring</td></tr>
-</table>
-
-<pre><code># Пример с Evidently
-from evidently.dashboard import Dashboard
-from evidently.tabs import DataDriftTab
-
-dashboard = Dashboard(tabs=[DataDriftTab()])
-dashboard.calculate(reference_data, current_data)
-dashboard.save('data_drift_report.html')</code></pre>
-  </div>
-
-
 
 </div>
 </body>

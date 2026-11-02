@@ -56,506 +56,312 @@
 </head>
 <body>
 <div class="container">
-  <h1>⚖️ Fairness в ML (Справедливость)</h1>
-  <div class="subtitle">📅 Январь 2026</div>
+<h1>⚖️ Fairness в ML (справедливость моделей)</h1>
+<div class="subtitle">📅 Январь 2026</div>
 
-  <div class="block">
-    <h2>🔷 1. Что такое Fairness в ML</h2>
-    <p><strong>Fairness (справедливость)</strong> — отсутствие дискриминации и предвзятости в предсказаниях ML-моделей по защищённым признакам.</p>
-    <ul>
-      <li><strong>Проблема</strong>: модели могут усиливать существующие предрассудки</li>
-      <li><strong>Защищённые признаки</strong>: раса, пол, возраст, религия, национальность</li>
-      <li><strong>Последствия</strong>: юридические риски, репутационный ущерб</li>
-      <li><strong>Решение</strong>: измерение и устранение bias</li>
-    </ul>
-    <blockquote>Модели обучаются на исторических данных, которые могут отражать системную дискриминацию. Без контроля ML может автоматизировать и масштабировать несправедливость.</blockquote>
-
-    </div>
 <div class="block">
-    <h2>🔷 2. Типы Bias (предвзятости)</h2>
-    <table>
-      <tr><th>Тип</th><th>Описание</th><th>Пример</th></tr>
-      <tr><td><strong>Historical Bias</strong></td><td>Предвзятость в данных</td><td>Меньше женщин в IT</td></tr>
-      <tr><td><strong>Representation Bias</strong></td><td>Неравное представление групп</td><td>Мало тёмнокожих в датасете лиц</td></tr>
-      <tr><td><strong>Measurement Bias</strong></td><td>Неточные измерения</td><td>Оценка creditworthiness</td></tr>
-      <tr><td><strong>Aggregation Bias</strong></td><td>Одна модель для всех</td><td>Медицина для мужчин</td></tr>
-      <tr><td><strong>Evaluation Bias</strong></td><td>Неправильные метрики</td><td>Accuracy на несбалансированных данных</td></tr>
-      <tr><td><strong>Deployment Bias</strong></td><td>Неправильное применение</td><td>Модель в другом контексте</td></tr>
-    </table>
-  </div>
+<h2>🔷 1. Что такое Fairness в ML</h2>
+<p><strong>Fairness (справедливость)</strong> — отсутствие дискриминации в решениях модели по защищённым признакам A (пол, раса, возраст, религия, национальность, инвалидность).</p>
+<ul>
+<li><strong>Проблема</strong>: модели учатся на исторических данных и могут автоматизировать и масштабировать дискриминацию</li>
+<li><strong>Где критично</strong>: кредитование, найм, медицина, суд, страхование</li>
+<li><strong>Group fairness</strong>: равенство статистик (доля одобрений, TPR, FPR, PPV) между группами</li>
+<li><strong>Individual fairness</strong>: похожие люди → похожие предсказания (условие Липшица: d(f(x), f(x′)) ≤ L·d(x, x′))</li>
+<li><strong>Counterfactual fairness</strong>: прогноз не меняется, если «переключить» A при прочих равных (в причинной модели)</li>
+<li><strong>Последствия</strong>: вред людям, юридические и репутационные риски</li>
+</ul>
+</div>
 
-  <div class="block">
-    <h2>🔷 3. Метрики справедливости</h2>
-    <p><strong>1. Demographic Parity (Демографический паритет)</strong></p>
-    <pre><code># Вероятность положительного предсказания одинакова
-P(ŷ=1 | A=0) = P(ŷ=1 | A=1)
+<div class="block">
+<h2>🔷 2. Источники bias</h2>
+<table>
+<tr><th>Тип</th><th>Описание</th><th>Пример</th></tr>
+<tr><td><strong>Historical</strong></td><td>Данные отражают прошлую дискриминацию</td><td>Меньше женщин в IT → модель найма их «штрафует»</td></tr>
+<tr><td><strong>Representation / sampling</strong></td><td>Группы неравно представлены в выборке</td><td>Мало тёмнокожих лиц в датасете</td></tr>
+<tr><td><strong>Measurement / label</strong></td><td>Признак или метка — смещённый прокси цели</td><td>Расходы на лечение как прокси «нужды в помощи»</td></tr>
+<tr><td><strong>Proxy-признаки</strong></td><td>Коррелируют с A</td><td>Почтовый индекс, имя, покупки</td></tr>
+<tr><td><strong>Aggregation</strong></td><td>Одна модель для разных популяций</td><td>Медицинская норма, выведенная на мужчинах</td></tr>
+<tr><td><strong>Evaluation</strong></td><td>Неподходящие метрики/бенчмарки</td><td>Общая accuracy скрывает провал малой группы</td></tr>
+<tr><td><strong>Algorithmic</strong></td><td>Модель усиливает перекос</td><td>Регуляризация «жертвует» малой группой</td></tr>
+<tr><td><strong>Deployment / feedback loops</strong></td><td>Применение вне контекста; решения модели формируют будущие данные</td><td>Predictive policing: больше патрулей → больше задержаний → «подтверждение»</td></tr>
+</table>
+<p><strong>Удалить A недостаточно</strong> («fairness through unawareness»): модель восстановит его через прокси, а без A нельзя измерить и исправить неравенство.</p>
+</div>
 
-# где A - защищённый признак (например, пол)</code></pre>
-    <p><strong>2. Equal Opportunity</strong></p>
-    <pre><code># Равная TPR (True Positive Rate) для всех групп
-P(ŷ=1 | y=1, A=0) = P(ŷ=1 | y=1, A=1)</code></pre>
-    <p><strong>3. Equalized Odds</strong></p>
-    <pre><code># Равные TPR и FPR для всех групп
-P(ŷ=1 | y=k, A=0) = P(ŷ=1 | y=k, A=1) для k∈{0,1}</code></pre>
-    <p><strong>4. Predictive Parity</strong></p>
-    <pre><code># Равная PPV (Positive Predictive Value)
-P(y=1 | ŷ=1, A=0) = P(y=1 | ŷ=1, A=1)</code></pre>
-  </div>
+<div class="block">
+<h2>🔷 3. Критерии справедливости</h2>
+<table>
+<tr><th>Критерий</th><th>Формула</th><th>Смысл</th></tr>
+<tr><td><strong>Demographic (statistical) parity</strong></td><td>P(Ŷ=1|A=0) = P(Ŷ=1|A=1)</td><td>Равная доля положительных решений (Ŷ ⊥ A)</td></tr>
+<tr><td><strong>Disparate impact ratio</strong></td><td>P(Ŷ=1|A=unpriv) / P(Ŷ=1|A=priv)</td><td>Правило 80%: ≥ 0.8</td></tr>
+<tr><td><strong>Equal opportunity</strong></td><td>P(Ŷ=1|Y=1, A=0) = P(Ŷ=1|Y=1, A=1)</td><td>Равный TPR: достойные имеют равные шансы</td></tr>
+<tr><td><strong>Equalized odds</strong></td><td>P(Ŷ=1|Y=y, A=0) = P(Ŷ=1|Y=y, A=1), y∈{0,1}</td><td>Равные TPR и FPR (Ŷ ⊥ A | Y)</td></tr>
+<tr><td><strong>Predictive parity</strong></td><td>P(Y=1|Ŷ=1, A=0) = P(Y=1|Ŷ=1, A=1)</td><td>Равный PPV (precision)</td></tr>
+<tr><td><strong>Calibration within groups</strong></td><td>P(Y=1|S=s, A=a) = s</td><td>Скор означает одно и то же в каждой группе</td></tr>
+</table>
+<p>На практике считают <strong>разность</strong> (difference, цель ≈ 0, часто &lt; 0.1) или <strong>отношение</strong> (ratio, цель ≈ 1) метрики между группами; для нескольких групп — max − min.</p>
+</div>
 
-  <div class="block">
-    <h2>🔷 4. Измерение Bias</h2>
-    <pre><code>from sklearn.metrics import confusion_matrix
-import numpy as np
+<div class="block">
+<h2>🔷 4. Несовместимость критериев и выбор</h2>
+<ul>
+<li><strong>Теоремы невозможности</strong> (Kleinberg et al.; Chouldechova, 2016–2017): если базовые доли P(Y=1|A) в группах различаются, калибровка (predictive parity) и равенство FPR/FNR одновременно невозможны — кроме идеального классификатора</li>
+<li><strong>Demographic parity vs точность</strong>: при разных базовых долях равенство одобрений достигается ценой ошибок (кредиты тем, кто не вернёт) — это может навредить самой группе; parity можно выполнить формально, случайно выбирая людей</li>
+<li><strong>COMPAS</strong>: модель была откалибрована по группам, но FPR для афроамериканцев был выше — спор ProPublica vs Northpointe иллюстрирует несовместимость</li>
+</ul>
+<table>
+<tr><th>Ситуация</th><th>Критерий</th></tr>
+<tr><td>Важен равный доступ к благу, метки исторически смещены</td><td>Demographic parity</td></tr>
+<tr><td>Важно не упустить достойных (найм, кредит)</td><td>Equal opportunity</td></tr>
+<tr><td>Важны оба типа ошибок (суд, медицина)</td><td>Equalized odds</td></tr>
+<tr><td>Решение принимает человек по скору</td><td>Calibration / predictive parity</td></tr>
+</table>
+</div>
 
-def measure_fairness(y_true, y_pred, protected_attr):
-    groups = np.unique(protected_attr)
-    
-    for group in groups:
-        mask = (protected_attr == group)
-        y_true_group = y_true[mask]
-        y_pred_group = y_pred[mask]
-        
-        # Метрики
-        tn, fp, fn, tp = confusion_matrix(y_true_group, y_pred_group).ravel()
-        
-        tpr = tp / (tp + fn) if (tp + fn) > 0 else 0  # True Positive Rate
-        fpr = fp / (fp + tn) if (fp + tn) > 0 else 0  # False Positive Rate
-        ppv = tp / (tp + fp) if (tp + fp) > 0 else 0  # Precision
-        
-        print(f"Group {group}:")
-        print(f"  TPR (Recall): {tpr:.3f}")
-        print(f"  FPR: {fpr:.3f}")
-        print(f"  PPV (Precision): {ppv:.3f}")
-        print(f"  Selection Rate: {y_pred_group.mean():.3f}")
+<div class="block">
+<h2>🔷 5. Измерение bias вручную</h2>
+<pre><code>import numpy as np
+import pandas as pd
 
-# Demographic Parity Difference
-def demographic_parity_difference(y_pred, protected_attr):
-    groups = np.unique(protected_attr)
-    rates = []
-    for group in groups:
-        mask = (protected_attr == group)
-        rate = y_pred[mask].mean()
-        rates.append(rate)
-    return abs(rates[0] - rates[1])
+def group_report(y_true, y_pred, a):
+    """Метрики по группам защищённого признака a."""
+    rows = {}
+    for g in np.unique(a):
+        m = a == g
+        yt, yp = y_true[m], y_pred[m]
+        tp = np.sum((yt == 1) &amp; (yp == 1)); fn = np.sum((yt == 1) &amp; (yp == 0))
+        fp = np.sum((yt == 0) &amp; (yp == 1)); tn = np.sum((yt == 0) &amp; (yp == 0))
+        rows[g] = {
+            'n': m.sum(),
+            'base_rate': yt.mean(),
+            'selection_rate': yp.mean(),
+            'TPR': tp / max(tp + fn, 1),
+            'FPR': fp / max(fp + tn, 1),
+            'PPV': tp / max(tp + fp, 1),
+        }
+    df = pd.DataFrame(rows).T
+    summary = {
+        'dp_difference': df.selection_rate.max() - df.selection_rate.min(),
+        'di_ratio': df.selection_rate.min() / df.selection_rate.max(),
+        'eo_difference': df.TPR.max() - df.TPR.min(),
+        'eodds_difference': max(df.TPR.max() - df.TPR.min(),
+                                df.FPR.max() - df.FPR.min()),
+    }
+    return df, summary
 
-# Disparate Impact Ratio
-def disparate_impact_ratio(y_pred, protected_attr, privileged=1):
-    privileged_rate = y_pred[protected_attr == privileged].mean()
-    unprivileged_rate = y_pred[protected_attr != privileged].mean()
-    return unprivileged_rate / privileged_rate if privileged_rate > 0 else 0
+# Bias в данных до модели: сравнить base_rate по группам
+# df.groupby('gender')['target'].mean()</code></pre>
+</div>
 
-# Правило 80%: ratio > 0.8 считается справедливым</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 5. Библиотеки для Fairness</h2>
-    <p><strong>Fairlearn (Microsoft)</strong></p>
-    <pre><code>pip install fairlearn
-
-from fairlearn.metrics import MetricFrame, selection_rate
+<div class="block">
+<h2>🔷 6. Библиотеки: Fairlearn и AIF360</h2>
+<pre><code># pip install fairlearn
+from fairlearn.metrics import (MetricFrame, selection_rate,
+    true_positive_rate, false_positive_rate,
+    demographic_parity_difference, equalized_odds_difference)
 from sklearn.metrics import accuracy_score
 
-# Оценка метрик по группам
-metric_frame = MetricFrame(
-    metrics={
-        'accuracy': accuracy_score,
-        'selection_rate': selection_rate
-    },
-    y_true=y_test,
-    y_pred=y_pred,
-    sensitive_features=protected_attr
-)
-
-print(metric_frame.by_group)
-print(f"Difference: {metric_frame.difference()}")
-print(f"Ratio: {metric_frame.ratio()}")</code></pre>
-
-    <p><strong>AIF360 (IBM)</strong></p>
-    <pre><code>pip install aif360
-
+mf = MetricFrame(
+    metrics={'accuracy': accuracy_score, 'selection_rate': selection_rate,
+             'TPR': true_positive_rate, 'FPR': false_positive_rate},
+    y_true=y_test, y_pred=y_pred, sensitive_features=A_test)
+print(mf.by_group)
+print(mf.difference(), mf.ratio())
+print(demographic_parity_difference(y_test, y_pred, sensitive_features=A_test))
+print(equalized_odds_difference(y_test, y_pred, sensitive_features=A_test))</code></pre>
+<pre><code># pip install aif360
 from aif360.datasets import BinaryLabelDataset
-from aif360.metrics import BinaryLabelDatasetMetric
+from aif360.metrics import BinaryLabelDatasetMetric, ClassificationMetric
 
-dataset = BinaryLabelDataset(
-    df=df,
-    label_names=['target'],
-    protected_attribute_names=['protected_attr']
-)
+priv, unpriv = [{'gender': 1}], [{'gender': 0}]
+ds = BinaryLabelDataset(df=df, label_names=['target'],
+                        protected_attribute_names=['gender'])
+m = BinaryLabelDatasetMetric(ds, unprivileged_groups=unpriv,
+                             privileged_groups=priv)
+print(m.statistical_parity_difference(), m.disparate_impact(),
+      m.consistency())                       # consistency — individual fairness (kNN)
 
-metric = BinaryLabelDatasetMetric(
-    dataset,
-    unprivileged_groups=[{'protected_attr': 0}],
-    privileged_groups=[{'protected_attr': 1}]
-)
+ds_pred = ds.copy(); ds_pred.labels = y_pred.reshape(-1, 1)
+cm = ClassificationMetric(ds, ds_pred, unprivileged_groups=unpriv,
+                          privileged_groups=priv)
+print(cm.equal_opportunity_difference(), cm.average_odds_difference())</code></pre>
+</div>
 
-print(f"Disparate Impact: {metric.disparate_impact()}")
-print(f"Mean Difference: {metric.mean_difference()}")</code></pre>
-  </div>
+<div class="block">
+<h2>🔷 7. Pre-processing: исправляем данные</h2>
+<ul>
+<li><strong>Reweighing</strong>: вес w(a, y) = P(A=a)·P(Y=y) / P(A=a, Y=y) — делает A и Y независимыми во взвешенных данных</li>
+<li><strong>Resampling</strong>: over/under-sampling групп и комбинаций (A, Y)</li>
+<li><strong>Disparate Impact Remover</strong>: выравнивает распределения признаков между группами (repair_level ∈ [0, 1])</li>
+<li><strong>Learning Fair Representations (LFR)</strong>: латентное представление, сохраняющее информацию о Y и скрывающее A</li>
+</ul>
+<pre><code>from aif360.algorithms.preprocessing import (Reweighing,
+    DisparateImpactRemover, LFR)
 
-  <div class="block">
-    <h2>🔷 6. Preprocessing: Удаление Bias из данных</h2>
-    <p><strong>Reweighting</strong></p>
-    <pre><code>from aif360.algorithms.preprocessing import Reweighing
+rw = Reweighing(unprivileged_groups=unpriv, privileged_groups=priv)
+ds_rw = rw.fit_transform(ds_train)
+model.fit(X_train, y_train, sample_weight=ds_rw.instance_weights)
 
-# Присваивание весов для баланса групп
-RW = Reweighing(
-    unprivileged_groups=[{'protected_attr': 0}],
-    privileged_groups=[{'protected_attr': 1}]
-)
-dataset_transf = RW.fit_transform(dataset)
+ds_dir = DisparateImpactRemover(repair_level=1.0).fit_transform(ds_train)
+ds_lfr = LFR(unprivileged_groups=unpriv, privileged_groups=priv).fit_transform(ds_train)
 
-# Обучение с весами
-model.fit(X_train, y_train, sample_weight=dataset_transf.instance_weights)</code></pre>
+# Простой resampling: выровнять размеры групп (A, Y)
+from sklearn.utils import resample
+parts = [resample(g, n_samples=df.groupby(['gender', 'target']).size().max(),
+                  replace=True, random_state=0)
+         for _, g in df.groupby(['gender', 'target'])]
+df_bal = pd.concat(parts)</code></pre>
+</div>
 
-    <p><strong>Learning Fair Representations (LFR)</strong></p>
-    <pre><code>from aif360.algorithms.preprocessing import LearningFairRepresentations
-
-# Преобразование признаков для удаления bias
-LFR = LearningFairRepresentations(
-    unprivileged_groups=[{'protected_attr': 0}],
-    privileged_groups=[{'protected_attr': 1}]
-)
-dataset_transf = LFR.fit_transform(dataset)
-
-# Новые "честные" признаки
-X_fair = dataset_transf.features</code></pre>
-
-    <p><strong>Disparate Impact Remover</strong></p>
-    <pre><code>from aif360.algorithms.preprocessing import DisparateImpactRemover
-
-# Изменение распределения признаков
-DIR = DisparateImpactRemover(repair_level=1.0)
-dataset_transf = DIR.fit_transform(dataset)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 7. In-processing: Справедливое обучение</h2>
-    <p><strong>Adversarial Debiasing</strong></p>
-    <pre><code>from aif360.algorithms.inprocessing import AdversarialDebiasing
-
-# Нейросеть с adversarial компонентой
-sess = tf.Session()
-debiaser = AdversarialDebiasing(
-    privileged_groups=[{'protected_attr': 1}],
-    unprivileged_groups=[{'protected_attr': 0}],
-    scope_name='debiaser',
-    debias=True,
-    sess=sess
-)
-debiaser.fit(dataset_train)
-dataset_pred = debiaser.predict(dataset_test)</code></pre>
-
-    <p><strong>Prejudice Remover</strong></p>
-    <pre><code>from aif360.algorithms.inprocessing import PrejudiceRemover
-
-# Регуляризация для fairness
-PR = PrejudiceRemover(
-    eta=1.0,  # Сила регуляризации
-    sensitive_attr='protected_attr'
-)
-PR.fit(dataset_train)
-dataset_pred = PR.predict(dataset_test)</code></pre>
-
-    <p><strong>Fairlearn - Reduction</strong></p>
-    <pre><code>from fairlearn.reductions import ExponentiatedGradient, DemographicParity
+<div class="block">
+<h2>🔷 8. In-processing: справедливое обучение</h2>
+<ul>
+<li><strong>Reductions</strong> (Fairlearn): задача с ограничением min loss s.t. |disparity| ≤ ε сводится к последовательности взвешенных задач классификации</li>
+<li><strong>Prejudice Remover</strong>: штраф η·MI(Ŷ; A) в loss</li>
+<li><strong>Adversarial debiasing</strong>: предиктор минимизирует loss, а adversary пытается восстановить A из выхода; предиктор учится его «обманывать»: L = L_pred − λ·L_adv</li>
+</ul>
+<pre><code>from fairlearn.reductions import ExponentiatedGradient, DemographicParity, EqualizedOdds
 from sklearn.linear_model import LogisticRegression
 
-# Оптимизация с ограничениями на fairness
-constraint = DemographicParity()
-mitigator = ExponentiatedGradient(
-    LogisticRegression(),
-    constraint
-)
-
-mitigator.fit(X_train, y_train, sensitive_features=protected_attr_train)
-y_pred = mitigator.predict(X_test)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 8. Post-processing: Коррекция предсказаний</h2>
-    <p><strong>Threshold Optimizer</strong></p>
-    <pre><code>from fairlearn.postprocessing import ThresholdOptimizer
-
-# Разные пороги для разных групп
-postprocessor = ThresholdOptimizer(
-    estimator=model,
-    constraints="demographic_parity",
-    objective="balanced_accuracy_score"
-)
-
-postprocessor.fit(X_train, y_train, sensitive_features=protected_attr_train)
-y_pred_fair = postprocessor.predict(X_test, sensitive_features=protected_attr_test)</code></pre>
-
-    <p><strong>Calibrated Equalized Odds</strong></p>
-    <pre><code>from aif360.algorithms.postprocessing import CalibratedEqOddsPostprocessing
-
-# Калибровка для equalized odds
-CPP = CalibratedEqOddsPostprocessing(
-    unprivileged_groups=[{'protected_attr': 0}],
-    privileged_groups=[{'protected_attr': 1}],
-    cost_constraint='fpr',  # или 'fnr', 'weighted'
-    seed=42
-)
-CPP.fit(dataset_true, dataset_pred)
-dataset_pred_fair = CPP.predict(dataset_pred)</code></pre>
-
-    <p><strong>Reject Option Classification</strong></p>
-    <pre><code>from aif360.algorithms.postprocessing import RejectOptionClassification
-
-# Изменение предсказаний в "сомнительных" случаях
-ROC = RejectOptionClassification(
-    unprivileged_groups=[{'protected_attr': 0}],
-    privileged_groups=[{'protected_attr': 1}],
-    low_class_thresh=0.01,
-    high_class_thresh=0.99,
-    num_class_thresh=100,
-    num_ROC_margin=50,
-    metric_name="Statistical parity difference"
-)
-ROC.fit(dataset_true, dataset_pred)
-dataset_pred_fair = ROC.predict(dataset_pred)</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 9. Практический workflow</h2>
-    <pre><code># 1. Загрузка и исследование данных
-import pandas as pd
-df = pd.read_csv('data.csv')
-
-# Проверка распределения защищённых признаков
-print(df['gender'].value_counts())
-print(df['race'].value_counts())
-
-# 2. Оценка исходного bias
-from fairlearn.metrics import demographic_parity_difference, equalized_odds_difference
-
-# Обучение базовой модели
-model = LogisticRegression()
-model.fit(X_train, y_train)
-y_pred = model.predict(X_test)
-
-# Метрики fairness
-dp_diff = demographic_parity_difference(
-    y_test, y_pred, sensitive_features=protected_attr_test
-)
-eo_diff = equalized_odds_difference(
-    y_test, y_pred, sensitive_features=protected_attr_test
-)
-
-print(f"Demographic Parity Difference: {dp_diff:.3f}")  # Желательно < 0.1
-print(f"Equalized Odds Difference: {eo_diff:.3f}")      # Желательно < 0.1
-
-# 3. Применение mitigation
-from fairlearn.reductions import ExponentiatedGradient, EqualizedOdds
-
-mitigator = ExponentiatedGradient(
-    LogisticRegression(),
-    constraints=EqualizedOdds()
-)
-mitigator.fit(X_train, y_train, sensitive_features=protected_attr_train)
-
-# 4. Оценка после mitigation
+mitigator = ExponentiatedGradient(LogisticRegression(max_iter=1000),
+                                  constraints=EqualizedOdds(difference_bound=0.05))
+mitigator.fit(X_train, y_train, sensitive_features=A_train)
 y_pred_fair = mitigator.predict(X_test)
 
-dp_diff_after = demographic_parity_difference(
-    y_test, y_pred_fair, sensitive_features=protected_attr_test
-)
-eo_diff_after = equalized_odds_difference(
-    y_test, y_pred_fair, sensitive_features=protected_attr_test
-)
+from aif360.algorithms.inprocessing import PrejudiceRemover
+pr = PrejudiceRemover(eta=25.0, sensitive_attr='gender').fit(ds_train)</code></pre>
+<pre><code># Adversarial debiasing в PyTorch (идея Zhang et al., 2018)
+import torch, torch.nn as nn
+pred = nn.Sequential(nn.Linear(d, 64), nn.ReLU(), nn.Linear(64, 1))
+adv = nn.Sequential(nn.Linear(1, 16), nn.ReLU(), nn.Linear(16, 1))
+opt_p = torch.optim.Adam(pred.parameters(), 1e-3)
+opt_a = torch.optim.Adam(adv.parameters(), 1e-3)
+bce, lam = nn.BCEWithLogitsLoss(), 1.0
 
-print(f"After mitigation:")
-print(f"Demographic Parity Difference: {dp_diff_after:.3f}")
-print(f"Equalized Odds Difference: {eo_diff_after:.3f}")
+for x, y, a in loader:                         # a — защищённый признак (float)
+    logit = pred(x).squeeze(1)
+    # 1) шаг adversary: угадать A по выходу предиктора
+    loss_a = bce(adv(logit.detach().unsqueeze(1)).squeeze(1), a)
+    opt_a.zero_grad(); loss_a.backward(); opt_a.step()
+    # 2) шаг предиктора: точность минус успех adversary
+    loss_p = bce(logit, y) - lam * bce(adv(logit.unsqueeze(1)).squeeze(1), a)
+    opt_p.zero_grad(); loss_p.backward(); opt_p.step()
+# Для equalized odds adversary получает ещё и y: adv([logit, y])</code></pre>
+</div>
 
-# 5. Анализ trade-off accuracy vs fairness
+<div class="block">
+<h2>🔷 9. Post-processing: коррекция предсказаний</h2>
+<ul>
+<li><strong>Threshold Optimizer</strong> (Hardt et al., 2016): свой (иногда рандомизированный) порог для каждой группы, выравнивающий TPR/FPR или доли одобрений</li>
+<li><strong>Calibrated Equalized Odds</strong>: сохраняет калибровку, выравнивая взвешенную стоимость ошибок (cost_constraint 'fpr' / 'fnr' / 'weighted')</li>
+<li><strong>Reject Option Classification</strong>: в зоне неопределённости около порога решения меняются в пользу непривилегированной группы</li>
+<li><strong>Плюс</strong>: не нужно переобучать модель. <strong>Минус</strong>: нужен A на инференсе (в ряде юрисдикций запрещено) и явное разное обращение с группами</li>
+</ul>
+<pre><code>from fairlearn.postprocessing import ThresholdOptimizer
+
+to = ThresholdOptimizer(estimator=model, constraints="equalized_odds",
+                        objective="balanced_accuracy_score", prefit=True,
+                        predict_method="predict_proba")
+to.fit(X_val, y_val, sensitive_features=A_val)
+y_fair = to.predict(X_test, sensitive_features=A_test, random_state=0)
+
+from aif360.algorithms.postprocessing import (CalibratedEqOddsPostprocessing,
+    RejectOptionClassification)
+cpp = CalibratedEqOddsPostprocessing(unprivileged_groups=unpriv,
+        privileged_groups=priv, cost_constraint='fnr', seed=42)
+cpp.fit(ds_val_true, ds_val_pred)      # ds_val_pred.scores = P(y=1|x)
+ds_test_fair = cpp.predict(ds_test_pred)
+
+roc = RejectOptionClassification(unprivileged_groups=unpriv,
+        privileged_groups=priv, metric_name="Statistical parity difference",
+        metric_ub=0.05, metric_lb=-0.05)
+ds_test_fair2 = roc.fit(ds_val_true, ds_val_pred).predict(ds_test_pred)</code></pre>
+</div>
+
+<div class="block">
+<h2>🔷 10. Workflow и trade-off accuracy vs fairness</h2>
+<ol>
+<li>Определить защищённые признаки и вредные исходы; выбрать критерий (блок 4)</li>
+<li>Проверить данные: размеры групп, base rates, прокси-признаки</li>
+<li>Обучить baseline, измерить метрики по группам</li>
+<li>Применить mitigation (pre / in / post) и сравнить</li>
+<li>Построить кривую trade-off и выбрать компромисс вместе с бизнесом</li>
+</ol>
+<pre><code>import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score
-print(f"Accuracy before: {accuracy_score(y_test, y_pred):.3f}")
-print(f"Accuracy after: {accuracy_score(y_test, y_pred_fair):.3f}")</code></pre>
-  </div>
 
-  <div class="block">
-    <h2>🔷 10. Fairness-Accuracy Trade-off</h2>
-    <ul>
-      <li>Улучшение fairness часто снижает accuracy</li>
-      <li>Нужен баланс между метриками</li>
-      <li>Trade-off curve: Pareto frontier</li>
-      <li>Бизнес решает приемлемый компромисс</li>
-    </ul>
-    <pre><code># Визуализация trade-off
-from fairlearn.metrics import MetricFrame
-import matplotlib.pyplot as plt
+accs, gaps = [], []
+for eps in [0.01, 0.02, 0.05, 0.1, 0.2]:
+    mit = ExponentiatedGradient(LogisticRegression(max_iter=1000),
+                                constraints=EqualizedOdds(difference_bound=eps))
+    mit.fit(X_train, y_train, sensitive_features=A_train)
+    yp = mit.predict(X_test)
+    accs.append(accuracy_score(y_test, yp))
+    gaps.append(equalized_odds_difference(y_test, yp, sensitive_features=A_test))
 
-# Различные значения constraint relaxation
-fairness_vals = []
-accuracy_vals = []
+plt.plot(gaps, accs, 'o-')
+plt.xlabel('Equalized odds difference'); plt.ylabel('Accuracy')
+plt.title('Fairness–accuracy trade-off (Pareto front)'); plt.show()</code></pre>
+<p>Улучшение fairness обычно стоит немного accuracy; иногда — почти ничего, если bias вызван недопредставленностью группы (тогда помогают данные).</p>
+</div>
 
-for epsilon in [0.01, 0.05, 0.1, 0.15, 0.2]:
-    constraint = EqualizedOdds(difference_bound=epsilon)
-    mitigator = ExponentiatedGradient(model, constraint)
-    mitigator.fit(X_train, y_train, sensitive_features=protected_attr_train)
-    
-    y_pred = mitigator.predict(X_test)
-    
-    acc = accuracy_score(y_test, y_pred)
-    eo_diff = equalized_odds_difference(y_test, y_pred, sensitive_features=protected_attr_test)
-    
-    accuracy_vals.append(acc)
-    fairness_vals.append(eo_diff)
+<div class="block">
+<h2>🔷 11. Intersectionality и мониторинг</h2>
+<p><strong>Intersectionality</strong>: модель может быть справедлива по полу и по расе отдельно, но не для пересечения (например, тёмнокожие женщины — Gender Shades). Анализируйте подгруппы, следя за их размером (доверительные интервалы).</p>
+<pre><code>mf = MetricFrame(metrics=accuracy_score, y_true=y_test, y_pred=y_pred,
+                 sensitive_features=df_test[['gender', 'race']])  # пересечения
+print(mf.by_group.sort_values())
+print('gap:', mf.difference())
 
-plt.plot(fairness_vals, accuracy_vals, 'o-')
-plt.xlabel('Equalized Odds Difference')
-plt.ylabel('Accuracy')
-plt.title('Fairness-Accuracy Trade-off')
-plt.show()</code></pre>
-  </div>
+# Мониторинг в продакшене: метрики по окнам времени
+def fairness_snapshot(y_true, y_pred, A):
+    return {'dp': demographic_parity_difference(y_true, y_pred, sensitive_features=A),
+            'eo': equalized_odds_difference(y_true, y_pred, sensitive_features=A)}
 
-  <div class="block">
-    <h2>🔷 11. Intersectionality</h2>
-    <p>Пересечение нескольких защищённых признаков создаёт уникальные группы с особыми bias.</p>
-    <pre><code># Анализ пересечений (например, пол × раса)
-df['intersection'] = df['gender'].astype(str) + '_' + df['race'].astype(str)
+history = []   # history.append({'ts': ts, **fairness_snapshot(...)})
+def check_drift(history, threshold=0.05):
+    base, last = history[0], history[-1]
+    return {k: last[k] - base[k] for k in ('dp', 'eo')
+            if abs(last[k] - base[k]) &gt; threshold}</code></pre>
+<p>Метки в проде приходят с задержкой и только для одобренных (selective labels) — учитывайте это при оценке TPR/FPR.</p>
+</div>
 
-# Оценка по всем группам
-metric_frame = MetricFrame(
-    metrics=accuracy_score,
-    y_true=y_test,
-    y_pred=y_pred,
-    sensitive_features=df.loc[test_indices, 'intersection']
-)
-
-print(metric_frame.by_group)
-
-# Выявление наиболее уязвимых групп
-worst_group = metric_frame.by_group.idxmin()
-best_group = metric_frame.by_group.idxmax()
-
-print(f"Worst performing group: {worst_group}")
-print(f"Best performing group: {best_group}")
-print(f"Gap: {metric_frame.by_group[best_group] - metric_frame.by_group[worst_group]:.3f}")</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 12. Auditing и мониторинг</h2>
-    <pre><code># Регулярный аудит модели в продакшене
-class FairnessMonitor:
-    def __init__(self, sensitive_features):
-        self.sensitive_features = sensitive_features
-        self.history = []
-    
-    def log_predictions(self, y_true, y_pred, timestamp):
-        metrics = {}
-        
-        for sf in self.sensitive_features:
-            dp_diff = demographic_parity_difference(y_true, y_pred, sensitive_features=sf)
-            eo_diff = equalized_odds_difference(y_true, y_pred, sensitive_features=sf)
-            
-            metrics[f'{sf}_dp_diff'] = dp_diff
-            metrics[f'{sf}_eo_diff'] = eo_diff
-        
-        self.history.append({
-            'timestamp': timestamp,
-            **metrics
-        })
-    
-    def check_drift(self, threshold=0.1):
-        if len(self.history) < 2:
-            return False
-        
-        latest = self.history[-1]
-        baseline = self.history[0]
-        
-        for key in latest:
-            if key == 'timestamp':
-                continue
-            if abs(latest[key] - baseline[key]) > threshold:
-                print(f"ALERT: {key} changed by {abs(latest[key] - baseline[key]):.3f}")
-                return True
-        
-        return False
-
-# Использование
-monitor = FairnessMonitor(sensitive_features=['gender', 'race'])
-monitor.log_predictions(y_true, y_pred, datetime.now())
-
-if monitor.check_drift():
-    # Переобучить модель или применить mitigation
-    pass</code></pre>
-  </div>
-
-  <div class="block">
-    <h2>🔷 13. Юридические аспекты</h2>
-    <ul>
-      <li><strong>GDPR (EU)</strong>: право на объяснение решений</li>
-      <li><strong>Equal Credit Opportunity Act (US)</strong>: запрет дискриминации в кредитовании</li>
-      <li><strong>Fair Housing Act (US)</strong>: справедливость в жилищной сфере</li>
-      <li><strong>Employment Law</strong>: запрет дискриминации при найме</li>
-      <li><strong>Disparate Impact</strong>: юридическая концепция непрямой дискриминации</li>
-    </ul>
-    <blockquote>Даже если модель не использует защищённые признаки напрямую, она может быть незаконной, если производит disparate impact на защищённые группы.</blockquote>
-  </div>
-
-  <div class="block">
-    <h2>🔷 14. Best Practices</h2>
-    <div class="good-vs-bad">
-      <div class="good">
-        <h3>✅ Рекомендации</h3>
-        <ul>
-          <li>Исследовать данные на bias ДО обучения</li>
-          <li>Измерять fairness на валидации и тесте</li>
-          <li>Документировать trade-offs</li>
-          <li>Привлекать domain experts и этиков</li>
-          <li>Регулярный аудит в продакшене</li>
-          <li>Тестировать на intersectionality</li>
-          <li>Transparency: объяснять решения</li>
-        </ul>
-      </div>
-      <div class="bad">
-        <h3>❌ Ошибки</h3>
-        <ul>
-          <li>Просто удалить защищённые признаки</li>
-          <li>Игнорировать fairness метрики</li>
-          <li>Одна модель для всех контекстов</li>
-          <li>Не учитывать feedback loops</li>
-          <li>Переоценивать "нейтральность" данных</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <div class="block">
-    <h2>🔷 15. Примеры проблем Fairness</h2>
-    <ul>
-      <li><strong>COMPAS</strong>: система оценки рецидивизма дискриминировала афроамериканцев</li>
-      <li><strong>Amazon Hiring AI</strong>: дискриминация женщин из-за исторических данных</li>
-      <li><strong>Face Recognition</strong>: низкая точность для тёмнокожих женщин</li>
-      <li><strong>Credit Scoring</strong>: систематическое занижение для меньшинств</li>
-      <li><strong>Healthcare</strong>: недооценка риска для чёрных пациентов</li>
-    </ul>
-  </div>
-
-  <div class="block">
-    <h2>🔷 16. Чек-лист Fairness</h2>
-    <ul>
-      <li>[ ] Идентифицировать защищённые признаки</li>
-      <li>[ ] Исследовать representation bias в данных</li>
-      <li>[ ] Измерить baseline fairness метрики</li>
-      <li>[ ] Выбрать подходящее определение fairness</li>
-      <li>[ ] Применить pre/in/post-processing mitigation</li>
-      <li>[ ] Оценить fairness-accuracy trade-off</li>
-      <li>[ ] Проверить intersectionality</li>
-      <li>[ ] Внедрить мониторинг в production</li>
-      <li>[ ] Документировать ограничения модели</li>
-      <li>[ ] Получить юридическую консультацию</li>
-      <li>[ ] Создать процедуру appeal для пользователей</li>
-    </ul>
-
-    <h3>💡 Объяснение заказчику:</h3>
-    <blockquote>
-      «Fairness в ML — это про то, чтобы AI-системы не дискриминировали людей по полу, расе, возрасту и другим характеристикам. Например, система одобрения кредитов не должна отказывать женщинам чаще, чем мужчинам с такой же кредитной историей. Мы измеряем и устраняем такую предвзятость специальными методами».
-    </blockquote>
-  </div>
-
+<div class="block">
+<h2>🔷 12. Право, кейсы, практики, чек-лист</h2>
+<ul>
+<li><strong>Регулирование</strong>: GDPR (автоматизированные решения, право на объяснение), EU AI Act (high-risk системы), ECOA и Fair Housing Act (США), трудовое право</li>
+<li><strong>Disparate impact</strong>: непрямая дискриминация незаконна, даже если A не используется напрямую</li>
+<li><strong>Кейсы</strong>: COMPAS (рецидивизм), Amazon hiring (дискриминация женщин), распознавание лиц (низкая точность для тёмнокожих женщин), healthcare-алгоритм (недооценка риска чёрных пациентов из-за метки «расходы»)</li>
+</ul>
+<div class="good-vs-bad">
+<div class="good">
+<h3>✅ Делать</h3>
+<ul>
+<li>Исследовать bias в данных до обучения</li>
+<li>Метрики по группам и пересечениям на валидации и тесте</li>
+<li>Документировать выбор критерия и trade-off (model cards)</li>
+<li>Привлекать domain experts, юристов; процедура апелляции</li>
+</ul>
+</div>
+<div class="bad">
+<h3>❌ Ошибки</h3>
+<ul>
+<li>Просто удалить защищённые признаки</li>
+<li>Смотреть только на общую accuracy</li>
+<li>Игнорировать feedback loops</li>
+<li>Считать данные «нейтральными»</li>
+</ul>
+</div>
+</div>
+<ul>
+<li>[ ] Защищённые признаки и критерий выбраны и обоснованы</li>
+<li>[ ] Baseline-метрики по группам измерены</li>
+<li>[ ] Mitigation применён, trade-off оценён</li>
+<li>[ ] Intersectionality проверена, мониторинг в проде настроен</li>
+</ul>
+<h3>💡 Объяснение заказчику:</h3>
+<blockquote>«Модель учится на прошлых решениях людей и может перенять их предвзятость. Мы измеряем, одинаково ли она ошибается для разных групп, и исправляем перекос — например, чтобы кредиты не отказывали женщинам чаще, чем мужчинам с такой же историей».</blockquote>
+</div>
 
 </div>
 </body>

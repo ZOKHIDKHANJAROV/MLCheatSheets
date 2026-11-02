@@ -22,6 +22,12 @@
 | [rl_gridworld.html](rl_gridworld.html) — Q-learning против SARSA на «обрыве», карта ценностей, value iteration | основы RL, Q-learning, SARSA, DP |
 | [attention.html](attention.html) — тепловая карта softmax(QKᵀ/√d), масштабирование, каузальная маска, головы, позиции | self-attention, трансформеры |
 | [dropout_batchnorm.html](dropout_batchnorm.html) — переобучение с dropout и без; активации по слоям с BatchNorm и без | dropout, BatchNorm, инициализация |
+| [embeddings.html](embeddings.html) — word2vec (skip-gram + negative sampling) учится в браузере: слова собираются в темы, окно, негативы, PCA-проекция, соседи по косинусу | эмбеддинги слов |
+| [regularization_l1_l2.html](regularization_l1_l2.html) — ромб L1 против круга L2 и Elastic Net, касание линий уровня, путь коэффициентов Lasso/Ridge, обнуление и коррелированные признаки | регуляризация, Ridge/Lasso/ElasticNet, отбор признаков |
+| [cross_validation.html](cross_validation.html) — схемы разбиения (hold-out, K-Fold, Stratified, Group, TimeSeriesSplit, LOO), оценка k-NN против истинного качества, разброс по seed, утечка при дрейфе и группах | кросс-валидация, валидация временных рядов, несбалансированные данные |
+| [exponential_smoothing.html](exponential_smoothing.html) — скользящее среднее, SES, Холт и Холт–Винтерс на ряде с трендом и сезонностью, прогноз и MAE на тесте, подбор α/β/γ, веса α(1−α)^k | экспоненциальное сглаживание, скользящие средние, временные ряды |
+| [gan.html](gan.html) — 1D GAN: плотности и D(x), отображение z → G(z), mode collapse на смеси гауссиан, non-saturating против minimax | GAN, DCGAN и Conditional GAN |
+| [vae.html](vae.html) — латент VAE на картинках 12×12: атлас декодера, зонд и интерполяция, β-VAE, posterior collapse, сравнение с автоэнкодером | VAE, автоэнкодеры, вариационный вывод |
 
 ## Как добавить демонстрацию
 

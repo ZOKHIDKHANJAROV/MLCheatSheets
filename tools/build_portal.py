@@ -168,6 +168,39 @@ def parse_questions():
     return questions
 
 
+def parse_glossary():
+    """glossary.md: «### Термин (перевод)», абзац определения, строка «→ стем1, стем2» → ([термины], [ошибки])."""
+    terms, errors = [], []
+    path = ROOT / "glossary.md"
+    if not path.exists():
+        return terms, errors
+    current = None
+    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if line.startswith("## ") or line.startswith("# "):
+            current = None
+        elif line.startswith("### "):
+            current = {"t": line[4:].strip(), "d": [], "topics": []}
+            terms.append(current)
+        elif current is not None and line.startswith("→"):
+            for stem in [x.strip() for x in line[1:].split(",") if x.strip()]:
+                if (CHEATSHEETS / f"{stem}_cheatsheet.html").exists():
+                    current["topics"].append(f"{stem}_cheatsheet.html")
+                else:
+                    errors.append(f"glossary.md:{n}: нет шпаргалки «{stem}»")
+        elif current is not None:
+            current["d"].append(line)
+    for t in terms:
+        t["d"] = "\n".join(t["d"]).strip()
+        if not t["d"]:
+            errors.append(f"glossary.md: у термина «{t['t']}» нет определения")
+    seen = set()
+    for t in terms:
+        if t["t"].lower() in seen:
+            errors.append(f"glossary.md: термин «{t['t']}» повторяется")
+        seen.add(t["t"].lower())
+    return sorted(terms, key=lambda t: t["t"].lower()), errors
+
+
 def parse_prerequisites():
     """prerequisites.md: строки «- тема: пред1, пред2» → ({файл темы: [файлы-предпосылки]}, [ошибки])."""
     deps, errors = {}, []
@@ -276,9 +309,12 @@ def main():
     prereqs, prereq_errors = parse_prerequisites()
     for e in prereq_errors:
         print(f"  ⚠ {e}")
+    glossary, glossary_errors = parse_glossary()
+    for e in glossary_errors:
+        print(f"  ⚠ {e}")
 
     data = {"parts": parts, "paths": paths, "exercises": exercises, "titles": titles,
-            "quizzes": quizzes, "questions": questions, "demos": demos, "prereqs": prereqs, "projects": projects, "build": build_version()}
+            "quizzes": quizzes, "questions": questions, "demos": demos, "prereqs": prereqs, "projects": projects, "glossary": glossary, "build": build_version()}
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     page = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
     OUTPUT.write_text(page, encoding="utf-8")
@@ -287,7 +323,7 @@ def main():
     print(f"  тем: {len(titles)}, разделов: {sum(len(p['sections']) for p in parts)}, "
           f"путей: {len(paths)}, упражнений: {len(exercises)}, проектов: {len(projects)}, тестов: {len(quizzes)}, "
           f"вопросов: {sum(map(len, questions.values()))} к {len(questions)} темам, "
-          f"интерактивов: {len(demos)}, тем со связями: {len(prereqs)}, вне README: {len(orphans)}")
+          f"интерактивов: {len(demos)}, тем со связями: {len(prereqs)}, терминов: {len(glossary)}, вне README: {len(orphans)}")
 
 
 if __name__ == "__main__":
