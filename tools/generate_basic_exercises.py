@@ -549,6 +549,7 @@ EXERCISE_LIST = [
     },
     {
         "name": "gradient_boosting_regression",
+        "seed": 102,  # данные, на которых scikit-learn 1.7–1.9 строят одинаковый бустинг
         "title": "Градиентный бустинг: прокат велосипедов",
         "data": data_gradient_boosting,
         "task": """
@@ -569,6 +570,9 @@ EXERCISE_LIST = [
 
             - Сравните RMSE бустинга и `LinearRegression` на тесте — насколько выигрывает нелинейная модель?
             - Поэкспериментируйте с `learning_rate` и `n_estimators`: как они связаны?
+
+            Эталон проверен на scikit-learn 1.7–1.9. В других версиях бустинг иногда выбирает другое из почти
+            равноценных разбиений — если расходятся лишь несколько прогнозов, сверьтесь с `solution.py`.
 
             ## Ожидаемый формат выходного файла
 
@@ -644,7 +648,7 @@ def build(exercise, seed):
 def main():
     print("Генерация упражнений:")
     for seed, exercise in enumerate(EXERCISE_LIST, start=101):
-        build(exercise, seed)
+        build(exercise, exercise.get("seed", seed))
 
 
 if __name__ == "__main__":
