@@ -5,3 +5,4 @@ venv
 **/.ipynb_checkpoints
 **/my_answer.csv
 **/my_predictions.csv
+my_progress.json

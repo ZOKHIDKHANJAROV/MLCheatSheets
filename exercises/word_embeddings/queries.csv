@@ -1,0 +1,7 @@
+query_id,kind,a,b,c
+1,neighbors,яблоко,,
+2,neighbors,москва,,
+3,neighbors,король,,
+4,analogy,король,мужчина,женщина
+5,analogy,париж,франция,россия
+6,analogy,принц,мальчик,девочка

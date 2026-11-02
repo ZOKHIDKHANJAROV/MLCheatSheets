@@ -4,7 +4,7 @@
 Создаёт тетрадку Jupyter exercise.ipynb в каждой папке упражнения (exercises/**/task.md).
 
 В тетрадке: условие задачи, загрузка input.csv, ячейка для решения и ячейка проверки,
-которая сравнивает ваш результат с answer.csv (та же логика, что в tools/check_exercise.py).
+которая сравнивает ваш результат с эталоном answer.key (та же логика, что в tools/check_exercise.py).
 
 Запуск из корня репозитория:
     python tools/make_notebooks.py           # создать тетрадки там, где их ещё нет
@@ -49,25 +49,22 @@ result = None
 """
 
 CHECK = """
-# Проверка: сравнение result с эталоном answer.csv (запускайте после своего решения)
+# Проверка: сравнение result с эталоном (запускайте после своего решения).
+# Сохраняет result в my_answer.csv, подсказывает вероятную причину ошибки, верное решение отмечает в портале.
 import sys
 from pathlib import Path
 
 root = next(p for p in [Path.cwd(), *Path.cwd().parents] if (p / 'tools' / 'check_exercise.py').exists())
 sys.path.insert(0, str(root / 'tools'))
-from check_exercise import compare
+from check_exercise import check_result
 
-if result is None:
-    print('Сначала запишите решение в переменную result (ячейка выше).')
-else:
-    result.to_csv('my_answer.csv', index=False)   # тот же файл проверяет и python tools/check_exercise.py
-    problems = compare(pd.read_csv('answer.csv'), pd.read_csv('my_answer.csv'))
-    print('✅ Всё верно!' if not problems else '❌ Есть расхождения:\\n' + '\\n'.join('  • ' + p for p in problems))
+check_result(result)
 """
 
 
 def notebook(folder):
     task = (folder / "task.md").read_text(encoding="utf-8")
+    task = task.split("\n## Разбор", 1)[0]   # разбор — после решения (в портале или в task.md)
     cells = [
         md(task),
         md("## Данные"),

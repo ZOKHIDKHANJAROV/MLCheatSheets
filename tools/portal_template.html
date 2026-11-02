@@ -189,6 +189,11 @@
   .md table { border-collapse: collapse; margin: 8px 0; }
   .md td, .md th { border: 1px solid var(--border); padding: 4px 10px; }
   .files { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 16px; }
+  .und-opts { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; max-width: 720px; }
+  .und-opts .btn { text-align: left; white-space: normal; line-height: 1.45; padding: 9px 12px; }
+  .und-opts .btn:disabled { opacity: 1; cursor: default; }
+  .hint { background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 6px; padding: 8px 12px; margin: 8px 0; }
+  .hint .md p, .hint p { margin: 2px 0; }
   .cmd { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
   .cmd code { flex: 1; background: var(--panel); border: 1px solid var(--border); padding: 7px 10px; border-radius: 6px; font-size: 13px; overflow-x: auto; white-space: nowrap; }
   .empty { color: var(--muted); padding: 30px 0; text-align: center; }
@@ -245,7 +250,7 @@ window.mlcsPortal = { open: f => { if (!DATA.titles[f]) return false; location.h
 
 // ---------- состояние и прогресс ----------
 function emptyState() {
-  return { done: {}, exDone: {}, projDone: {}, review: {}, notes: {}, exams: [], plan: null, activity: {}, last: null, tab: "sections", qOpen: false };
+  return { done: {}, exDone: {}, exAuto: {}, exRev: {}, hints: {}, reveal: {}, und: {}, projDone: {}, review: {}, notes: {}, exams: [], plan: null, activity: {}, last: null, tab: "sections", qOpen: false };
 }
 function loadState() {
   const empty = emptyState();
@@ -331,6 +336,48 @@ function rate(f, remembered) {
   state.review[f] = { step, due: Date.now() + INTERVALS[step] * DAY };
   logActivity(); save(); refreshChrome();
 }
+// ---------- практика: автоотметка и повтор упражнений ----------
+// tools/check_exercise.py записывает верные решения в my_progress.json; портал читает его, когда открыт через start.py.
+// Решённое упражнение возвращается «решить снова без подсказок» через 14, 45 и 120 дней.
+const EX_INTERVALS = [14, 45, 120];
+const exIndex = id => DATA.exercises.findIndex(e => e.id === id);
+function exRevOf(id) {
+  return state.exRev[id] || (state.exDone[id] ? { step: 0, due: state.exDone[id] + EX_INTERVALS[0] * DAY } : null);
+}
+function markExSolved(id, when) {
+  const r = exRevOf(id);
+  if (!state.exDone[id]) { state.exDone[id] = when; state.exRev[id] = { step: 0, due: when + EX_INTERVALS[0] * DAY }; }
+  else if (r && when >= r.due) {                       // решено снова, когда подошёл срок повтора
+    const step = Math.min(r.step + 1, EX_INTERVALS.length - 1);
+    state.exRev[id] = { step, due: when + EX_INTERVALS[step] * DAY };
+  } else return;
+  logActivity();
+}
+function unmarkEx(id) { delete state.exDone[id]; delete state.exRev[id]; delete state.exAuto[id]; }
+const dueExercises = () => DATA.exercises.filter(e => { const r = exRevOf(e.id); return r && r.due <= Date.now(); });
+async function syncProgress() {
+  if (!/^https?:$/.test(location.protocol)) return;
+  try {
+    const res = await fetch("my_progress.json?t=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) return;
+    const solved = (await res.json()).exercises || {};
+    let changed = false;
+    for (const [id, info] of Object.entries(solved)) {
+      const last = Date.parse(info.last || info.first);
+      if (exIndex(id) < 0 || !last || state.exAuto[id] === last) continue;
+      markExSolved(id, last); state.exAuto[id] = last; changed = true;
+    }
+    if (changed) { save(); rerenderKeepScroll(); refreshChrome(); }
+  } catch (e) {}
+}
+function exerciseDueBlock() {
+  const ex = dueExercises();
+  if (!ex.length) return "";
+  return `<h2>🏋 Упражнения на повтор: ${ex.length}</h2>
+    <p class="note">Решите снова — без подсказок и не заглядывая в старое решение. Верная проверка продвинет повтор.</p>
+    <div class="files">${ex.map(e => `<a class="btn" href="#/x/${exIndex(e.id)}">${esc(e.title)}</a>`).join("")}</div>`;
+}
+
 function whenLabel(f) {
   const r = reviewOf(f);
   if (!r) return "";
@@ -369,6 +416,7 @@ function rateButtons(f) {
 // #/j/<n>                    мини-проект
 // #/g                        план занятий
 // #/k/<термин>               глоссарий (термин — подсветить)
+// #/u, #/u/<i>                задачи на понимание: «предскажи результат» и «выбери подход»
 function parseHash() {
   const [route, query] = decodeURIComponent(location.hash.slice(1) || "/").split("?ctx=");
   return { parts: route.split("/").filter(Boolean), ctx: query || "" };
@@ -400,13 +448,14 @@ function render() {
   else if (kind === "e") main.innerHTML = viewExam();
   else if (kind === "j") main.innerHTML = viewProject(+a);
   else if (kind === "g") main.innerHTML = viewPlan();
+  else if (kind === "u") main.innerHTML = a === undefined ? viewUnderstandingList() : viewUnderstanding(+a);
   else if (kind === "k") { if (parts[1]) glossaryQuery = ""; main.innerHTML = viewGlossary(); requestAnimationFrame(() => glossaryJump(parts.slice(1).join("/"))); }   // после сброса прокрутки ниже
   else main.innerHTML = viewHome();
   if (kind === "t" || kind === "d") forwardFrameKeys(main.querySelector("iframe"));
   else main.scrollTop = 0;
   if (kind === "s") setTab("sections", false);
   if (kind === "p") setTab("paths", false);
-  if (kind === "x") setTab("exercises", false);
+  if (kind === "x" || kind === "u") setTab("exercises", false);
   refreshChrome();
 }
 
@@ -466,7 +515,8 @@ function viewHome() {
     <h2>📊 Ваш прогресс</h2>
     <div class="cards">
       <div class="card"><b>Все шпаргалки</b><div class="meta">${all.n} из ${all.total} (${all.pct}%)</div>${bar(allTopics)}</div>
-      <div class="card"><b>Практика</b><div class="meta">решено ${DATA.exercises.filter(e => state.exDone[e.id]).length} из ${DATA.exercises.length} упражнений</div></div>
+      <div class="card"><b>Практика</b><div class="meta">решено ${DATA.exercises.filter(e => state.exDone[e.id]).length} из ${DATA.exercises.length} упражнений${dueExercises().length ? ` · на повтор: ${dueExercises().length}` : ""}</div></div>
+      ${understandingCard()}
       <div class="card"><b>Недавно изучено</b><div class="meta">${recent.length ? recent.map(f => `<a href="#/t/${encodeURIComponent(f)}">${esc(title(f))}</a>`).join("<br>") : "пока ничего — отметьте тему галочкой ✔"}</div></div>
     </div>
 
@@ -495,6 +545,60 @@ function viewHome() {
   </div>`;
 }
 
+// ---------- задачи на понимание ----------
+const UND_KINDS = { predict: "🔮 Предскажи результат", case: "🧭 Выбери подход" };
+const UND = DATA.understanding || [];
+const undOf = f => UND.map((u, i) => [u, i]).filter(([u]) => u.topics.includes(f));
+const undDemo = file => UND.map((u, i) => [u, i]).filter(([u]) => u.demo === file);
+const undMark = u => { const r = state.und[u.id]; return r ? (r.ok ? "✔" : "✖") : ""; };
+
+function understandingCard() {
+  if (!UND.length) return "";
+  const done = UND.filter(u => state.und[u.id]).length, ok = UND.filter(u => state.und[u.id] && state.und[u.id].ok).length;
+  return `<a class="card" href="#/u"><b>🧩 Задачи на понимание</b>
+    <div class="meta">${done ? `отвечено ${done} из ${UND.length}, верно ${ok}` : `${UND.length} задач: предскажите поведение модели и выберите подход к рабочей ситуации`}</div></a>`;
+}
+
+function viewUnderstandingList() {
+  const next = UND.findIndex(u => !state.und[u.id]);
+  return `<div class="page">
+    <h1>🧩 Задачи на понимание</h1>
+    <p class="sub">Не расчёт, а суждение: как поведёт себя модель и какой подход выбрать. Ответьте, затем прочитайте разбор —
+      а задачи «Предскажи результат» проверьте в интерактиве.</p>
+    <p>${next >= 0 ? `<a class="cta" href="#/u/${next}">▶ ${state.und[UND[0].id] ? "Продолжить" : "Начать"}</a>` : "Все задачи пройдены ✔"}
+      ${UND.some(u => state.und[u.id] && !state.und[u.id].ok) ? ` <a class="btn" href="#/u/${UND.findIndex(u => state.und[u.id] && !state.und[u.id].ok)}">↻ К ошибкам</a>` : ""}</p>
+    ${Object.entries(UND_KINDS).map(([k, label]) => {
+      const list = UND.map((u, i) => [u, i]).filter(([u]) => u.kind === k);
+      return list.length ? `<h2>${label}</h2><ol class="topics">${list.map(([u, i]) =>
+        `<li><a href="#/u/${i}">${esc(u.q)}</a><span class="where">${undMark(u) === "✔" ? "✔ верно" : undMark(u) === "✖" ? "✖ ошибка" : ""}</span></li>`).join("")}</ol>` : "";
+    }).join("")}
+  </div>`;
+}
+
+function viewUnderstanding(i) {
+  const u = UND[i];
+  if (!u) return viewUnderstandingList();
+  const r = state.und[u.id];
+  const next = UND.findIndex((x, j) => j > i && !state.und[x.id]);
+  return `<div class="page">
+    <p class="sub" style="margin:0"><a href="#/u">🧩 Задачи на понимание</a> · ${UND_KINDS[u.kind]} · ${i + 1} из ${UND.length}</p>
+    <h1>${esc(u.q)}</h1>
+    <div class="md">${markdown(u.text)}</div>
+    ${!r && u.demo ? `<p class="note">Сначала ответьте сами — потом проверите себя в интерактиве.</p>` : ""}
+    <div class="und-opts">${u.options.map((o, k) => {
+      const cls = !r ? "" : k === u.answer ? "good" : k === r.pick ? "bad" : "";
+      return `<button class="btn ${cls}" ${r ? "disabled" : `data-und="${i}:${k}"`}>${r && k === u.answer ? "✔ " : r && k === r.pick ? "✖ " : ""}${markdown(o).replace(/^<p>|<\/p>$/g, "")}</button>`;
+    }).join("")}</div>
+    ${r ? `<div class="hint"><b>${r.ok ? "Верно!" : "Не совсем."}</b> ${markdown(u.why)}</div>
+      <p style="display:flex;gap:8px;flex-wrap:wrap">
+        ${u.demo ? `<a class="btn" href="#/d/${encodeURIComponent(u.demo)}">🎮 Проверить в интерактиве</a>` : ""}
+        ${u.topics.map(f => `<a class="btn" href="#/t/${encodeURIComponent(f)}">📘 ${esc(title(f))}</a>`).join("")}
+        <button class="btn" data-und-reset="${i}">↻ Ответить заново</button>
+      </p>
+      <p>${next >= 0 ? `<a class="cta" href="#/u/${next}">Следующая →</a>` : `<a class="cta" href="#/u">К списку</a>`}</p>` : ""}
+  </div>`;
+}
+
 function demoCards() {
   if (!DATA.demos.length) return "";
   return `<h2>🎮 Интерактивные демонстрации</h2><div class="cards">${DATA.demos.map(d =>
@@ -511,6 +615,7 @@ function viewDemo(file) {
       <a class="btn" href="${main ? "#/t/" + encodeURIComponent(main) : "#/"}" title="К шпаргалке">← 📘 Шпаргалка</a>
       <div class="title">🎮 ${esc(d.title)} <span class="ctx">· интерактивная демонстрация</span></div>
       ${d.topics.slice(1).map(t => `<a class="btn" href="#/t/${encodeURIComponent(t)}">📘 ${esc(title(t))}</a>`).join("")}
+      ${undDemo(file).map(([u, i]) => `<a class="btn" href="#/u/${i}" title="${esc(u.q)}">🔮 ${undMark(u) || "Предскажи"}</a>`).join("")}
       <a class="btn" href="interactive/${encodeURIComponent(file)}${V}" target="_blank" title="Открыть отдельно">↗</a>
     </div>
     <div class="vbody"><iframe src="interactive/${encodeURIComponent(file)}${V}" title="${esc(d.title)}"></iframe></div>
@@ -518,12 +623,13 @@ function viewDemo(file) {
 }
 
 function reviewCard() {
-  const due = dueTopics();
+  const due = dueTopics(), exDue = dueExercises().length;
   const learned = reviewTopics().length;
-  if (!learned) return "";
-  return `<h2>🔁 Повторение</h2><a class="card ${due.length ? "due" : ""}" href="#/r">
-    <b>${due.length ? `Сегодня к повторению: ${due.length} ${plural(due.length, "тема", "темы", "тем")}` : "На сегодня всё повторено ✔"}</b>
-    <div class="meta">${due.length ? "Ответьте на вопросы и оцените, насколько хорошо помните тему" : "Следующие темы вернутся на повторение позже"}</div></a>`;
+  if (!learned && !exDue) return "";
+  const parts = [due.length ? `${due.length} ${plural(due.length, "тема", "темы", "тем")}` : "", exDue ? `${exDue} ${plural(exDue, "упражнение", "упражнения", "упражнений")}` : ""].filter(Boolean);
+  return `<h2>🔁 Повторение</h2><a class="card ${parts.length ? "due" : ""}" href="#/r">
+    <b>${parts.length ? `Сегодня к повторению: ${parts.join(" и ")}` : "На сегодня всё повторено ✔"}</b>
+    <div class="meta">${parts.length ? "Ответьте на вопросы, оцените, насколько хорошо помните тему, и решите упражнения снова" : "Следующие темы вернутся на повторение позже"}</div></a>`;
 }
 
 function viewReview() {
@@ -534,6 +640,7 @@ function viewReview() {
     return `<div class="page"><h1>🔁 Повторение</h1>
       <p class="sub">${upcoming.length ? "На сегодня всё повторено. Ближайшие темы:" : "Отмечайте темы как изученные — они будут возвращаться сюда на повторение."}</p>
       ${upcoming.length ? `<ol class="topics">${upcoming.map(f => `<li><a href="#/t/${encodeURIComponent(f)}">${esc(title(f))}</a><span class="where">${esc(whenLabel(f))}</span></li>`).join("")}</ol>` : ""}
+      ${exerciseDueBlock()}
     </div>`;
   }
   const f = due[0];
@@ -544,6 +651,7 @@ function viewReview() {
     <p class="note">Попробуйте ответить сами, потом раскройте ответ.</p>
     ${questionsBlock(f)}
     ${rateButtons(f)}
+    ${exerciseDueBlock()}
   </div>`;
 }
 
@@ -627,6 +735,7 @@ function viewTopic(f, ctx) {
         <p class="note">Ответьте мысленно или вслух, затем раскройте ответ.</p>
         ${questionsBlock(f)}
         <div id="rateBox">${rateButtons(f)}</div>
+        ${undOf(f).length ? `<h3 style="margin-top:18px">🧩 Задачи на понимание</h3><p class="files">${undOf(f).map(([u, i]) => `<a class="btn" href="#/u/${i}">${undMark(u) ? undMark(u) + " " : ""}${esc(u.q)}</a>`).join("")}</p>` : ""}
         ${termsOf(f).length ? `<h3 style="margin-top:18px">📖 Термины темы</h3>${termsOf(f).map(t => `<details class="q"><summary>${esc(t.t)}</summary><div class="ans">${markdown(t.d)}</div></details>`).join("")}` : ""}
         <div class="notes">
           <h3 style="margin-top:18px">📝 Мои заметки</h3>
@@ -1008,23 +1117,40 @@ function viewProject(i) {
 function viewExercise(i) {
   const e = DATA.exercises[i];
   if (!e) return viewHome();
-  const dir = e.id;
+  const dir = e.id, solved = !!state.exDone[e.id], shown = Math.min(state.hints[e.id] || 0, e.hints.length);
+  const r = exRevOf(e.id), again = solved && r && r.due <= Date.now();
+  const days = r ? Math.ceil((r.due - Date.now()) / DAY) : 0;
+  const cmd = `python tools/check_exercise.py ${dir}`;
+  const runBuggy = `cd ${dir} && python buggy.py`;
   return `<div class="page">
-    <p class="sub" style="margin:0">Практика · ${esc(e.topic)}</p>
+    <p class="sub" style="margin:0">Практика · ${e.kind === "bug" ? "🐞 найди ошибку" : esc(e.topic.replace(/_/g, " "))}</p>
     <h1>${esc(e.title)}</h1>
     <p style="display:flex;gap:8px;flex-wrap:wrap">
       ${e.cheatsheet ? `<a class="btn" href="#/t/${encodeURIComponent(e.cheatsheet)}">📘 Теория: ${esc(title(e.cheatsheet))}</a>` : ""}
-      <button class="btn ${state.exDone[e.id] ? "on" : ""}" data-ex="${esc(e.id)}">${state.exDone[e.id] ? "✔ Решено" : "☐ Решено"}</button>
+      <button class="btn ${solved ? "on" : ""}" data-ex="${esc(e.id)}" title="${state.exAuto[e.id] ? "Отмечено автоматически после верной проверки" : "Отметьте вручную или запустите проверку — портал отметит сам"}">${solved ? (state.exAuto[e.id] ? "✔ Решено · проверено" : "✔ Решено") : "☐ Решено"}</button>
     </p>
-    <h2>📁 Файлы</h2>
-    <div class="files">${e.files.map(n => `<a class="btn" href="${esc(dir)}/${encodeURIComponent(n)}${V}" target="_blank">${esc(n)}</a>`).join("")}</div>
-    <h2>✅ Самопроверка</h2>
-    <p class="note">Сохраните свой результат в <code>my_answer.csv</code> в папке упражнения и выполните в корне репозитория:</p>
-    <div class="cmd"><code>python tools/check_exercise.py ${esc(dir)}</code><button class="btn" data-copy="python tools/check_exercise.py ${esc(dir)}">Копировать</button></div>
-    ${e.files.includes("exercise.ipynb") ? `<p class="note">Или решайте в Jupyter: в тетрадке <code>exercise.ipynb</code> уже есть загрузка данных и ячейка автопроверки.</p>
-    <div class="cmd"><code>jupyter notebook ${esc(dir)}/exercise.ipynb</code><button class="btn" data-copy="jupyter notebook ${esc(dir)}/exercise.ipynb">Копировать</button></div>` : ""}
+    ${again ? `<p class="hint">🔁 Пора решить снова — без подсказок и не заглядывая в своё старое решение. Верная проверка продвинет повтор.
+      <button class="btn" data-ex-again="${esc(e.id)}">✔ Решил снова</button></p>`
+      : solved && r ? `<p class="note">🔁 Повтор упражнения через ${days} ${plural(days, "день", "дня", "дней")}.</p>` : ""}
     <h2>📝 Задание</h2>
     <div class="md">${markdown(e.task)}</div>
+    <h2>📁 Файлы</h2>
+    <div class="files">${e.files.map(n => `<a class="btn" href="${esc(dir)}/${encodeURIComponent(n)}${V}" target="_blank">${esc(n)}</a>`).join("")}</div>
+    ${e.hints.length ? `<h2>💡 Подсказки</h2>
+      <p class="note">Открывайте по одной — каждая следующая подсказывает сильнее.</p>
+      ${e.hints.slice(0, shown).map((h, k) => `<div class="hint"><b>${k + 1}.</b> ${markdown(h)}</div>`).join("")}
+      ${shown < e.hints.length ? `<p><button class="btn" data-hint="${esc(e.id)}">💡 Подсказка ${shown + 1} из ${e.hints.length}</button></p>` : ""}` : ""}
+    <h2>✅ Самопроверка</h2>
+    ${e.kind === "bug" ? `<p class="note">Запустите код с ошибкой — он запишет результат в <code>my_answer.csv</code>; проверка покажет, что он неверен. Исправьте <code>buggy.py</code> и повторите.</p>
+    <div class="cmd"><code>${esc(runBuggy)}</code><button class="btn" data-copy="${esc(runBuggy)}">Копировать</button></div>`
+    : `<p class="note">Сохраните свой результат в <code>my_answer.csv</code> в папке упражнения и выполните в корне репозитория:</p>`}
+    <div class="cmd"><code>${esc(cmd)}</code><button class="btn" data-copy="${esc(cmd)}">Копировать</button></div>
+    <p class="note">Проверка подскажет вероятную причину ошибки, а верное решение портал отметит сам (если открыт через <code>python start.py</code>).</p>
+    ${e.files.includes("exercise.ipynb") ? `<p class="note">Или решайте в Jupyter: в тетрадке <code>exercise.ipynb</code> уже есть загрузка данных и ячейка автопроверки.</p>
+    <div class="cmd"><code>jupyter notebook ${esc(dir)}/exercise.ipynb</code><button class="btn" data-copy="jupyter notebook ${esc(dir)}/exercise.ipynb">Копировать</button></div>` : ""}
+    ${e.review ? `<h2>🧠 Разбор</h2>${solved || state.reveal[e.id] ? `<div class="md">${markdown(e.review)}</div>`
+      : `<p class="note">Разбор откроется, когда упражнение будет решено: идея решения, типичные ошибки и что вынести.</p>
+         <p><button class="btn" data-reveal="${esc(e.id)}">Сдаюсь — показать разбор</button></p>`}` : ""}
   </div>`;
 }
 
@@ -1098,10 +1224,11 @@ function renderNav() {
   if (tab === "paths") {
     html = DATA.paths.map((p, i) => item(`#/p/${i}`, p.title, pathItems(p))).join("");
   } else if (tab === "exercises") {
-    html = `<div class="navgroup">🏗 мини-проекты</div>` + DATA.projects.map((p, i) =>
+    html = (UND.length ? `<a class="navitem ${hash.startsWith("#/u") ? "active" : ""}" href="#/u"><span>🧩 Задачи на понимание</span><small class="full">${UND.filter(u => state.und[u.id]).length}/${UND.length}</small></a>` : "")
+      + `<div class="navgroup">🏗 мини-проекты</div>` + DATA.projects.map((p, i) =>
       `<a class="navitem ${hash === "#/j/" + i ? "active" : ""}" href="#/j/${i}"><span>${esc(p.title)}</span><small class="full">${state.projDone[p.id] ? "✔" : ""}</small></a>`).join("");
     const groups = {};
-    DATA.exercises.forEach((e, i) => (groups[e.topic] = groups[e.topic] || []).push([e, i]));
+    DATA.exercises.forEach((e, i) => { const g = e.kind === "bug" ? "🐞 найди ошибку" : e.topic; (groups[g] = groups[g] || []).push([e, i]); });
     html += Object.entries(groups).map(([g, list]) => `<div class="navgroup">${esc(g.replace(/_/g, " "))}</div>` +
       list.map(([e, i]) => `<a class="navitem ${hash === "#/x/" + i ? "active" : ""}" href="#/x/${i}"><span>${esc(e.title)}</span><small class="full">${state.exDone[e.id] ? "✔" : ""}</small></a>`).join("")).join("");
   } else {
@@ -1147,7 +1274,7 @@ function rerenderKeepScroll() {
 
 // ---------- события ----------
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-tab],[data-toggle],[data-ex],[data-copy],[data-action],[data-tab-link],[data-qtoggle],[data-rate],[data-theme-toggle],[data-proj],[data-plan],[data-plan-path],[data-plan-min],[data-exam],[data-exam-src],[data-exam-size],#menuBtn");
+  const t = e.target.closest("[data-tab],[data-toggle],[data-ex],[data-copy],[data-action],[data-tab-link],[data-qtoggle],[data-rate],[data-theme-toggle],[data-proj],[data-plan],[data-plan-path],[data-plan-min],[data-exam],[data-exam-src],[data-exam-size],[data-hint],[data-reveal],[data-ex-again],[data-und],[data-und-reset],#menuBtn");
   if (!t) return;
   if (t.id === "menuBtn") { document.body.classList.toggle("menu-open"); return; }
   if (t.dataset.proj) { const id = t.dataset.proj; if (state.projDone[id]) delete state.projDone[id]; else state.projDone[id] = Date.now(); save(); rerenderKeepScroll(); return; }
@@ -1174,7 +1301,17 @@ document.addEventListener("click", e => {
     rate(t.dataset.topic, t.dataset.rate === "1");
     if (parseHash().parts[0] === "r") render(); else rerenderKeepScroll();
   }
-  if (t.dataset.ex) { const id = t.dataset.ex; if (state.exDone[id]) delete state.exDone[id]; else { state.exDone[id] = Date.now(); logActivity(); } save(); rerenderKeepScroll(); }
+  if (t.dataset.ex) { const id = t.dataset.ex; if (state.exDone[id]) unmarkEx(id); else markExSolved(id, Date.now()); save(); rerenderKeepScroll(); refreshChrome(); }
+  if (t.dataset.exAgain) { markExSolved(t.dataset.exAgain, Date.now()); save(); rerenderKeepScroll(); refreshChrome(); }
+  if (t.dataset.und) {
+    const [i, k] = t.dataset.und.split(":").map(Number), u = UND[i];
+    state.und[u.id] = { pick: k, ok: k === u.answer, t: Date.now() }; logActivity(); save(); rerenderKeepScroll(); refreshChrome();
+  }
+  if (t.dataset.undReset) { delete state.und[UND[+t.dataset.undReset].id]; save(); rerenderKeepScroll(); }
+  if (t.dataset.hint) { const id = t.dataset.hint; state.hints[id] = (state.hints[id] || 0) + 1; save(); rerenderKeepScroll(); }
+  if (t.dataset.reveal && confirm("Разбор раскрывает решение. Сначала попробуйте ещё раз с подсказками — показать всё равно?")) {
+    state.reveal[t.dataset.reveal] = Date.now(); save(); rerenderKeepScroll();
+  }
   if (t.dataset.copy) { navigator.clipboard && navigator.clipboard.writeText(t.dataset.copy).then(() => { t.textContent = "Скопировано ✔"; }); }
   if (t.dataset.action) action(t.dataset.action);
 });
@@ -1256,6 +1393,8 @@ window.addEventListener("hashchange", () => {
 });
 setTab(state.tab || "sections", false);
 render();
+syncProgress();
+window.addEventListener("focus", syncProgress);   // вернулись из терминала после проверки — подхватить результат
 </script>
 </body>
 </html>

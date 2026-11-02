@@ -27,7 +27,7 @@ TEMPLATE = Path(__file__).resolve().parent / "portal_template.html"
 OUTPUT = ROOT / "index.html"
 
 LINK_RE = re.compile(r"\[([^\]]+)\]\([^)]*?cheatsheets/([\w\-]+\.html)\)")
-LOCAL_FILES = {"my_answer.csv", "solution_output.csv"}  # личные файлы ученика, в git не попадают
+LOCAL_FILES = {"my_answer.csv", "solution_output.csv", "answer.key"}  # личные файлы ученика, в git не попадают
 LEVEL_ICONS = {"🟢": "beginner", "🟡": "intermediate", "🔴": "advanced"}
 
 
@@ -124,22 +124,45 @@ def parse_projects():
     return projects
 
 
+def split_task(md):
+    """task.md → (условие без подсказок и разбора, [подсказки по одной], разбор)."""
+    md = re.sub(r"\A\s*# .*\n", "", md)                # заголовок упражнения портал показывает сам
+    sections = re.split(r"^(?=## )", md, flags=re.M)
+    body, hints, review = [], [], ""
+    for sec in sections:
+        head, _, rest = sec.partition("\n")
+        if head.strip() == "## Подсказки":
+            hints = [re.sub(r"\s*\n\s*", " ", h).strip() for h in re.split(r"^- ", rest, flags=re.M) if h.strip()]
+        elif head.strip() == "## Задание":
+            body.append(rest)                         # заголовок «📝 Задание» уже есть в портале
+        elif head.strip() == "## Проверка":
+            continue                                  # в портале свой блок самопроверки
+        elif head.strip() == "## Разбор":
+            review = "\n".join(l for l in rest.splitlines() if not l.startswith("> Читайте после")).strip()
+        else:
+            body.append(sec)
+    return "".join(body).rstrip() + "\n", hints, review
+
+
 def parse_exercises():
-    """Каждая папка с task.md — одно упражнение."""
+    """Каждая папка с task.md — одно упражнение. В task.md можно указать <!-- шпаргалка: имя -->."""
     exercises = []
     for task in sorted(EXERCISES.rglob("task.md")):
         folder = task.parent
         rel = folder.relative_to(ROOT).as_posix()
         topic = folder.relative_to(EXERCISES).parts[0]
         md = task.read_text(encoding="utf-8")
-        cheatsheet = f"{topic}_cheatsheet.html"
+        meta = re.search(r"<!--\s*шпаргалка:\s*([\w-]+)\s*-->", md)
+        cheatsheet = f"{meta.group(1) if meta else topic}_cheatsheet.html"
+        body, hints, review = split_task(re.sub(r"<!--.*?-->\n?", "", md))
         exercises.append({
             "id": rel,
             "title": first_heading(md, folder.name).replace("Упражнение:", "").strip(),
             "topic": topic,
+            "kind": "bug" if topic.startswith("bug_") else "calc",
             "cheatsheet": cheatsheet if (CHEATSHEETS / cheatsheet).exists() else None,
             "files": sorted(p.name for p in folder.iterdir() if p.is_file() and p.name not in LOCAL_FILES),
-            "task": md,
+            "task": body, "hints": hints, "review": review,
         })
     return exercises
 
@@ -199,6 +222,47 @@ def parse_glossary():
             errors.append(f"glossary.md: термин «{t['t']}» повторяется")
         seen.add(t["t"].lower())
     return sorted(terms, key=lambda t: t["t"].lower()), errors
+
+
+UNDERSTANDING = {"predict": "predict.md", "case": "cases.md"}
+
+
+def parse_understanding():
+    """understanding/*.md: «## Вопрос», <!-- демо: файл | темы: стемы -->, условие, варианты «- …» (верный с ✅), «**Почему.** …»."""
+    tasks, errors = [], []
+    for kind, name in UNDERSTANDING.items():
+        path = ROOT / "understanding" / name
+        if not path.exists():
+            continue
+        for n, chunk in enumerate(re.split(r"^## ", path.read_text(encoding="utf-8"), flags=re.M)[1:], 1):
+            head, _, rest = chunk.partition("\n")
+            where = f"understanding/{name}: «{head.strip()}»"
+            meta = re.search(r"<!--(.*?)-->", rest)
+            fields = dict(re.findall(r"(демо|темы):\s*([^|]+)", meta.group(1))) if meta else {}
+            demo = fields.get("демо", "").strip() or None
+            if demo and not (INTERACTIVE / demo).exists():
+                errors.append(f"{where}: нет интерактива {demo}")
+                demo = None
+            topics = []
+            for stem in [s.strip() for s in fields.get("темы", "").split(",") if s.strip()]:
+                if (CHEATSHEETS / f"{stem}_cheatsheet.html").exists():
+                    topics.append(f"{stem}_cheatsheet.html")
+                else:
+                    errors.append(f"{where}: нет шпаргалки «{stem}»")
+            body = re.sub(r"<!--.*?-->\n?", "", rest)
+            question, _, tail = body.partition("\n- ")
+            options_text, _, why = ("- " + tail).partition("**Почему.**")
+            options = [o.strip() for o in re.split(r"^- ", options_text, flags=re.M) if o.strip()]
+            answer = [i for i, o in enumerate(options) if o.endswith("✅")]
+            if len(options) < 2 or len(answer) != 1 or not why.strip():
+                errors.append(f"{where}: нужно ≥ 2 вариантов, ровно один с ✅ и разбор «**Почему.**»")
+                continue
+            tasks.append({
+                "id": f"{kind}:{n}", "kind": kind, "q": head.strip(), "text": question.strip(),
+                "options": [o.rstrip("✅ ").strip() for o in options], "answer": answer[0],
+                "why": why.strip(), "demo": demo, "topics": topics,
+            })
+    return tasks, errors
 
 
 def parse_prerequisites():
@@ -312,9 +376,13 @@ def main():
     glossary, glossary_errors = parse_glossary()
     for e in glossary_errors:
         print(f"  ⚠ {e}")
+    understanding, understanding_errors = parse_understanding()
+    for e in understanding_errors:
+        print(f"  ⚠ {e}")
 
     data = {"parts": parts, "paths": paths, "exercises": exercises, "titles": titles,
-            "quizzes": quizzes, "questions": questions, "demos": demos, "prereqs": prereqs, "projects": projects, "glossary": glossary, "build": build_version()}
+            "quizzes": quizzes, "questions": questions, "demos": demos, "prereqs": prereqs, "projects": projects,
+            "glossary": glossary, "understanding": understanding, "build": build_version()}
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     page = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
     OUTPUT.write_text(page, encoding="utf-8")
@@ -323,7 +391,7 @@ def main():
     print(f"  тем: {len(titles)}, разделов: {sum(len(p['sections']) for p in parts)}, "
           f"путей: {len(paths)}, упражнений: {len(exercises)}, проектов: {len(projects)}, тестов: {len(quizzes)}, "
           f"вопросов: {sum(map(len, questions.values()))} к {len(questions)} темам, "
-          f"интерактивов: {len(demos)}, тем со связями: {len(prereqs)}, терминов: {len(glossary)}, вне README: {len(orphans)}")
+          f"интерактивов: {len(demos)}, тем со связями: {len(prereqs)}, терминов: {len(glossary)}, задач на понимание: {len(understanding)}, вне README: {len(orphans)}")
 
 
 if __name__ == "__main__":

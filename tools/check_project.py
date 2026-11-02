@@ -215,6 +215,13 @@ def check_glossary():
     report(errs, [], f"терминов: {len(terms)}, со ссылками на шпаргалки: {sum(1 for t in terms if t['topics'])}")
 
 
+def check_understanding():
+    section("Задачи на понимание (understanding/)")
+    from build_portal import parse_understanding
+    tasks, errs = parse_understanding()
+    report(errs, [], f"задач: {len(tasks)}, с интерактивом: {sum(1 for t in tasks if t['demo'])}")
+
+
 def check_questions_and_demos():
     section("Вопросы и интерактивы")
     errs, warns = [], []
@@ -249,23 +256,32 @@ def check_questions_and_demos():
 
 def check_exercises(run_solutions):
     section("Упражнения" + ("" if run_solutions else " (без запуска решений)"))
-    from check_exercise import compare
+    from check_exercise import compare, load_reference, reference_path
     import pandas as pd
 
     errs, warns, checked = [], [], 0
     tasks = sorted((ROOT / "exercises").rglob("task.md"))
     for task in tasks:
         folder = task.parent
-        for need in ["input.csv", "answer.csv"]:
-            if not (folder / need).exists():
-                errs.append(f"{rel(folder)}: нет {need}")
+        if not (folder / "input.csv").exists():
+            errs.append(f"{rel(folder)}: нет input.csv")
+        if not reference_path(folder).exists():
+            errs.append(f"{rel(folder)}: нет эталона answer.key")
+        elif reference_path(folder).name == "answer.csv":
+            warns.append(f"{rel(folder)}: эталон лежит открыто в answer.csv — закодируйте его (check_exercise.save_reference)")
+        md = task.read_text(encoding="utf-8")
+        for head in ["## Подсказки", "## Проверка", "## Разбор"]:
+            if not re.search(rf"^{head}\s*$", md, re.M):
+                warns.append(f"{rel(task)}: нет раздела «{head[3:]}»")
         solution = folder / "solution.py"
-        if not run_solutions or not solution.exists() or not (folder / "answer.csv").exists():
+        if not solution.exists():
+            warns.append(f"{rel(folder)}: нет эталонного решения solution.py")
+        if not run_solutions or not solution.exists() or not reference_path(folder).exists():
             continue
         # решение запускаем во временной копии папки, чтобы не трогать файлы упражнения
         with tempfile.TemporaryDirectory() as tmp:
             for f in folder.iterdir():
-                if f.is_file() and f.name not in {"my_answer.csv", "solution_output.csv"}:
+                if f.is_file() and f.name not in {"my_answer.csv", "solution_output.csv", "answer.key", "answer.csv"}:
                     shutil.copy(f, tmp)
             run = subprocess.run([sys.executable, "solution.py"], cwd=tmp, capture_output=True, text=True,
                                  encoding="utf-8", errors="replace", env={**__import__("os").environ, "PYTHONIOENCODING": "utf-8", "MPLBACKEND": "Agg"})
@@ -275,9 +291,9 @@ def check_exercises(run_solutions):
             elif not out.exists():
                 warns.append(f"{rel(solution)}: не создаёт solution_output.csv — сравнить с эталоном нельзя")
             else:
-                problems = compare(pd.read_csv(folder / "answer.csv"), pd.read_csv(out))
+                problems = compare(load_reference(folder), pd.read_csv(out))
                 if problems:
-                    errs.append(f"{rel(solution)}: результат не совпадает с answer.csv — {problems[0]}")
+                    errs.append(f"{rel(solution)}: результат не совпадает с эталоном — {problems[0]}")
                 else:
                     checked += 1
     msg = f"упражнений: {len(tasks)}, файлы на месте" + (f"; решений совпадает с эталоном: {checked}" if run_solutions else "")
@@ -324,6 +340,7 @@ def check_portal_fresh():
     sources = [ROOT / n for n in ("README.md", "ROADMAP.md", "glossary.md", "prerequisites.md", "tools/portal_template.html") if (ROOT / n).exists()]
     sources += list((ROOT / "exercises").rglob("task.md")) + list((ROOT / "questions").glob("*.md"))
     sources += list((ROOT / "interactive").glob("*.html")) + list((ROOT / "projects").glob("*/README.md"))
+    sources += list((ROOT / "understanding").glob("*.md"))
     newer = [rel(p) for p in sources if p.stat().st_mtime > index.stat().st_mtime]
     warns = [f"index.html старше {len(newer)} исходных файлов (например, {newer[0]}) — пересоберите: python tools/build_portal.py"] if newer else []
     report([], warns, "собран после последних изменений")
@@ -341,6 +358,7 @@ def main():
     check_questions_and_demos()
     check_prerequisites()
     check_glossary()
+    check_understanding()
     check_exercises(run_solutions=not args.fast)
     check_projects(run_solutions=not args.fast)
     check_portal_fresh()

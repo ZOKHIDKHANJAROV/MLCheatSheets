@@ -2,528 +2,154 @@
 
 > **Практические задания для закрепления теории из [cheatsheets](README.md)**
 
-Этот файл содержит набор упражнений для практического освоения различных методов предобработки и работы с данными в машинном обучении.
+Всего упражнений: **53**, из них 🐞 «Найди ошибку» — 6. Удобнее всего решать их в портале (`python start.py` → вкладка «Практика»): там подсказки открываются по одной, решённое упражнение отмечается само, после решения открывается разбор, а через 2 недели упражнение возвращается на повтор.
 
-## 🎯 О практических упражнениях
+## 🎯 Как устроено упражнение
 
-Упражнения разработаны для **отработки навыков** после изучения соответствующих cheatsheets. Каждое упражнение включает:
+- `input.csv` (и другие файлы данных) — входные данные;
+- `task.md` — условие, **подсказки** от лёгкой к сильной, формат ответа и **разбор** (читайте после попытки);
+- `exercise.ipynb` — тетрадка с загрузкой данных и ячейкой проверки;
+- `solution.py` — эталонное решение с комментариями;
+- `answer.key` — эталонный ответ в закодированном виде, чтобы не подсмотреть случайно;
+- 🐞 у заданий «Найди ошибку» есть `buggy.py` — правдоподобный код с ошибками, который надо найти и исправить.
 
-- 📁 **Реальные данные** - CSV файлы для практики
-- 📝 **Подробное условие** - что нужно сделать
-- ✅ **Правильные ответы** - для самопроверки
-- 💡 **Готовые решения** - с комментариями и объяснениями (для некоторых упражнений)
+Проверка решения (из корня репозитория):
 
-### ✨ Новое: Подробные решения!
+```bash
+python tools/check_exercise.py exercises/<папка>      # ваш результат — my_answer.csv в папке упражнения
+python tools/check_exercise.py --list                  # все упражнения и что уже решено
+```
 
-Для некоторых упражнений доступны файлы `solution.py` с подробными комментариями. Используйте их для:
-- 📖 Изучения best practices
-- 🔍 Понимания пошагового процесса решения
-- ✔️ Проверки своего подхода
-- 🎓 Обучения на примерах
+Проверка не только говорит «неверно», но и подсказывает вероятную причину: порядок строк, округление, ddof, проценты вместо долей, сдвиг нумерации, перепутанные столбцы, лишний индекс.
 
-### Связь с курсом
-
-Упражнения соответствуют разделам из [Дорожной карты](ROADMAP.md):
-- **Этап 3 (Путь 1: Полный новичок)**: Упражнения 1-8
-- **Этапы 2, 4–6 (Путь 1)**: Упражнения 9-15 (метрики, регрессия, классификация, деревья, бустинг)
-- **Этапы 1, 3, 5 (Путь 2)**: Упражнения 16-22 (активации, softmax, backprop, MLP, оптимизаторы, свёртка, attention)
-- **Пути 3 и 4**: Упражнения 23-29 (подбор гиперпараметров, SHAP, утечки, дрейф, TF-IDF, сглаживание, Q-learning)
+Кроме расчётных упражнений в портале есть 🧩 **задачи на понимание** ([understanding/](understanding/)): «Предскажи результат» с проверкой в интерактиве и «Выбери подход» — короткие рабочие кейсы.
 
 После упражнений пути попробуйте его **мини-проект** — сквозную задачу без готового ответа: [projects/](projects/README.md).
-- **Подготовка данных**: Все упражнения полезны
-- **Feature Engineering**: Упражнения 6.1-6.7
 
-## Список упражнений
+## Упражнения по учебным путям ([ROADMAP](ROADMAP.md))
 
-### 1. Предобработка данных (Preprocessing)
+### 🌱 Путь 1: Полный новичок в ML (3-6 месяцев)
 
-**Описание:** Применение StandardScaler к числовым признакам и LabelEncoder к категориальным признакам.
+**Этап 1: Основы Python и библиотек (2-4 недели)**
 
-**Файлы:**
-- [Входные данные](exercises/preprocessing/input.csv)
-- [Условие задачи](exercises/preprocessing/task.md)
-- [Ответ](exercises/preprocessing/answer.csv)
-- [Решение с комментариями](exercises/preprocessing/solution.py) ✨ NEW!
+- **Предобработка данных (Preprocessing)** — [условие](exercises/preprocessing/task.md) · [папка](exercises/preprocessing/) · теория: [Предобработка данных (Preprocessing)](cheatsheets/preprocessing_cheatsheet.html)
 
----
+**Этап 2: Основы теории ML (3-4 недели)**
 
-### 2. Обработка пропущенных значений и кодирование (Data Preprocessing: Missing Values & Encoding)
+- **Кросс-валидация** — [условие](exercises/cross_validation/task.md) · [папка](exercises/cross_validation/) · теория: [Кросс-валидация](cheatsheets/cross_validation_cheatsheet.html)
+- **Градиентный спуск для линейной регрессии вручную** — [условие](exercises/gradient_descent/task.md) · [папка](exercises/gradient_descent/) · теория: [Градиентный спуск (Gradient Descent)](cheatsheets/gradient_descent_cheatsheet.html)
 
-**Описание:** Заполнение пропущенных значений (mean для числовых, mode для категориальных) и применение One-Hot Encoding.
+**Этап 3: Подготовка данных (2-3 недели)**
 
-**Файлы:**
-- [Входные данные](exercises/data_preprocessing_missing_encoding/input.csv)
-- [Условие задачи](exercises/data_preprocessing_missing_encoding/task.md)
-- [Ответ](exercises/data_preprocessing_missing_encoding/answer.csv)
+- **Обработка пропущенных значений и кодирование** — [условие](exercises/data_preprocessing_missing_encoding/task.md) · [папка](exercises/data_preprocessing_missing_encoding/) · теория: [Data Preprocessing (missing values, encoding)](cheatsheets/data_preprocessing_missing_encoding_cheatsheet.html)
+- **Обработка выбросов: метод IQR** — [условие](exercises/outliers_handling/task.md) · [папка](exercises/outliers_handling/) · теория: [Обработка выбросов](cheatsheets/outliers_handling_cheatsheet.html)
+- **Кодирование категориальных признаков** — [условие](exercises/categorical_encoding/task.md) · [папка](exercises/categorical_encoding/) · теория: [Кодирование категориальных признаков](cheatsheets/categorical_encoding_cheatsheet.html)
+- **Масштабирование и нормализация** — [условие](exercises/scaling_normalization/task.md) · [папка](exercises/scaling_normalization/) · теория: [Масштабирование и нормализация](cheatsheets/scaling_normalization_cheatsheet.html)
+- **Отбор признаков 1: удаление низкодисперсных признаков (Variance Threshold)** — [условие](exercises/feature_selection/exercise1_variance_threshold/task.md) · [папка](exercises/feature_selection/exercise1_variance_threshold/) · теория: [Выбор признаков (Feature Selection)](cheatsheets/feature_selection_cheatsheet.html)
+- **Отбор признаков 2: взаимная информация (Mutual Information)** — [условие](exercises/feature_selection/exercise2_mutual_information/task.md) · [папка](exercises/feature_selection/exercise2_mutual_information/) · теория: [Выбор признаков (Feature Selection)](cheatsheets/feature_selection_cheatsheet.html)
+- **Отбор признаков 3: рекурсивное удаление признаков (RFE)** — [условие](exercises/feature_selection/exercise3_rfe/task.md) · [папка](exercises/feature_selection/exercise3_rfe/) · теория: [Выбор признаков (Feature Selection)](cheatsheets/feature_selection_cheatsheet.html)
+- **Отбор признаков 4: Lasso (L1-регуляризация)** — [условие](exercises/feature_selection/exercise4_lasso/task.md) · [папка](exercises/feature_selection/exercise4_lasso/) · теория: [Выбор признаков (Feature Selection)](cheatsheets/feature_selection_cheatsheet.html)
+- **Отбор признаков 5: важность признаков в случайном лесе** — [условие](exercises/feature_selection/exercise5_tree_importance/task.md) · [папка](exercises/feature_selection/exercise5_tree_importance/) · теория: [Выбор признаков (Feature Selection)](cheatsheets/feature_selection_cheatsheet.html)
+- **Отбор признаков 6: удаление коррелирующих признаков** — [условие](exercises/feature_selection/exercise6_remove_correlated/task.md) · [папка](exercises/feature_selection/exercise6_remove_correlated/) · теория: [Выбор признаков (Feature Selection)](cheatsheets/feature_selection_cheatsheet.html)
+- **Отбор признаков 7: корреляция с целевой переменной** — [условие](exercises/feature_selection/exercise7_correlation_target/task.md) · [папка](exercises/feature_selection/exercise7_correlation_target/) · теория: [Выбор признаков (Feature Selection)](cheatsheets/feature_selection_cheatsheet.html)
+- **Снижение размерности: PCA** — [условие](exercises/dimensionality_reduction/task.md) · [папка](exercises/dimensionality_reduction/) · теория: [Снижение размерности (Dimensionality Reduction)](cheatsheets/dimensionality_reduction_cheatsheet.html)
+- **Балансировка классов: random oversampling** — [условие](exercises/imbalanced_data/task.md) · [папка](exercises/imbalanced_data/) · теория: [Балансировка классов (Imbalanced Data)](cheatsheets/imbalanced_data_cheatsheet.html)
+- 🐞 **Найди ошибку: масштабирование до разбиения** — [условие](exercises/bug_scaler_leakage/task.md) · [папка](exercises/bug_scaler_leakage/) · теория: [Масштабирование и нормализация](cheatsheets/scaling_normalization_cheatsheet.html)
+- 🐞 **Найди ошибку: утечка целевой переменной** — [условие](exercises/bug_target_leakage/task.md) · [папка](exercises/bug_target_leakage/) · теория: [Feature Engineering](cheatsheets/feature_engineering_cheatsheet.html)
 
----
+**Этап 4: Классические алгоритмы - Регрессия (2-3 недели)**
 
-### 3. Обработка выбросов (Outliers Handling)
+- **Линейная регрессия: цена квартиры** — [условие](exercises/linreg/task.md) · [папка](exercises/linreg/) · теория: [Линейная регрессия](cheatsheets/linreg_cheatsheet.html)
+- **Метрики регрессии** — [условие](exercises/regression_metrics/task.md) · [папка](exercises/regression_metrics/) · теория: [Метрики регрессии](cheatsheets/regression_metrics_cheatsheet.html)
 
-**Описание:** Определение и удаление выбросов с использованием метода IQR (Interquartile Range).
+**Этап 5: Классические алгоритмы - Классификация (2-3 недели)**
 
-**Файлы:**
-- [Входные данные](exercises/outliers_handling/input.csv)
-- [Условие задачи](exercises/outliers_handling/task.md)
-- [Ответ](exercises/outliers_handling/answer.csv)
+- **Логистическая регрессия: отток клиентов** — [условие](exercises/logreg/task.md) · [папка](exercises/logreg/) · теория: [Логистическая регрессия](cheatsheets/logreg_cheatsheet.html)
+- **Метрики классификации** — [условие](exercises/classification_metrics/task.md) · [папка](exercises/classification_metrics/) · теория: [Метрики классификации](cheatsheets/classification_metrics_cheatsheet.html)
+- **ROC-кривая и AUC вручную** — [условие](exercises/roc_auc/task.md) · [папка](exercises/roc_auc/) · теория: [ROC и AUC](cheatsheets/roc_auc_cheatsheet.html)
+- **k ближайших соседей вручную** — [условие](exercises/knn/task.md) · [папка](exercises/knn/) · теория: [k-ближайших соседей (k-NN)](cheatsheets/knn_cheatsheet.html)
+- **Мультиномиальный наивный Байес для спама** — [условие](exercises/naive_bayes/task.md) · [папка](exercises/naive_bayes/) · теория: [Наивный Байес (Naive Bayes)](cheatsheets/naive_bayes_cheatsheet.html)
+- 🐞 **Найди ошибку: метрики классификации** — [условие](exercises/bug_metrics/task.md) · [папка](exercises/bug_metrics/) · теория: [Метрики классификации](cheatsheets/classification_metrics_cheatsheet.html)
 
----
+**Этап 6: Деревья и ансамбли (3-4 недели)**
 
-### 4. Кодирование категориальных признаков (Categorical Encoding)
+- **Дерево решений: одобрение кредита** — [условие](exercises/decision_trees/task.md) · [папка](exercises/decision_trees/) · теория: [Деревья решений для классификации](cheatsheets/decision_trees_cheatsheet.html)
+- **Случайный лес: OOB-оценка и важность признаков** — [условие](exercises/random_forest/task.md) · [папка](exercises/random_forest/) · теория: [Случайный лес для классификации](cheatsheets/random_forest_cheatsheet.html)
+- **Градиентный бустинг: прокат велосипедов** — [условие](exercises/gradient_boosting_regression/task.md) · [папка](exercises/gradient_boosting_regression/) · теория: [Градиентный бустинг для регрессии](cheatsheets/gradient_boosting_regression_cheatsheet.html)
 
-**Описание:** Применение различных методов кодирования: Label Encoding, One-Hot Encoding и Target Encoding.
+### 🚀 Путь 2: Специализация в глубоком обучении (4-8 месяцев)
 
-**Файлы:**
-- [Входные данные](exercises/categorical_encoding/input.csv)
-- [Условие задачи](exercises/categorical_encoding/task.md)
-- [Ответ](exercises/categorical_encoding/answer.csv)
+**Этап 1: Основы нейросетей (3-4 недели)**
 
----
+- **Функции активации и их производные** — [условие](exercises/activation_functions/task.md) · [папка](exercises/activation_functions/) · теория: [Функции активации (ReLU, Sigmoid, Tanh, Softmax)](cheatsheets/activation_functions_cheatsheet.html)
+- **Softmax и кросс-энтропия (численно устойчиво)** — [условие](exercises/loss_functions/task.md) · [папка](exercises/loss_functions/) · теория: [Функции потерь для классификации и регрессии](cheatsheets/loss_functions_cheatsheet.html)
+- **Обратное распространение для одного нейрона** — [условие](exercises/backpropagation/task.md) · [папка](exercises/backpropagation/) · теория: [Обратное распространение ошибки (Backpropagation)](cheatsheets/backpropagation_cheatsheet.html)
+- **Прямой проход многослойного перцептрона** — [условие](exercises/mlp/task.md) · [папка](exercises/mlp/) · теория: [Архитектура MLP (многослойный перцептрон)](cheatsheets/mlp_cheatsheet.html)
+- **SGD, Momentum и Adam на «овраге»** — [условие](exercises/optimizers/task.md) · [папка](exercises/optimizers/) · теория: [Оптимизаторы (SGD, Momentum, Adam, RMSProp)](cheatsheets/optimizers_cheatsheet.html)
+- 🐞 **Найди ошибку: цикл градиентного спуска** — [условие](exercises/bug_training_loop/task.md) · [папка](exercises/bug_training_loop/) · теория: [Градиентный спуск (Gradient Descent)](cheatsheets/gradient_descent_cheatsheet.html)
 
-### 5. Масштабирование и нормализация (Scaling and Normalization)
+**Этап 2: Фреймворки (2-3 недели)**
 
-**Описание:** Применение различных методов масштабирования: MinMaxScaler, StandardScaler, RobustScaler и MaxAbsScaler.
+- **Цикл обучения как в PyTorch — на NumPy** — [условие](exercises/pytorch_full_guide/task.md) · [папка](exercises/pytorch_full_guide/) · теория: [PyTorch полный гайд](cheatsheets/pytorch_full_guide_cheatsheet.html)
 
-**Файлы:**
-- [Входные данные](exercises/scaling_normalization/input.csv)
-- [Условие задачи](exercises/scaling_normalization/task.md)
-- [Ответ](exercises/scaling_normalization/answer.csv)
-- [Решение с комментариями](exercises/scaling_normalization/solution.py) ✨ NEW!
+**Этап 3: Сверточные сети (Computer Vision) (3-4 недели)**
 
----
+- **Свёртка, ReLU и max pooling вручную** — [условие](exercises/cnn_basics/task.md) · [папка](exercises/cnn_basics/) · теория: [Основы свертки](cheatsheets/cnn_basics_cheatsheet.html)
+- **IoU и Non-Maximum Suppression** — [условие](exercises/object_detection/task.md) · [папка](exercises/object_detection/) · теория: [Детекция объектов - Faster R-CNN, SSD, RetinaNet, EfficientDet](cheatsheets/object_detection_cheatsheet.html)
+- **Метрики сегментации: IoU, Dice, pixel accuracy** — [условие](exercises/image_segmentation/task.md) · [папка](exercises/image_segmentation/) · теория: [Сегментация изображений (U-Net, DeepLab, Mask R-CNN)](cheatsheets/image_segmentation_cheatsheet.html)
 
-### 6. Выбор признаков (Feature Selection) - Цикл упражнений
+**Этап 4: Рекуррентные сети и NLP (3-4 недели)**
 
-**Описание:** Комплексный цикл упражнений по различным методам отбора признаков (Filter, Wrapper, Embedded).
+- **Ячейка LSTM: прямой проход по последовательности** — [условие](exercises/lstm/task.md) · [папка](exercises/lstm/) · теория: [LSTM (Long Short-Term Memory)](cheatsheets/lstm_cheatsheet.html)
+- **Word embeddings: косинусная близость и аналогии** — [условие](exercises/word_embeddings/task.md) · [папка](exercises/word_embeddings/) · теория: [Векторные представления слов (Word2Vec, GloVe, FastText)](cheatsheets/word_embeddings_cheatsheet.html)
 
-**Упражнения:**
+**Этап 5: Трансформеры и LLM (4-5 недель)**
 
-#### 6.1. Variance Threshold (Удаление низкодисперсных признаков)
-- [Входные данные](exercises/feature_selection/exercise1_variance_threshold/input.csv)
-- [Условие задачи](exercises/feature_selection/exercise1_variance_threshold/task.md)
-- [Ответ](exercises/feature_selection/exercise1_variance_threshold/answer.csv)
+- **Scaled dot-product attention** — [условие](exercises/self_attention/task.md) · [папка](exercises/self_attention/) · теория: [Self-attention](cheatsheets/self_attention_cheatsheet.html)
 
-#### 6.2. Mutual Information (Взаимная информация)
-- [Входные данные](exercises/feature_selection/exercise2_mutual_information/input.csv)
-- [Условие задачи](exercises/feature_selection/exercise2_mutual_information/task.md)
-- [Ответ](exercises/feature_selection/exercise2_mutual_information/answer.csv)
+**Этап 6: Генеративные модели (3-4 недели)**
 
-#### 6.3. RFE - Recursive Feature Elimination
-- [Входные данные](exercises/feature_selection/exercise3_rfe/input.csv)
-- [Условие задачи](exercises/feature_selection/exercise3_rfe/task.md)
-- [Ответ](exercises/feature_selection/exercise3_rfe/answer.csv)
+- **VAE: репараметризация, KL и ELBO** — [условие](exercises/vae/task.md) · [папка](exercises/vae/) · теория: [Вариационные автоэнкодеры (VAE)](cheatsheets/vae_cheatsheet.html)
+- **Функции потерь GAN: minimax и non-saturating** — [условие](exercises/gan/task.md) · [папка](exercises/gan/) · теория: [Генеративно-состязательные сети (GAN)](cheatsheets/gan_cheatsheet.html)
 
-#### 6.4. Lasso (L1 регуляризация)
-- [Входные данные](exercises/feature_selection/exercise4_lasso/input.csv)
-- [Условие задачи](exercises/feature_selection/exercise4_lasso/task.md)
-- [Ответ](exercises/feature_selection/exercise4_lasso/answer.csv)
+### 💼 Путь 3: ML для работы (Production ML) (2-4 месяца)
 
-#### 6.5. Tree-based Feature Importance
-- [Входные данные](exercises/feature_selection/exercise5_tree_importance/input.csv)
-- [Условие задачи](exercises/feature_selection/exercise5_tree_importance/task.md)
-- [Ответ](exercises/feature_selection/exercise5_tree_importance/answer.csv)
+**Этап 1: Оптимизация моделей (2-3 недели)**
 
-#### 6.6. Удаление коррелирующих признаков
-- [Входные данные](exercises/feature_selection/exercise6_remove_correlated/input.csv)
-- [Условие задачи](exercises/feature_selection/exercise6_remove_correlated/task.md)
-- [Ответ](exercises/feature_selection/exercise6_remove_correlated/answer.csv)
+- **Подбор глубины дерева кросс-валидацией** — [условие](exercises/hyperparameter_tuning/task.md) · [папка](exercises/hyperparameter_tuning/) · теория: [Grid Search / Random Search](cheatsheets/hyperparameter_tuning_cheatsheet.html)
 
-#### 6.7. Корреляция с целевой переменной
-- [Входные данные](exercises/feature_selection/exercise7_correlation_target/input.csv)
-- [Условие задачи](exercises/feature_selection/exercise7_correlation_target/task.md)
-- [Ответ](exercises/feature_selection/exercise7_correlation_target/answer.csv)
+**Этап 2: Интерпретируемость (2 недели)**
 
-**См. также:** [README цикла упражнений](exercises/feature_selection/README.md)
+- **Значения Шепли вручную** — [условие](exercises/shap/task.md) · [папка](exercises/shap/) · теория: [SHAP значения](cheatsheets/shap_cheatsheet.html)
 
----
+**Этап 3: Production и MLOps (3-4 недели)**
 
-### 7. Снижение размерности (Dimensionality Reduction)
+- **Утечка данных: отбор признаков вне пайплайна** — [условие](exercises/ml_pipelines/task.md) · [папка](exercises/ml_pipelines/) · теория: [Пайплайны ML](cheatsheets/ml_pipelines_cheatsheet.html)
+- 🐞 **Найди ошибку: отбор признаков до кросс-валидации** — [условие](exercises/bug_cv_selection/task.md) · [папка](exercises/bug_cv_selection/) · теория: [Пайплайны ML](cheatsheets/ml_pipelines_cheatsheet.html)
 
-**Описание:** Применение метода PCA (Principal Component Analysis) для снижения размерности данных.
+**Этап 4: Специальные темы (2-3 недели)**
 
-**Файлы:**
-- [Входные данные](exercises/dimensionality_reduction/input.csv)
-- [Условие задачи](exercises/dimensionality_reduction/task.md)
-- [Ответ](exercises/dimensionality_reduction/answer.csv)
+- **Дрейф данных: Population Stability Index** — [условие](exercises/concept_drift/task.md) · [папка](exercises/concept_drift/) · теория: [Дрейф данных и концептуальный дрейф](cheatsheets/concept_drift_cheatsheet.html)
 
----
+### 📈 Путь 4: Специализация по доменам
 
-### 8. Балансировка классов (Imbalanced Data)
+**Computer Vision специалист**
 
-**Описание:** Балансировка несбалансированных данных с использованием метода Random Oversampling.
+- **IoU и Non-Maximum Suppression** — [условие](exercises/object_detection/task.md) · [папка](exercises/object_detection/) · теория: [Детекция объектов - Faster R-CNN, SSD, RetinaNet, EfficientDet](cheatsheets/object_detection_cheatsheet.html)
+- **Метрики сегментации: IoU, Dice, pixel accuracy** — [условие](exercises/image_segmentation/task.md) · [папка](exercises/image_segmentation/) · теория: [Сегментация изображений (U-Net, DeepLab, Mask R-CNN)](cheatsheets/image_segmentation_cheatsheet.html)
 
-**Файлы:**
-- [Входные данные](exercises/imbalanced_data/input.csv)
-- [Условие задачи](exercises/imbalanced_data/task.md)
-- [Ответ](exercises/imbalanced_data/answer.csv)
+**NLP специалист**
 
-## Базовые алгоритмы ML
+- **TF-IDF вручную** — [условие](exercises/tfidf/task.md) · [папка](exercises/tfidf/) · теория: [TF-IDF и векторное пространство](cheatsheets/tfidf_cheatsheet.html)
 
-> Упражнения к этапам 2, 4–6 [Пути новичка](ROADMAP.md). Данные и эталоны создаёт `tools/generate_basic_exercises.py`.
+**Time Series специалист**
 
-### 9. Метрики регрессии
+- **Экспоненциальное сглаживание: SES и Хольт** — [условие](exercises/exponential_smoothing/task.md) · [папка](exercises/exponential_smoothing/) · теория: [Экспоненциальное сглаживание](cheatsheets/exponential_smoothing_cheatsheet.html)
+- 🐞 **Найди ошибку: валидация временного ряда** — [условие](exercises/bug_time_series_split/task.md) · [папка](exercises/bug_time_series_split/) · теория: [Валидация временных рядов](cheatsheets/time_series_validation_cheatsheet.html)
 
-**Теория:** [Метрики регрессии](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/regression_metrics_cheatsheet.html)
+**Reinforcement Learning специалист**
 
-**Описание:** MAE, MSE, RMSE, R² и MAPE — вручную и через sklearn.metrics.
-
-**Файлы:**
-- [Входные данные](exercises/regression_metrics/input.csv)
-- [Условие задачи](exercises/regression_metrics/task.md)
-- [Ответ](exercises/regression_metrics/answer.csv)
-- [Решение с комментариями](exercises/regression_metrics/solution.py)
-
-### 10. Метрики классификации
-
-**Теория:** [Метрики классификации](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/classification_metrics_cheatsheet.html)
-
-**Описание:** Матрица ошибок, accuracy, precision, recall, F1 и ROC-AUC.
-
-**Файлы:**
-- [Входные данные](exercises/classification_metrics/input.csv)
-- [Условие задачи](exercises/classification_metrics/task.md)
-- [Ответ](exercises/classification_metrics/answer.csv)
-- [Решение с комментариями](exercises/classification_metrics/solution.py)
-
-### 11. Линейная регрессия: цена квартиры
-
-**Теория:** [Линейная регрессия](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/linreg_cheatsheet.html)
-
-**Описание:** Обучение LinearRegression на train, предсказание на test, разбор коэффициентов.
-
-**Файлы:**
-- [Входные данные](exercises/linreg/input.csv)
-- [Условие задачи](exercises/linreg/task.md)
-- [Ответ](exercises/linreg/answer.csv)
-- [Решение с комментариями](exercises/linreg/solution.py)
-
-### 12. Логистическая регрессия: отток клиентов
-
-**Теория:** [Логистическая регрессия](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/logreg_cheatsheet.html)
-
-**Описание:** StandardScaler без утечки данных, LogisticRegression, вероятности и порог.
-
-**Файлы:**
-- [Входные данные](exercises/logreg/input.csv)
-- [Условие задачи](exercises/logreg/task.md)
-- [Ответ](exercises/logreg/answer.csv)
-- [Решение с комментариями](exercises/logreg/solution.py)
-
-### 13. Дерево решений: одобрение кредита
-
-**Теория:** [Деревья решений](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/decision_trees_cheatsheet.html)
-
-**Описание:** DecisionTreeClassifier с ограничением глубины, правила дерева, важность признаков, переобучение.
-
-**Файлы:**
-- [Входные данные](exercises/decision_trees/input.csv)
-- [Условие задачи](exercises/decision_trees/task.md)
-- [Ответ](exercises/decision_trees/answer.csv)
-- [Решение с комментариями](exercises/decision_trees/solution.py)
-
-### 14. Кросс-валидация
-
-**Теория:** [Кросс-валидация](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/cross_validation_cheatsheet.html)
-
-**Описание:** KFold вручную и через cross_val_score, R² по фолдам.
-
-**Файлы:**
-- [Входные данные](exercises/cross_validation/input.csv)
-- [Условие задачи](exercises/cross_validation/task.md)
-- [Ответ](exercises/cross_validation/answer.csv)
-- [Решение с комментариями](exercises/cross_validation/solution.py)
-
-### 15. Градиентный бустинг: прокат велосипедов
-
-**Теория:** [Градиентный бустинг для регрессии](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/gradient_boosting_regression_cheatsheet.html)
-
-**Описание:** GradientBoostingRegressor на нелинейных данных, сравнение с линейной моделью.
-
-**Файлы:**
-- [Входные данные](exercises/gradient_boosting_regression/input.csv)
-- [Условие задачи](exercises/gradient_boosting_regression/task.md)
-- [Ответ](exercises/gradient_boosting_regression/answer.csv)
-- [Решение с комментариями](exercises/gradient_boosting_regression/solution.py)
-
-## Основы Deep Learning (NumPy)
-
-> Упражнения к Пути 2: всё, что фреймворки делают внутри, посчитано вручную на NumPy — PyTorch не нужен. Данные и эталоны создаёт `tools/generate_dl_exercises.py`.
-
-### 16. Функции активации и их производные
-
-**Теория:** [Функции активации](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/activation_functions_cheatsheet.html)
-
-**Описание:** sigmoid, tanh, ReLU и их производные; почему сигмоида ведёт к затуханию градиента.
-
-**Файлы:**
-- [Входные данные](exercises/activation_functions/input.csv)
-- [Условие задачи](exercises/activation_functions/task.md)
-- [Ответ](exercises/activation_functions/answer.csv)
-- [Решение с комментариями](exercises/activation_functions/solution.py)
-- [Тетрадка Jupyter](exercises/activation_functions/exercise.ipynb)
-
-### 17. Softmax и кросс-энтропия
-
-**Теория:** [Функции потерь](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/loss_functions_cheatsheet.html)
-
-**Описание:** Численно устойчивые softmax и log-sum-exp на логитах ±1000.
-
-**Файлы:**
-- [Входные данные](exercises/loss_functions/input.csv)
-- [Условие задачи](exercises/loss_functions/task.md)
-- [Ответ](exercises/loss_functions/answer.csv)
-- [Решение с комментариями](exercises/loss_functions/solution.py)
-- [Тетрадка Jupyter](exercises/loss_functions/exercise.ipynb)
-
-### 18. Обратное распространение для одного нейрона
-
-**Теория:** [Обратное распространение ошибки](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/backpropagation_cheatsheet.html)
-
-**Описание:** Прямой и обратный проход по цепному правилу, проверка градиента численно.
-
-**Файлы:**
-- [Входные данные](exercises/backpropagation/input.csv)
-- [Условие задачи](exercises/backpropagation/task.md)
-- [Ответ](exercises/backpropagation/answer.csv)
-- [Решение с комментариями](exercises/backpropagation/solution.py)
-- [Тетрадка Jupyter](exercises/backpropagation/exercise.ipynb)
-
-### 19. Прямой проход MLP
-
-**Теория:** [Архитектура MLP](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/mlp_cheatsheet.html)
-
-**Описание:** Сеть 2 → 3 → 1 с весами из weights.json: матричный прямой проход.
-
-**Файлы:**
-- [Входные данные](exercises/mlp/input.csv)
-- [Веса сети](exercises/mlp/weights.json)
-- [Условие задачи](exercises/mlp/task.md)
-- [Ответ](exercises/mlp/answer.csv)
-- [Решение с комментариями](exercises/mlp/solution.py)
-- [Тетрадка Jupyter](exercises/mlp/exercise.ipynb)
-
-### 20. SGD, Momentum и Adam
-
-**Теория:** [Оптимизаторы](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/optimizers_cheatsheet.html)
-
-**Описание:** Три оптимизатора на функции-«овраге» по формулам, 50 шагов.
-
-**Файлы:**
-- [Входные данные](exercises/optimizers/input.csv)
-- [Условие задачи](exercises/optimizers/task.md)
-- [Ответ](exercises/optimizers/answer.csv)
-- [Решение с комментариями](exercises/optimizers/solution.py)
-- [Тетрадка Jupyter](exercises/optimizers/exercise.ipynb)
-
-### 21. Свёртка, ReLU и max pooling
-
-**Теория:** [Основы свёртки](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/cnn_basics_cheatsheet.html)
-
-**Описание:** Детектор вертикальной границы на изображении 7×7, затем ReLU и пулинг 2×2.
-
-**Файлы:**
-- [Входные данные](exercises/cnn_basics/input.csv)
-- [Условие задачи](exercises/cnn_basics/task.md)
-- [Ответ](exercises/cnn_basics/answer.csv)
-- [Решение с комментариями](exercises/cnn_basics/solution.py)
-- [Тетрадка Jupyter](exercises/cnn_basics/exercise.ipynb)
-
-### 22. Scaled dot-product attention
-
-**Теория:** [Self-attention](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/self_attention_cheatsheet.html)
-
-**Описание:** softmax(QKᵀ/√d)·V для 4 токенов; бонус — каузальная маска.
-
-**Файлы:**
-- [Входные данные](exercises/self_attention/input.csv)
-- [Условие задачи](exercises/self_attention/task.md)
-- [Ответ](exercises/self_attention/answer.csv)
-- [Решение с комментариями](exercises/self_attention/solution.py)
-- [Тетрадка Jupyter](exercises/self_attention/exercise.ipynb)
-
-## Production, NLP, временные ряды и RL
-
-> Упражнения к Путям 3 и 4. Данные и эталоны создаёт `tools/generate_advanced_exercises.py`.
-
-### 23. Подбор глубины дерева кросс-валидацией
-
-**Теория:** [Подбор гиперпараметров](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/hyperparameter_tuning_cheatsheet.html)
-
-**Описание:** Средний MSE по 5 фолдам для max_depth 1–8, U-образная кривая, лучшая глубина.
-
-**Файлы:**
-- [Входные данные](exercises/hyperparameter_tuning/input.csv)
-- [Условие задачи](exercises/hyperparameter_tuning/task.md)
-- [Ответ](exercises/hyperparameter_tuning/answer.csv)
-- [Решение с комментариями](exercises/hyperparameter_tuning/solution.py)
-- [Тетрадка Jupyter](exercises/hyperparameter_tuning/exercise.ipynb)
-
-### 24. Значения Шепли вручную
-
-**Теория:** [SHAP](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/shap_cheatsheet.html)
-
-**Описание:** Перебор подмножеств признаков для модели с взаимодействием, проверка аддитивности.
-
-**Файлы:**
-- [Входные данные](exercises/shap/input.csv)
-- [Фоновая выборка](exercises/shap/background.csv)
-- [Условие задачи](exercises/shap/task.md)
-- [Ответ](exercises/shap/answer.csv)
-- [Решение с комментариями](exercises/shap/solution.py)
-- [Тетрадка Jupyter](exercises/shap/exercise.ipynb)
-
-### 25. Утечка данных: отбор признаков вне пайплайна
-
-**Теория:** [Пайплайны ML](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/ml_pipelines_cheatsheet.html)
-
-**Описание:** На чистом шуме: отбор признаков до CV даёт accuracy 0.85, честный пайплайн — около 0.5.
-
-**Файлы:**
-- [Входные данные](exercises/ml_pipelines/input.csv)
-- [Условие задачи](exercises/ml_pipelines/task.md)
-- [Ответ](exercises/ml_pipelines/answer.csv)
-- [Решение с комментариями](exercises/ml_pipelines/solution.py)
-- [Тетрадка Jupyter](exercises/ml_pipelines/exercise.ipynb)
-
-### 26. Дрейф данных: Population Stability Index
-
-**Теория:** [Дрейф данных](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/concept_drift_cheatsheet.html)
-
-**Описание:** PSI по децилям эталонной выборки для трёх признаков: stable / moderate / drift.
-
-**Файлы:**
-- [Входные данные](exercises/concept_drift/input.csv)
-- [Условие задачи](exercises/concept_drift/task.md)
-- [Ответ](exercises/concept_drift/answer.csv)
-- [Решение с комментариями](exercises/concept_drift/solution.py)
-- [Тетрадка Jupyter](exercises/concept_drift/exercise.ipynb)
-
-### 27. TF-IDF вручную
-
-**Теория:** [TF-IDF](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/tfidf_cheatsheet.html)
-
-**Описание:** Формула sklearn (сглаженный idf, L2-нормировка) на шести коротких документах.
-
-**Файлы:**
-- [Входные данные](exercises/tfidf/input.csv)
-- [Условие задачи](exercises/tfidf/task.md)
-- [Ответ](exercises/tfidf/answer.csv)
-- [Решение с комментариями](exercises/tfidf/solution.py)
-- [Тетрадка Jupyter](exercises/tfidf/exercise.ipynb)
-
-### 28. Экспоненциальное сглаживание: SES и Хольт
-
-**Теория:** [Экспоненциальное сглаживание](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/exponential_smoothing_cheatsheet.html)
-
-**Описание:** Обе модели по формулам, прогнозы на шаг вперёд и на три шага в будущее.
-
-**Файлы:**
-- [Входные данные](exercises/exponential_smoothing/input.csv)
-- [Условие задачи](exercises/exponential_smoothing/task.md)
-- [Ответ](exercises/exponential_smoothing/answer.csv)
-- [Решение с комментариями](exercises/exponential_smoothing/solution.py)
-- [Тетрадка Jupyter](exercises/exponential_smoothing/exercise.ipynb)
-
-### 29. Q-learning и SARSA по записанной траектории
-
-**Теория:** [Q-learning и SARSA](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/q_learning_sarsa_cheatsheet.html)
-
-**Описание:** Обновления двух таблиц Q по одним данным: off-policy против on-policy.
-
-**Файлы:**
-- [Входные данные](exercises/q_learning_sarsa/input.csv)
-- [Условие задачи](exercises/q_learning_sarsa/task.md)
-- [Ответ](exercises/q_learning_sarsa/answer.csv)
-- [Решение с комментариями](exercises/q_learning_sarsa/solution.py)
-- [Тетрадка Jupyter](exercises/q_learning_sarsa/exercise.ipynb)
-
-
-
-
----
-
-## 📚 Как работать с упражнениями
-
-### Рекомендуемый подход (для максимального обучения)
-
-#### Шаг 1: Изучите теорию
-Перед решением упражнения обязательно прочитайте соответствующий cheatsheet:
-- Упражнение 1 → [Preprocessing cheatsheet](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/preprocessing_cheatsheet.html)
-- Упражнение 2 → [Data Preprocessing cheatsheet](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/data_preprocessing_missing_encoding_cheatsheet.html)
-- И так далее (ссылки в конце документа)
-
-#### Шаг 2: Попробуйте решить самостоятельно
-1. Перейдите в папку упражнения: `cd exercises/имя_упражнения/`
-2. Прочитайте условие в `task.md`
-3. Изучите данные в `input.csv`
-4. Напишите свой код и сохраните результат в `my_answer.csv` (не перезаписывайте `answer.csv` — это эталон)
-5. Проверьте результат автоматически (из корня репозитория):
-
-```bash
-python tools/check_exercise.py exercises/preprocessing
-```
-
-Скрипт покажет недостающие столбцы и строки с неверными значениями. Список всех упражнений: `python tools/check_exercise.py --list`. Условия и файлы удобно открывать в учебном портале (`python start.py`, вкладка «Практика»).
-
-**Удобнее в Jupyter:** в каждой папке упражнения лежит тетрадка `exercise.ipynb` — условие, загрузка `input.csv`, ячейка для решения и ячейка проверки. Запишите итог в переменную `result` и запустите последнюю ячейку: она сохранит `my_answer.csv` и сравнит его с эталоном.
-
-```bash
-jupyter notebook exercises/linreg/exercise.ipynb
-```
-
-#### Шаг 3: Проверьте решение
-- Если получилось - отлично! Отметьте упражнение решённым на портале и переходите к следующему
-- Если не получилось - изучите `solution.py` (где доступно)
-- Экспериментируйте с параметрами
-
-### Способ 1: Самостоятельное решение (рекомендуется)
-
-```bash
-cd exercises/preprocessing/
-# Прочитайте task.md
-# Изучите input.csv
-# Напишите свой код в новом файле my_solution.py
-python my_solution.py
-# Сравните результат с answer.csv
-```
-
-**Когда использовать:** Вы изучили cheatsheet и хотите проверить понимание.
-
-### Способ 2: Изучение через готовое решение
-
-```bash
-cd exercises/имя_упражнения/
-# Откройте solution.py в редакторе
-# Изучите код построчно с комментариями
-python solution.py
-# Экспериментируйте: меняйте параметры и смотрите результат
-```
-
-**Когда использовать:** Упражнение оказалось сложным или нужны подсказки.
-
-### Способ 3: Интерактивная работа в Jupyter
-
-```bash
-# Установите jupyter если нужно
-pip install jupyter
-
-# Запустите Jupyter
-jupyter notebook
-
-# Создайте новый notebook в папке упражнения
-# Копируйте код из solution.py по блокам
-# Выполняйте и изучайте каждый блок отдельно
-```
-
-**Когда использовать:** Хотите экспериментировать и визуализировать промежуточные результаты.
-
-### 🎓 Советы по решению упражнений
-
-✅ **Решайте по порядку** - упражнения расположены по возрастанию сложности  
-✅ **Не спешите** - лучше разобраться с одним упражнением, чем пробежаться по всем  
-✅ **Экспериментируйте** - меняйте параметры, смотрите что произойдет  
-✅ **Ведите заметки** - записывайте что узнали и что не получилось  
-✅ **Используйте отладку** - добавляйте print() для понимания процесса
+- **Q-learning и SARSA по записанной траектории** — [условие](exercises/q_learning_sarsa/task.md) · [папка](exercises/q_learning_sarsa/) · теория: [Q-learning и SARSA](cheatsheets/q_learning_sarsa_cheatsheet.html)
 
 ## Требования
 
@@ -536,17 +162,6 @@ jupyter notebook
 ```bash
 pip install pandas numpy scikit-learn
 ```
-
-## Связанные чит-шиты
-
-- [Предобработка данных (Preprocessing)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/preprocessing_cheatsheet.html)
-- [Data Preprocessing (missing values, encoding)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/data_preprocessing_missing_encoding_cheatsheet.html)
-- [Обработка выбросов](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/outliers_handling_cheatsheet.html)
-- [Кодирование категориальных признаков](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/categorical_encoding_cheatsheet.html)
-- [Масштабирование и нормализация](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/scaling_normalization_cheatsheet.html)
-- [Выбор признаков (Feature Selection)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/feature_selection_cheatsheet.html)
-- [Снижение размерности (Dimensionality Reduction)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/dimensionality_reduction_cheatsheet.html)
-- [Балансировка классов (Imbalanced Data)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/imbalanced_data_cheatsheet.html)
 
 ---
 

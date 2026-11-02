@@ -85,3 +85,5 @@ my_answer.csv
 solution_output.csv
 my_predictions.csv
 solution_predictions.csv
+
+my_progress.json

@@ -30,6 +30,18 @@ class PortalHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 
+    def do_GET(self):
+        # Прогресс проверок (tools/check_exercise.py) — пустой, пока ни одно упражнение не решено
+        if self.path.split("?")[0] == "/my_progress.json" and not (ROOT / "my_progress.json").exists():
+            body = b'{"exercises": {}}'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        super().do_GET()
+
     def log_message(self, *args):
         pass  # без лога каждого запроса
 
@@ -41,6 +53,7 @@ def portal_is_stale():
     sources = [ROOT / "README.md", ROOT / "ROADMAP.md", ROOT / "glossary.md", ROOT / "prerequisites.md", ROOT / "tools" / "portal_template.html"]
     sources += list((ROOT / "exercises").rglob("task.md")) + list((ROOT / "questions").glob("*.md"))
     sources += list((ROOT / "interactive").glob("*.html")) + list((ROOT / "projects").glob("*/README.md"))
+    sources += list((ROOT / "understanding").glob("*.md"))
     return any(p.stat().st_mtime > index.stat().st_mtime for p in sources if p.exists())
 
 
