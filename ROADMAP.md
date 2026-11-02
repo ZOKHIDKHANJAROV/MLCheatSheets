@@ -30,7 +30,7 @@
 1. [NumPy для ML](cheatsheets/numpy_ml_cheatsheet.html)
 2. [Pandas для ML](cheatsheets/pandas_ml_cheatsheet.html)
 3. [Matplotlib/Seaborn для визуализации](cheatsheets/matplotlib_seaborn_ml_cheatsheet.html)
-4. **Упражнения:** Начните с preprocessing
+4. **Упражнения:** preprocessing
 
 #### Этап 2: Основы теории ML (3-4 недели) 🟢
 1. [Смещение-дисперсия](cheatsheets/bias_variance_cheatsheet.html)
@@ -45,7 +45,7 @@
 3. [Обработка выбросов](cheatsheets/outliers_handling_cheatsheet.html)
 4. [Кодирование категориальных признаков](cheatsheets/categorical_encoding_cheatsheet.html)
 5. [Масштабирование и нормализация](cheatsheets/scaling_normalization_cheatsheet.html)
-6. **Упражнения:** Все упражнения из раздела подготовки данных
+6. **Упражнения:** data_preprocessing_missing_encoding, outliers_handling, categorical_encoding, scaling_normalization, feature_selection, dimensionality_reduction, imbalanced_data
 
 #### Этап 4: Классические алгоритмы - Регрессия (2-3 недели) 🟢-🟡
 1. [Линейная регрессия](cheatsheets/linreg_cheatsheet.html)
