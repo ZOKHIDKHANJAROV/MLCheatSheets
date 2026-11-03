@@ -23,6 +23,7 @@ CHEATSHEETS = ROOT / "cheatsheets"
 EXERCISES = ROOT / "exercises"
 QUESTIONS = ROOT / "questions"
 INTERACTIVE = ROOT / "interactive"
+LECTURES = ROOT / "lectures"
 TEMPLATE = Path(__file__).resolve().parent / "portal_template.html"
 OUTPUT = ROOT / "index.html"
 
@@ -224,6 +225,27 @@ def parse_glossary():
     return sorted(terms, key=lambda t: t["t"].lower()), errors
 
 
+def parse_lectures():
+    """lectures/<тема>.md: «# Заголовок», <!-- время: N мин -->, разделы «## ». Текст портал загружает сам при открытии."""
+    lectures, errors = {}, []
+    for md in sorted(LECTURES.glob("*.md")):
+        if md.name.lower() == "readme.md":
+            continue
+        where = md.relative_to(ROOT).as_posix()
+        file_name = f"{md.stem}_cheatsheet.html"
+        if not (CHEATSHEETS / file_name).exists():
+            errors.append(f"{where}: нет шпаргалки {file_name}")
+            continue
+        text = md.read_text(encoding="utf-8")
+        minutes = re.search(r"<!--\s*время:\s*(\d+)", text)
+        heads = re.findall(r"^## (.+)$", text, flags=re.M)
+        if not minutes or len(heads) < 3:
+            errors.append(f"{where}: нужны строка <!-- время: N мин --> и хотя бы 3 раздела «## »")
+        lectures[file_name] = {"title": first_heading(text, md.stem), "minutes": int(minutes.group(1)) if minutes else 10,
+                               "heads": heads}
+    return lectures, errors
+
+
 UNDERSTANDING = {"predict": "predict.md", "case": "cases.md"}
 
 
@@ -328,7 +350,7 @@ def parse_demos():
 def build_version():
     """Метка сборки для адресов файлов в портале (…/x.html?v=метка) — сбрасывает старый кэш браузера.
     Зависит от времени изменения материалов, поэтому повторная сборка без изменений даёт ту же метку."""
-    sources = [*CHEATSHEETS.glob("*.html"), *INTERACTIVE.glob("*"), *(ROOT / "assets").glob("*"), *EXERCISES.rglob("*.*")]
+    sources = [*CHEATSHEETS.glob("*.html"), *INTERACTIVE.glob("*"), *(ROOT / "assets").glob("*"), *EXERCISES.rglob("*.*"), *LECTURES.glob("*.md")]
     return format(int(max(p.stat().st_mtime for p in sources)), "x")
 
 
@@ -379,10 +401,13 @@ def main():
     understanding, understanding_errors = parse_understanding()
     for e in understanding_errors:
         print(f"  ⚠ {e}")
+    lectures, lecture_errors = parse_lectures()
+    for e in lecture_errors:
+        print(f"  ⚠ {e}")
 
     data = {"parts": parts, "paths": paths, "exercises": exercises, "titles": titles,
             "quizzes": quizzes, "questions": questions, "demos": demos, "prereqs": prereqs, "projects": projects,
-            "glossary": glossary, "understanding": understanding, "build": build_version()}
+            "glossary": glossary, "understanding": understanding, "lectures": lectures, "build": build_version()}
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     page = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
     OUTPUT.write_text(page, encoding="utf-8")
@@ -391,7 +416,7 @@ def main():
     print(f"  тем: {len(titles)}, разделов: {sum(len(p['sections']) for p in parts)}, "
           f"путей: {len(paths)}, упражнений: {len(exercises)}, проектов: {len(projects)}, тестов: {len(quizzes)}, "
           f"вопросов: {sum(map(len, questions.values()))} к {len(questions)} темам, "
-          f"интерактивов: {len(demos)}, тем со связями: {len(prereqs)}, терминов: {len(glossary)}, задач на понимание: {len(understanding)}, вне README: {len(orphans)}")
+          f"интерактивов: {len(demos)}, тем со связями: {len(prereqs)}, терминов: {len(glossary)}, задач на понимание: {len(understanding)}, лекций: {len(lectures)}, вне README: {len(orphans)}")
 
 
 if __name__ == "__main__":

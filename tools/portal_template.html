@@ -196,6 +196,15 @@
   .hint .md p, .hint p { margin: 2px 0; }
   .cmd { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
   .cmd code { flex: 1; background: var(--panel); border: 1px solid var(--border); padding: 7px 10px; border-radius: 6px; font-size: 13px; overflow-x: auto; white-space: nowrap; }
+  .md blockquote { margin: 12px 0; padding: 8px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 6px; }
+  .md blockquote p { margin: 2px 0; }
+  .lecture .vbar { position: sticky; top: 0; z-index: 2; }
+  .lecture .page { max-width: 820px; }
+  .lecture-body { font-size: 15.5px; line-height: 1.65; padding: 10px 28px 22px; }
+  .lecture-body h2, .lecture-body h3 { margin: 26px 0 8px; }
+  .lecture-body li { margin: 3px 0; }
+  .lec-toc { columns: 2; column-gap: 24px; margin: 0 0 14px; padding-left: 20px; color: var(--muted); font-size: 14px; }
+  @media (max-width: 700px) { .lec-toc { columns: 1; } .lecture-body { padding: 6px 14px 16px; } }
   .empty { color: var(--muted); padding: 30px 0; text-align: center; }
   .kbd { font-size: 12px; color: var(--muted); }
   .kbd b { border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; font-weight: 500; }
@@ -250,7 +259,7 @@ window.mlcsPortal = { open: f => { if (!DATA.titles[f]) return false; location.h
 
 // ---------- состояние и прогресс ----------
 function emptyState() {
-  return { done: {}, exDone: {}, exAuto: {}, exRev: {}, hints: {}, reveal: {}, und: {}, projDone: {}, review: {}, notes: {}, exams: [], plan: null, activity: {}, last: null, tab: "sections", qOpen: false };
+  return { done: {}, exDone: {}, exAuto: {}, exRev: {}, hints: {}, reveal: {}, und: {}, lec: {}, projDone: {}, review: {}, notes: {}, exams: [], plan: null, activity: {}, last: null, tab: "sections", qOpen: false };
 }
 function loadState() {
   const empty = emptyState();
@@ -449,12 +458,13 @@ function render() {
   else if (kind === "j") main.innerHTML = viewProject(+a);
   else if (kind === "g") main.innerHTML = viewPlan();
   else if (kind === "u") main.innerHTML = a === undefined ? viewUnderstandingList() : viewUnderstanding(+a);
+  else if (kind === "l") { main.innerHTML = a === undefined ? viewLectureList() : viewLecture(parts.slice(1).join("/"), ctx); if (a !== undefined) loadLecture(parts.slice(1).join("/")); }
   else if (kind === "k") { if (parts[1]) glossaryQuery = ""; main.innerHTML = viewGlossary(); requestAnimationFrame(() => glossaryJump(parts.slice(1).join("/"))); }   // после сброса прокрутки ниже
   else main.innerHTML = viewHome();
   if (kind === "t" || kind === "d") forwardFrameKeys(main.querySelector("iframe"));
   else main.scrollTop = 0;
   if (kind === "s") setTab("sections", false);
-  if (kind === "p") setTab("paths", false);
+  if (kind === "p" || kind === "l") setTab("paths", false);
   if (kind === "x" || kind === "u") setTab("exercises", false);
   refreshChrome();
 }
@@ -481,6 +491,7 @@ function topicRow(f, ctx, showWhere) {
   return `<li class="${isDone(f) ? "done" : ""}">
     <input type="checkbox" data-done="${esc(f)}" ${isDone(f) ? "checked" : ""} title="Отметить как изученное">
     <a href="#/t/${encodeURIComponent(f)}${ctx ? "?ctx=" + ctx : ""}">${esc(title(f))}</a>${where}
+    ${LECT[f] ? `<a class="badge" href="${lectureLink(f, ctx)}" title="Лекция по теме${state.lec[f] ? " (прочитана)" : ""}">🎓${state.lec[f] ? "✔" : ""}</a>` : ""}
     ${demosOf(f).length ? `<a class="badge" href="#/d/${encodeURIComponent(demosOf(f)[0].file)}" title="Интерактивная демонстрация">🎮</a>` : ""}
     ${noteOf(f) ? `<span class="badge" title="Есть заметка">📝</span>` : ""}
     ${questionsOf(f).length ? `<span class="badge" title="Есть вопросы для самопроверки">❓${questionsOf(f).length}</span>` : ""}</li>`;
@@ -516,6 +527,7 @@ function viewHome() {
     <div class="cards">
       <div class="card"><b>Все шпаргалки</b><div class="meta">${all.n} из ${all.total} (${all.pct}%)</div>${bar(allTopics)}</div>
       <div class="card"><b>Практика</b><div class="meta">решено ${DATA.exercises.filter(e => state.exDone[e.id]).length} из ${DATA.exercises.length} упражнений${dueExercises().length ? ` · на повтор: ${dueExercises().length}` : ""}</div></div>
+      ${lectureCard()}
       ${understandingCard()}
       <div class="card"><b>Недавно изучено</b><div class="meta">${recent.length ? recent.map(f => `<a href="#/t/${encodeURIComponent(f)}">${esc(title(f))}</a>`).join("<br>") : "пока ничего — отметьте тему галочкой ✔"}</div></div>
     </div>
@@ -528,7 +540,7 @@ function viewHome() {
     <div class="card">
       <ol style="margin:0;padding-left:20px">
         <li>Выберите <a href="#/p/0">учебный путь</a> или раздел слева.</li>
-        <li>Откройте шпаргалку, разберите формулы и запустите код примеров.</li>
+        <li>Прочитайте <a href="#/l">🎓 лекцию</a> по теме, затем откройте шпаргалку, разберите формулы и запустите код примеров.</li>
         <li>Нажмите <b>✔ Изучено</b> (или клавишу <b>M</b>) и переходите дальше стрелкой <b>→</b>.</li>
         <li>Закрепите тему на <a href="#" data-tab-link="exercises">практике</a> — проверка ответа одной командой.</li>
         <li>Проверьте себя: кнопка <b>❓ Вопросы</b> (клавиша <b>Q</b>) открывает вопросы к теме.</li>
@@ -543,6 +555,103 @@ function viewHome() {
     </div>
     <p class="kbd" style="margin-top:16px">Клавиши: <b>/</b> поиск · <b>←</b> <b>→</b> предыдущая/следующая тема · <b>M</b> отметить изученным · <b>Q</b> вопросы · <b>Esc</b> назад к списку</p>
   </div>`;
+}
+
+// ---------- лекции ----------
+// Текст лекции (lectures/<тема>.md) загружается при открытии — так портал остаётся лёгким.
+const LECT = DATA.lectures || {};
+const lectureCache = {};
+const lectureUrl = f => `lectures/${encodeURIComponent(f.replace(/_cheatsheet\.html$/, ".md"))}${V}`;
+const lectureLink = (f, ctx) => `#/l/${encodeURIComponent(f)}${ctx ? "?ctx=" + ctx : ""}`;
+function lectureOrder() {                     // порядок учебных путей, затем остальные
+  const seen = [];
+  DATA.paths.forEach(p => pathItems(p).forEach(f => { if (LECT[f] && !seen.includes(f)) seen.push(f); }));
+  Object.keys(LECT).forEach(f => { if (!seen.includes(f)) seen.push(f); });
+  return seen;
+}
+const lecRead = () => Object.keys(LECT).filter(f => state.lec[f]).length;
+
+function lectureCard() {
+  const total = Object.keys(LECT).length;
+  if (!total) return "";
+  const next = lectureOrder().find(f => !state.lec[f]);
+  return `<a class="card" href="${next && lecRead() ? lectureLink(next) : "#/l"}"><b>🎓 Лекции</b>
+    <div class="meta">${lecRead() ? `прочитано ${lecRead()} из ${total}${next ? ` · дальше: ${esc(LECT[next].title)}` : ""}` : `${total} лекций по темам учебных путей: связный рассказ перед шпаргалкой`}</div></a>`;
+}
+
+function viewLectureList() {
+  const order = lectureOrder(), next = order.find(f => !state.lec[f]);
+  const row = (f, ctx) => `<li class="${state.lec[f] ? "done" : ""}">
+    <a href="${lectureLink(f, ctx)}">${state.lec[f] ? "✔ " : ""}${esc(LECT[f].title)}</a><span class="where">${LECT[f].minutes} мин</span>
+    <a class="badge" href="#/t/${encodeURIComponent(f)}" title="Шпаргалка">📘</a></li>`;
+  return `<div class="page">
+    <h1>🎓 Лекции</h1>
+    <p class="sub">Связный рассказ по теме: зачем она нужна, интуиция, как это работает, пример кода и подводные камни.
+      Удобный порядок — лекция → шпаргалка → вопросы → практика. Прочитано ${lecRead()} из ${order.length}.</p>
+    ${next ? `<p><a class="cta" href="${lectureLink(next)}">▶ ${lecRead() ? "Продолжить" : "Начать"}: ${esc(LECT[next].title)}</a></p>` : "<p>🎉 Все лекции прочитаны!</p>"}
+    ${DATA.paths.map((p, i) => {
+      const stages = p.stages.map(s => [s, s.items.filter(f => LECT[f])]).filter(([, l]) => l.length);
+      if (!stages.length) return "";
+      return `<h2>${esc(p.title)}</h2>${stages.map(([s, l]) => `<div class="stage"><h3>${esc(s.title)}</h3>
+        <ol class="topics">${l.map(f => row(f, `p:${i}`)).join("")}</ol></div>`).join("")}`;
+    }).join("")}
+    ${(() => { const rest = order.filter(f => !DATA.paths.some(p => pathItems(p).includes(f)));
+      return rest.length ? `<h2>Вне учебных путей</h2><ol class="topics">${rest.map(f => row(f, "")).join("")}</ol>` : ""; })()}
+  </div>`;
+}
+
+function viewLecture(f, ctx) {
+  const L = LECT[f];
+  if (!L) return `<div class="page empty">Лекция не найдена: ${esc(f)}</div>`;
+  const c = contextList(ctx);
+  const seq = (c ? c.items : lectureOrder()).filter(g => LECT[g]);
+  const idx = seq.indexOf(f), prev = seq[idx - 1], next = seq[idx + 1];
+  const ex = DATA.exercises.findIndex(e => e.cheatsheet === f);
+  const topicHref = `#/t/${encodeURIComponent(f)}${ctx ? "?ctx=" + ctx : ""}`;
+  const navBtn = (g, dir, label) => g ? `<a class="btn" href="${lectureLink(g, ctx)}" title="${esc(LECT[g].title)} (${dir === "next" ? "→" : "←"})" data-nav="${dir}">${label}</a>`
+    : `<a class="btn" style="opacity:.4;pointer-events:none" data-nav="${dir}">${label}</a>`;
+  const readBtn = `<button class="btn ${state.lec[f] ? "on" : ""}" data-lec="${esc(f)}" title="Клавиша M">${state.lec[f] ? "✔ Прочитано" : "☐ Прочитано"}</button>`;
+  return `<div class="lecture">
+    <div class="vbar">
+      <a class="btn" href="#/l" title="Все лекции (Esc)">☰ Лекции</a>
+      ${navBtn(prev, "prev", "← Назад")}
+      <div class="title">🎓 ${esc(L.title)} <span class="ctx">· ${c ? esc(c.label) + " · " : ""}${idx + 1}/${seq.length}</span></div>
+      <a class="btn" href="${topicHref}" title="Шпаргалка по теме">📘 Шпаргалка</a>
+      ${readBtn}
+      ${navBtn(next, "next", "Далее →")}
+    </div>
+    <div class="page">
+      <h1>${esc(L.title)}</h1>
+      <p class="sub">≈ ${L.minutes} мин чтения · ${L.heads.length} разделов</p>
+      <ol class="lec-toc">${L.heads.map(h => `<li>${esc(h)}</li>`).join("")}</ol>
+      <div class="md lecture-body" id="lectureBody" data-lecture="${esc(f)}">${lectureCache[f] || '<p class="note">Загрузка лекции…</p>'}</div>
+      <h2>Что дальше</h2>
+      <p class="files">
+        <a class="btn" href="${topicHref}">📘 Шпаргалка: ${esc(title(f))}</a>
+        ${questionsOf(f).length ? `<a class="btn" href="${topicHref}" data-qopen>❓ Вопросы (${questionsOf(f).length})</a>` : ""}
+        ${demosOf(f).map(d => `<a class="btn" href="#/d/${encodeURIComponent(d.file)}">🎮 ${esc(d.title)}</a>`).join("")}
+        ${ex >= 0 ? `<a class="btn" href="#/x/${ex}">💪 Практика</a>` : ""}
+        ${undOf(f).length ? `<a class="btn" href="#/u/${undOf(f)[0][1]}">🧩 Задачи на понимание (${undOf(f).length})</a>` : ""}
+        ${DATA.quizzes[f] ? `<a class="btn" href="cheatsheets/${encodeURIComponent(DATA.quizzes[f])}${V}" target="_blank">📝 Тест</a>` : ""}
+      </p>
+      <p>${readBtn} ${next ? `<a class="cta" href="${lectureLink(next, ctx)}">▶ Следующая лекция: ${esc(LECT[next].title)}</a>` : ""}</p>
+    </div>
+  </div>`;
+}
+
+async function loadLecture(f) {
+  if (!LECT[f] || lectureCache[f]) return;
+  let html;
+  try {
+    const res = await fetch(lectureUrl(f));
+    if (!res.ok) throw new Error(res.status);
+    html = lectureCache[f] = markdown((await res.text()).replace(/^\s*# .*\n/, "").replace(/<!--[\s\S]*?-->\n?/g, ""));
+  } catch (err) {
+    html = `<p class="note">Не удалось загрузить лекцию. Откройте портал через <code>python start.py</code>
+      или прочитайте файл напрямую: <a href="${lectureUrl(f)}" target="_blank">${esc(f.replace(/_cheatsheet\.html$/, ".md"))}</a>.</p>`;
+  }
+  const box = document.getElementById("lectureBody");
+  if (box && box.dataset.lecture === f) box.innerHTML = html;   // пока грузилось, могли уйти на другую страницу
 }
 
 // ---------- задачи на понимание ----------
@@ -719,6 +828,7 @@ function viewTopic(f, ctx) {
       <a class="btn" href="${c ? c.back : "#/"}" title="К списку (Esc)">☰ Список</a>
       <a class="btn" ${prev ? `href="${link(prev)}" title="${esc(title(prev))} (←)"` : 'style="opacity:.4;pointer-events:none"'} data-nav="prev">← Назад</a>
       <div class="title">${esc(title(f))} ${c ? `<span class="ctx">· ${esc(c.label)} · ${idx + 1}/${c.items.length}</span>` : ""}</div>
+      ${LECT[f] ? `<a class="btn ${state.lec[f] ? "on" : ""}" href="${lectureLink(f, ctx)}" title="Лекция по теме: ≈ ${LECT[f].minutes} мин">🎓 Лекция</a>` : ""}
       ${demosOf(f).map(d => `<a class="btn" href="#/d/${encodeURIComponent(d.file)}" title="Интерактивная демонстрация: ${esc(d.title)}">🎮 ${demosOf(f).length > 1 ? esc(d.title) : "Интерактив"}</a>`).join("")}
       <button class="btn" data-qtoggle title="Вопросы для самопроверки и заметки (Q)">❓ Вопросы${questionsOf(f).length ? ` (${questionsOf(f).length})` : ""}<span id="noteMark">${noteOf(f) ? " · 📝" : ""}</span></button>
       ${ex >= 0 ? `<a class="btn" href="#/x/${ex}">💪 Практика</a>` : ""}
@@ -1171,15 +1281,21 @@ function viewSearch(q) {
 
 // ---------- мини-рендер markdown для заданий ----------
 function markdown(src) {
-  const inline = s => esc(s)
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-  const out = []; let list = null, code = null, table = null, para = null;   // para — строки текущего абзаца
+  const inline = s => {
+    const codes = [];                            // код прячем, чтобы * и ** внутри него не стали разметкой
+    return esc(s)
+      .replace(/`([^`]+)`/g, (_, c) => `\u0000${codes.push(c) - 1}\u0000`)
+      .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+      .replace(/(^|[^*\w])\*([^*\s](?:[^*]*[^*\s])?)\*(?![*\w])/g, "$1<i>$2</i>")
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+      .replace(/\u0000(\d+)\u0000/g, (_, i) => `<code>${codes[+i]}</code>`);
+  };
+  const out = []; let list = null, code = null, table = null, para = null, quote = null;   // para — строки текущего абзаца
   const flush = () => {
     if (list) { out.push(`<${list.tag}>${list.items.map(i => `<li>${i}</li>`).join("")}</${list.tag}>`); list = null; }
     if (table) { out.push(`<table>${table.map((r, k) => `<tr>${r.map(c => k ? `<td>${inline(c)}</td>` : `<th>${inline(c)}</th>`).join("")}</tr>`).join("")}</table>`); table = null; }
     if (para) { out.push(`<p>${para.map(inline).join(" ")}</p>`); para = null; }
+    if (quote) { out.push(`<blockquote>${markdown(quote.join("\n"))}</blockquote>`); quote = null; }
   };
   for (const line of src.split(/\r?\n/)) {
     if (code !== null) {
@@ -1188,6 +1304,8 @@ function markdown(src) {
     }
     if (line.startsWith("```")) { flush(); code = []; continue; }
     let m;
+    if ((m = line.match(/^>\s?(.*)/))) { if (!quote) { flush(); quote = []; } quote.push(m[1]); continue; }
+    if (quote) flush();
     if ((m = line.match(/^(#{1,6})\s+(.*)/))) { flush(); const l = Math.min(m[1].length + 1, 4); out.push(`<h${l}>${inline(m[2])}</h${l}>`); }
     else if (/^\s*\|.*\|\s*$/.test(line)) {
       if (list || para) flush();
@@ -1222,7 +1340,8 @@ function renderNav() {
     `<a class="navitem ${hash === href ? "active" : ""}" href="${href}"><span>${esc(label)}</span>${items ? countLabel(items) : ""}</a>`;
   let html = "";
   if (tab === "paths") {
-    html = DATA.paths.map((p, i) => item(`#/p/${i}`, p.title, pathItems(p))).join("");
+    html = (Object.keys(LECT).length ? `<a class="navitem ${hash.startsWith("#/l") ? "active" : ""}" href="#/l"><span>🎓 Лекции</span><small class="full">${lecRead()}/${Object.keys(LECT).length}</small></a>` : "")
+      + DATA.paths.map((p, i) => item(`#/p/${i}`, p.title, pathItems(p))).join("");
   } else if (tab === "exercises") {
     html = (UND.length ? `<a class="navitem ${hash.startsWith("#/u") ? "active" : ""}" href="#/u"><span>🧩 Задачи на понимание</span><small class="full">${UND.filter(u => state.und[u.id]).length}/${UND.length}</small></a>` : "")
       + `<div class="navgroup">🏗 мини-проекты</div>` + DATA.projects.map((p, i) =>
@@ -1274,7 +1393,7 @@ function rerenderKeepScroll() {
 
 // ---------- события ----------
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-tab],[data-toggle],[data-ex],[data-copy],[data-action],[data-tab-link],[data-qtoggle],[data-rate],[data-theme-toggle],[data-proj],[data-plan],[data-plan-path],[data-plan-min],[data-exam],[data-exam-src],[data-exam-size],[data-hint],[data-reveal],[data-ex-again],[data-und],[data-und-reset],#menuBtn");
+  const t = e.target.closest("[data-tab],[data-toggle],[data-ex],[data-copy],[data-action],[data-tab-link],[data-qtoggle],[data-rate],[data-theme-toggle],[data-proj],[data-plan],[data-plan-path],[data-plan-min],[data-exam],[data-exam-src],[data-exam-size],[data-hint],[data-reveal],[data-ex-again],[data-und],[data-und-reset],[data-lec],[data-qopen],#menuBtn");
   if (!t) return;
   if (t.id === "menuBtn") { document.body.classList.toggle("menu-open"); return; }
   if (t.dataset.proj) { const id = t.dataset.proj; if (state.projDone[id]) delete state.projDone[id]; else state.projDone[id] = Date.now(); save(); rerenderKeepScroll(); return; }
@@ -1307,6 +1426,8 @@ document.addEventListener("click", e => {
     const [i, k] = t.dataset.und.split(":").map(Number), u = UND[i];
     state.und[u.id] = { pick: k, ok: k === u.answer, t: Date.now() }; logActivity(); save(); rerenderKeepScroll(); refreshChrome();
   }
+  if (t.dataset.lec) { const f = t.dataset.lec; if (state.lec[f]) delete state.lec[f]; else { state.lec[f] = Date.now(); logActivity(); } save(); rerenderKeepScroll(); refreshChrome(); }
+  if (t.hasAttribute("data-qopen")) { state.qOpen = true; save(); }   // ссылка ведёт к шпаргалке с открытыми вопросами
   if (t.dataset.undReset) { delete state.und[UND[+t.dataset.undReset].id]; save(); rerenderKeepScroll(); }
   if (t.dataset.hint) { const id = t.dataset.hint; state.hints[id] = (state.hints[id] || 0) + 1; save(); rerenderKeepScroll(); }
   if (t.dataset.reveal && confirm("Разбор раскрывает решение. Сначала попробуйте ещё раз с подсказками — показать всё равно?")) {
@@ -1372,13 +1493,13 @@ document.addEventListener("keydown", e => {
     if (map[e.key] && (e.key === " " ? !exam.shown : exam.shown)) { e.preventDefault(); examAction(map[e.key]); }
     return;
   }
-  const inViewer = parseHash().parts[0] === "t";
+  const view = parseHash().parts[0], inViewer = view === "t" || (view === "l" && parseHash().parts[1]);
   if (!inViewer) return;
   if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
     const a = document.querySelector(`[data-nav="${e.key === "ArrowRight" ? "next" : "prev"}"][href]`);
     if (a) location.hash = a.getAttribute("href");
   } else if (e.key === "m" || e.key === "M" || e.key === "ь" || e.key === "Ь") {
-    const btn = document.querySelector("[data-toggle]"); if (btn) btn.click();
+    const btn = document.querySelector("[data-toggle],[data-lec]"); if (btn) btn.click();
   } else if (e.key === "q" || e.key === "Q" || e.key === "й" || e.key === "Й") {
     const btn = document.querySelector("[data-qtoggle]"); if (btn) btn.click();
   } else if (e.key === "Escape") {

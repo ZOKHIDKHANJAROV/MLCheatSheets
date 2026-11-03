@@ -10,6 +10,7 @@
   • битые ссылки внутри шпаргалок и интерактивов, неэкранированный HTML в примерах кода,
     вложенные друг в друга блоки (незакрытый <div>);
   • ссылки портала: темы, разделы, пути, упражнения, тесты и интерактивы из index.html;
+  • лекции (lectures/*.md): формат, синтаксис примеров кода, покрытие тем учебных путей;
   • вопросы (questions/*.md) и интерактивы (interactive/*.html) с несуществующими темами;
   • упражнения без нужных файлов и с решением, не совпадающим с эталоном;
   • устаревший index.html (портал не пересобран после изменений).
@@ -222,6 +223,35 @@ def check_understanding():
     report(errs, [], f"задач: {len(tasks)}, с интерактивом: {sum(1 for t in tasks if t['demo'])}")
 
 
+def check_lectures():
+    section("Лекции (lectures/)")
+    import ast
+    from build_portal import parse_lectures, parse_readme, collect_titles, parse_roadmap
+    lectures, errs = parse_lectures()
+    warns = []
+    for md in sorted((ROOT / "lectures").glob("*.md")):
+        text = md.read_text(encoding="utf-8")
+        for n, code in enumerate(re.findall(r"^```python\n(.*?)^```", text, flags=re.M | re.S), 1):
+            try:
+                ast.parse(code)
+            except SyntaxError as e:
+                errs.append(f"{rel(md)}: пример кода №{n} не разбирается Python (строка {e.lineno}: {e.msg})")
+        for table in re.findall(r"(?:^\|.*\|[ \t]*\n)+", text, flags=re.M):
+            widths = {row.count("|") for row in table.splitlines()}
+            if len(widths) > 1:
+                errs.append(f"{rel(md)}: в таблице «{table.splitlines()[0][:40]}» строки с разным числом столбцов (лишний «|» в ячейке?)")
+        if re.search(r"\$[^$\n]+\$", text.replace("`", "")):
+            warns.append(f"{rel(md)}: похоже на LaTeX ($…$) — портал его не отображает, пишите формулы юникодом")
+        if "## Проверьте себя" not in text:
+            warns.append(f"{rel(md)}: нет раздела «## Проверьте себя»")
+    parts = parse_readme()
+    in_paths = {f for p in parse_roadmap(collect_titles(parts)) for s in p["stages"] for f in s["items"]}
+    missing = sorted(f.replace("_cheatsheet.html", "") for f in in_paths if f not in lectures)
+    if missing:
+        warns.append(f"нет лекции у {len(missing)} тем учебных путей: {', '.join(missing[:8])}{' …' if len(missing) > 8 else ''}")
+    report(errs, warns, f"лекций: {len(lectures)}, все темы учебных путей покрыты")
+
+
 def check_questions_and_demos():
     section("Вопросы и интерактивы")
     errs, warns = [], []
@@ -340,7 +370,7 @@ def check_portal_fresh():
     sources = [ROOT / n for n in ("README.md", "ROADMAP.md", "glossary.md", "prerequisites.md", "tools/portal_template.html") if (ROOT / n).exists()]
     sources += list((ROOT / "exercises").rglob("task.md")) + list((ROOT / "questions").glob("*.md"))
     sources += list((ROOT / "interactive").glob("*.html")) + list((ROOT / "projects").glob("*/README.md"))
-    sources += list((ROOT / "understanding").glob("*.md"))
+    sources += list((ROOT / "understanding").glob("*.md")) + list((ROOT / "lectures").glob("*.md"))
     newer = [rel(p) for p in sources if p.stat().st_mtime > index.stat().st_mtime]
     warns = [f"index.html старше {len(newer)} исходных файлов (например, {newer[0]}) — пересоберите: python tools/build_portal.py"] if newer else []
     report([], warns, "собран после последних изменений")
@@ -359,6 +389,7 @@ def main():
     check_prerequisites()
     check_glossary()
     check_understanding()
+    check_lectures()
     check_exercises(run_solutions=not args.fast)
     check_projects(run_solutions=not args.fast)
     check_portal_fresh()
