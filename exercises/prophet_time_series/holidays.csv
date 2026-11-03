@@ -1,0 +1,10 @@
+holiday,ds,lower_window,upper_window
+new_year,2023-01-01,-1,1
+new_year,2024-01-01,-1,1
+new_year,2025-01-01,-1,1
+women_day,2023-03-08,0,0
+women_day,2024-03-08,0,0
+victory_day,2023-05-09,0,0
+victory_day,2024-05-09,0,0
+unity_day,2023-11-04,0,0
+unity_day,2024-11-04,0,0

@@ -1,0 +1,8 @@
+run_id,smoke_test,latency_p95_ms,size_mb
+prod,pass,95,38
+r1,pass,88,35
+r2,pass,118,45
+r3,pass,101,40
+r4,pass,90,36
+r5,fail,150,44
+r6,pass,97,80

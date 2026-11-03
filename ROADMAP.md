@@ -30,14 +30,14 @@
 1. [NumPy для ML](cheatsheets/numpy_ml_cheatsheet.html)
 2. [Pandas для ML](cheatsheets/pandas_ml_cheatsheet.html)
 3. [Matplotlib/Seaborn для визуализации](cheatsheets/matplotlib_seaborn_ml_cheatsheet.html)
-4. **Упражнения:** preprocessing
+4. **Упражнения:** preprocessing, numpy_ml, pandas_ml, matplotlib_seaborn_ml
 
 #### Этап 2: Основы теории ML (3-4 недели) 🟢
 1. [Смещение-дисперсия](cheatsheets/bias_variance_cheatsheet.html)
 2. [Переобучение и недообучение](cheatsheets/overfitting_underfitting_cheatsheet.html)
 3. [Кросс-валидация](cheatsheets/cross_validation_cheatsheet.html)
 4. [Градиентный спуск](cheatsheets/gradient_descent_cheatsheet.html)
-5. **Упражнения:** cross_validation, gradient_descent
+5. **Упражнения:** cross_validation, gradient_descent, bias_variance, overfitting_underfitting
 
 #### Этап 3: Подготовка данных (2-3 недели) 🟢
 1. [Предобработка данных](cheatsheets/preprocessing_cheatsheet.html)
@@ -52,7 +52,7 @@
 2. [Метрики регрессии](cheatsheets/regression_metrics_cheatsheet.html)
 3. [Полиномиальная регрессия](cheatsheets/polynomial_regression_cheatsheet.html)
 4. [Ридж, Лассо, ElasticNet](cheatsheets/ridge_lasso_elasticnet_cheatsheet.html)
-5. **Упражнения:** linreg, regression_metrics
+5. **Упражнения:** linreg, regression_metrics, polynomial_regression, ridge_lasso_elasticnet
 
 #### Этап 5: Классические алгоритмы - Классификация (2-3 недели) 🟢-🟡
 1. [Логистическая регрессия](cheatsheets/logreg_cheatsheet.html)
@@ -61,7 +61,7 @@
 4. [ROC и AUC](cheatsheets/roc_auc_cheatsheet.html)
 5. [k-ближайших соседей (k-NN)](cheatsheets/knn_cheatsheet.html)
 6. [Наивный Байес](cheatsheets/naive_bayes_cheatsheet.html)
-7. **Упражнения:** logreg, classification_metrics, roc_auc, knn, naive_bayes, bug_metrics
+7. **Упражнения:** logreg, classification_metrics, roc_auc, knn, naive_bayes, bug_metrics, confusion_matrix
 
 #### Этап 6: Деревья и ансамбли (3-4 недели) 🟡
 1. [Деревья решений](cheatsheets/decision_trees_cheatsheet.html)
@@ -70,7 +70,7 @@
 4. [XGBoost](cheatsheets/xgboost_cheatsheet.html)
 5. [LightGBM](cheatsheets/lightgbm_cheatsheet.html)
 6. [CatBoost](cheatsheets/catboost_cheatsheet.html)
-7. **Упражнения:** decision_trees, random_forest, gradient_boosting_regression
+7. **Упражнения:** decision_trees, random_forest, gradient_boosting_regression, boosting, catboost, lightgbm, xgboost
 
 ---
 
@@ -85,13 +85,13 @@
 4. [Функции потерь](cheatsheets/loss_functions_cheatsheet.html)
 5. [Обратное распространение ошибки](cheatsheets/backpropagation_cheatsheet.html)
 6. [Оптимизаторы](cheatsheets/optimizers_cheatsheet.html)
-7. **Упражнения:** activation_functions, loss_functions, backpropagation, mlp, optimizers, bug_training_loop
+7. **Упражнения:** activation_functions, loss_functions, backpropagation, mlp, optimizers, bug_training_loop, perceptron
 
 #### Этап 2: Фреймворки (2-3 недели) 🟡
 1. [PyTorch полный гайд](cheatsheets/pytorch_full_guide_cheatsheet.html)
 2. [TensorFlow/Keras полный гайд](cheatsheets/tensorflow_keras_full_guide_cheatsheet.html)
 3. [PyTorch Lightning](cheatsheets/pytorch_lightning_cheatsheet.html)
-4. **Упражнения:** pytorch_full_guide
+4. **Упражнения:** pytorch_full_guide, pytorch_lightning, tensorflow_keras_full_guide
 
 #### Этап 3: Сверточные сети (Computer Vision) (3-4 недели) 🟡-🔴
 1. [Основы свертки](cheatsheets/cnn_basics_cheatsheet.html)
@@ -101,7 +101,7 @@
 5. [Transfer learning для CNN](cheatsheets/transfer_learning_cnn_cheatsheet.html)
 6. [Data augmentation](cheatsheets/data_augmentation_cheatsheet.html)
 7. Применение: [Детекция объектов (YOLO)](cheatsheets/yolo_cheatsheet.html)
-8. **Упражнения:** cnn_basics, object_detection, image_segmentation
+8. **Упражнения:** cnn_basics, object_detection, image_segmentation, cnn_architectures, data_augmentation, pooling_layers, resnet, transfer_learning_cnn, yolo
 
 #### Этап 4: Рекуррентные сети и NLP (3-4 недели) 🟡-🔴
 1. [Основы RNN](cheatsheets/rnn_basics_cheatsheet.html)
@@ -109,7 +109,7 @@
 3. [GRU](cheatsheets/gru_cheatsheet.html)
 4. [Векторные представления слов](cheatsheets/word_embeddings_cheatsheet.html)
 5. [Механизм внимания](cheatsheets/attention_mechanism_cheatsheet.html)
-6. **Упражнения:** lstm, word_embeddings
+6. **Упражнения:** lstm, word_embeddings, gru, rnn_basics, attention_mechanism
 
 #### Этап 5: Трансформеры и LLM (4-5 недель) 🔴
 1. [Self-attention](cheatsheets/self_attention_cheatsheet.html)
@@ -119,14 +119,14 @@
 5. [GPT-архитектуры](cheatsheets/gpt_architectures_cheatsheet.html)
 6. [Prompt Engineering](cheatsheets/prompt_engineering_cheatsheet.html)
 7. [Vision Transformers (ViT)](cheatsheets/vision_transformers_vit_cheatsheet.html)
-8. **Упражнения:** self_attention
+8. **Упражнения:** self_attention, vision_transformers_vit, bert_language_models, gpt_architectures, multi_head_attention, prompt_engineering, transformers
 
 #### Этап 6: Генеративные модели (3-4 недели) 🔴
 1. [Автоэнкодеры](cheatsheets/autoencoders_cheatsheet.html)
 2. [VAE](cheatsheets/vae_cheatsheet.html)
 3. [GAN](cheatsheets/gan_cheatsheet.html)
 4. [Diffusion модели](cheatsheets/diffusion_models_cheatsheet.html)
-5. **Упражнения:** vae, gan
+5. **Упражнения:** vae, gan, autoencoders, diffusion_models
 
 ---
 
@@ -138,7 +138,7 @@
 1. [Grid Search / Random Search](cheatsheets/hyperparameter_tuning_cheatsheet.html)
 2. [Bayesian Optimization](cheatsheets/bayesian_optimization_cheatsheet.html)
 3. [Optuna / Hyperopt](cheatsheets/optuna_hyperopt_cheatsheet.html)
-4. **Упражнения:** hyperparameter_tuning
+4. **Упражнения:** hyperparameter_tuning, feature_importance, bayesian_optimization, optuna_hyperopt
 4. [Важность признаков](cheatsheets/feature_importance_cheatsheet.html)
 
 #### Этап 2: Интерпретируемость (2 недели) 🟡
@@ -146,7 +146,7 @@
 2. [LIME](cheatsheets/lime_cheatsheet.html)
 3. [Частичные зависимости](cheatsheets/partial_dependence_cheatsheet.html)
 4. [Explainable AI (XAI)](cheatsheets/explainable_ai_xai_cheatsheet.html)
-5. **Упражнения:** shap
+5. **Упражнения:** shap, partial_dependence, explainable_ai_xai, lime
 
 #### Этап 3: Production и MLOps (3-4 недели) 🟡-🔴
 1. [Production ML Best Practices](cheatsheets/production_ml_best_practices_cheatsheet.html)
@@ -156,14 +156,14 @@
 5. [Мониторинг моделей и A/B тестирование](cheatsheets/model_monitoring_ab_testing_cheatsheet.html)
 6. [Feature stores](cheatsheets/feature_stores_cheatsheet.html)
 7. [CI/CD для ML](cheatsheets/cicd_ml_cheatsheet.html)
-8. **Упражнения:** ml_pipelines, bug_cv_selection
+8. **Упражнения:** ml_pipelines, bug_cv_selection, cicd_ml, feature_stores, mlops_best_practices, model_monitoring_ab_testing, model_serialization, production_ml_best_practices
 
 #### Этап 4: Специальные темы (2-3 недели) 🟡
 1. [Несбалансированные данные](cheatsheets/imbalanced_data_cheatsheet.html)
 2. [Дрейф данных](cheatsheets/concept_drift_cheatsheet.html)
 3. [Fairness в ML](cheatsheets/fairness_ml_cheatsheet.html)
 4. [Adversarial robustness](cheatsheets/adversarial_robustness_cheatsheet.html)
-5. **Упражнения:** concept_drift
+5. **Упражнения:** concept_drift, fairness_ml, adversarial_robustness
 
 ---
 
@@ -176,7 +176,7 @@
 4. [Детекция объектов - продвинутое](cheatsheets/object_detection_cheatsheet.html)
 5. [Оценка позы человека](cheatsheets/pose_estimation_cheatsheet.html)
 6. [Neural style transfer](cheatsheets/neural_style_transfer_cheatsheet.html)
-7. **Упражнения:** object_detection, image_segmentation
+7. **Упражнения:** object_detection, image_segmentation, 3d_computer_vision, neural_style_transfer, pose_estimation
 
 #### NLP специалист 🔴
 1. Завершите Этапы 1-2, 4-5 из Пути 2
@@ -184,7 +184,7 @@
 3. [BERT fine-tuning](cheatsheets/bert_finetuning_cheatsheet.html)
 4. [Задачи NLP](cheatsheets/nlp_tasks_ner_classification_summarization_cheatsheet.html)
 5. [Тематическое моделирование](cheatsheets/topic_modeling_lda_nmf_cheatsheet.html)
-6. **Упражнения:** tfidf
+6. **Упражнения:** tfidf, bert_finetuning, nlp_tasks_ner_classification_summarization, tokenization, topic_modeling_lda_nmf
 
 #### Time Series специалист 🟡-🔴
 1. Классические методы:
@@ -195,7 +195,7 @@
    - [RNN/LSTM для временных рядов](cheatsheets/rnn_lstm_time_series_cheatsheet.html)
    - [CNN для временных рядов (TCN)](cheatsheets/cnn_time_series_tcn_cheatsheet.html)
    - [Transformers для временных рядов](cheatsheets/transformers_time_series_cheatsheet.html)
-3. **Упражнения:** exponential_smoothing, bug_time_series_split
+3. **Упражнения:** exponential_smoothing, bug_time_series_split, time_series, prophet_time_series, rnn_lstm_time_series, cnn_time_series_tcn, transformers_time_series
 
 #### Reinforcement Learning специалист 🔴
 1. Классическое RL:
@@ -206,7 +206,7 @@
    - [DQN](cheatsheets/dqn_cheatsheet.html)
    - [Policy Gradient методы](cheatsheets/policy_gradient_cheatsheet.html)
    - [PPO](cheatsheets/ppo_reinforcement_learning_cheatsheet.html)
-3. **Упражнения:** q_learning_sarsa
+3. **Упражнения:** q_learning_sarsa, multi_armed_bandits, reinforcement_learning_basics, policy_gradient, ppo_reinforcement_learning, dqn
 
 ---
 

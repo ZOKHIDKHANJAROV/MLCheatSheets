@@ -1,0 +1,15 @@
+run_id,segment,tp,fp,fn,tn
+prod,north,90,30,30,350
+prod,south,56,24,24,196
+r1,north,96,28,24,352
+r1,south,58,22,22,198
+r2,north,100,26,20,354
+r2,south,57,23,23,197
+r3,north,104,20,16,360
+r3,south,50,30,30,190
+r4,north,91,30,29,350
+r4,south,56,24,24,196
+r5,north,105,18,15,362
+r5,south,62,18,18,202
+r6,north,95,25,20,355
+r6,south,58,22,22,198

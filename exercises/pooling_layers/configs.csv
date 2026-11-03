@@ -1,0 +1,6 @@
+config_id,mode,kernel,stride,padding
+1,max,2,2,0
+2,max,3,2,1
+3,avg,3,2,1
+4,global_avg,0,0,0
+5,global_max,0,0,0

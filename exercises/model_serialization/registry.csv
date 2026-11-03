@@ -1,0 +1,7 @@
+model_id,sklearn_version,numpy_version,features
+m1,1.9.0,2.3.1,age|income|tenure|n_products
+m2,1.8.2,2.5.4,age|income|tenure|n_products
+m3,1.9.1,1.26.4,age|income|tenure|n_products
+m4,1.9.1,2.5.4,age|tenure|income|n_products
+m5,1.9.1,2.5.4,age|income|tenure
+m6,1.19.0,2.5.4,age|income|tenure|n_products

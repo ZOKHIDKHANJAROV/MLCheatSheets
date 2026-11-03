@@ -1,0 +1,14 @@
+layer_id,type,out,kernel,stride,padding,bias
+1,conv,16,3,1,1,1
+2,bn,,,,,
+3,relu,,,,,
+4,maxpool,,2,2,0,
+5,conv,32,3,1,1,0
+6,bn,,,,,
+7,relu,,,,,
+8,maxpool,,3,2,1,
+9,conv,64,3,2,0,1
+10,relu,,,,,
+11,conv,32,1,1,0,1
+12,flatten,,,,,
+13,dense,10,,,,1

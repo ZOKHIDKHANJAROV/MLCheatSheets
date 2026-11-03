@@ -1,0 +1,5 @@
+step,op,top,left,height,width
+1,hflip,,,,
+2,rot90,,,,
+3,vflip,,,,
+4,crop,4,1,4,4
