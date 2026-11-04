@@ -163,8 +163,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -185,7 +185,7 @@
     </ul>
     <blockquote>💡 "Правильная сериализация — ключ к успешному deployment"</blockquote>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-neural_network_serialization-1"><h2>🖼 Что и куда сохранять</h2><figure><svg viewBox="0 0 360 284" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Форматы сохранения"><defs><marker id="nns-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c5" x="15" y="110" width="95" height="50" rx="6"/><text x="62.5" y="131.32" text-anchor="middle">nn.Module</text><text x="62.5" y="146.96" text-anchor="middle" class="mut" font-size="11">в памяти</text><rect class="c2" x="165" y="15" width="180" height="44" rx="6"/><text x="255" y="33.32" text-anchor="middle">state_dict (.pt)</text><text x="255" y="48.96" text-anchor="middle" class="mut" font-size="11">только веса, нужен код</text><line class="ln" x1="110" y1="135" x2="163" y2="37" marker-end="url(#nns-a)"/><rect class="c4" x="165" y="75" width="180" height="44" rx="6"/><text x="255" y="93.32" text-anchor="middle">torch.save(model)</text><text x="255" y="108.96" text-anchor="middle" class="mut" font-size="11">весь объект через pickle</text><line class="ln" x1="110" y1="135" x2="163" y2="97" marker-end="url(#nns-a)"/><rect class="c1" x="165" y="135" width="180" height="44" rx="6"/><text x="255" y="153.32" text-anchor="middle">TorchScript (.pt)</text><text x="255" y="168.96" text-anchor="middle" class="mut" font-size="11">граф без Python, C++</text><line class="ln" x1="110" y1="135" x2="163" y2="157" marker-end="url(#nns-a)"/><rect class="c3" x="165" y="195" width="180" height="44" rx="6"/><text x="255" y="213.32" text-anchor="middle">ONNX (.onnx)</text><text x="255" y="228.96" text-anchor="middle" class="mut" font-size="11">кросс-фреймворк, ORT</text><line class="ln" x1="110" y1="135" x2="163" y2="217" marker-end="url(#nns-a)"/><text x="180" y="262" text-anchor="middle" class="mut" font-size="11">в checkpoint: + optimizer, epoch,</text><text x="180" y="277" text-anchor="middle" class="mut" font-size="11">препроцессинг и метаданные</text></svg><figcaption>state_dict — рекомендуемый способ (нужен код класса), pickle целой модели ломается при рефакторинге и небезопасен; TorchScript и ONNX уносят граф для деплоя без Python.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Что сохранять?</h2>
     <table>

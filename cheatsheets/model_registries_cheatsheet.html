@@ -51,8 +51,8 @@
     @media print { .container { column-gap: 12px; } .block { box-shadow: none; } code, pre { font-size: 0.78em; } h1 { font-size: 1.4em; } h2 { font-size: 1em; } }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 <div class="container">
@@ -71,7 +71,7 @@
     </ul>
     <blockquote>💡 Model Registry - центральная часть MLOps инфраструктуры</blockquote>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-model_registries-1"><h2>🖼 Стадии версий модели</h2><figure><svg viewBox="0 0 360 268" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Стадии версии модели в Model Registry"><defs><marker id="mreg-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="30" y="15" width="115" height="34" rx="6"/><text x="87.5" y="36" text-anchor="middle">None</text><text x="158" y="36" class="mut" style="font-size:11px">только зарегистрирована</text><rect class="c6" x="306" y="20" width="44" height="24" rx="12"/><text x="328" y="36" text-anchor="middle" style="font-size:11px">v4</text><line class="ln" x1="87" y1="49" x2="87" y2="73" marker-end="url(#mreg-a)"/><rect class="c3" x="30" y="75" width="115" height="34" rx="6"/><text x="87.5" y="96" text-anchor="middle">Staging</text><text x="158" y="96" class="mut" style="font-size:11px">тесты перед выкатом</text><rect class="c3" x="306" y="80" width="44" height="24" rx="12"/><text x="328" y="96" text-anchor="middle" style="font-size:11px">v3</text><line class="ln" x1="87" y1="109" x2="87" y2="133" marker-end="url(#mreg-a)"/><rect class="c2" x="30" y="135" width="115" height="34" rx="6"/><text x="87.5" y="156" text-anchor="middle">Production</text><text x="158" y="156" class="mut" style="font-size:11px">обслуживает трафик</text><rect class="c2" x="306" y="140" width="44" height="24" rx="12"/><text x="328" y="156" text-anchor="middle" style="font-size:11px">v2</text><line class="ln" x1="87" y1="169" x2="87" y2="193" marker-end="url(#mreg-a)"/><rect class="c5" x="30" y="195" width="115" height="34" rx="6"/><text x="87.5" y="216" text-anchor="middle">Archived</text><text x="158" y="216" class="mut" style="font-size:11px">устаревшие версии</text><rect class="c5" x="306" y="200" width="44" height="24" rx="12"/><text x="328" y="216" text-anchor="middle" style="font-size:11px">v1</text><path class="ln s4" d="M30,212 H18 V152 H28" stroke-dasharray="4 3" marker-end="url(#mreg-a)"/><text x="12" y="182" class="t4" text-anchor="middle" style="font-size:11px" transform="rotate(-90 12 182)">rollback</text><text x="180" y="258" class="mut" text-anchor="middle" style="font-size:11px">transition_model_version_stage()</text></svg><figcaption>Каждая версия проходит None → Staging → Production → Archived; в Production обычно одна версия, а архив позволяет быстро откатиться.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. MLflow Model Registry</h2>
     <pre><code>import mlflow

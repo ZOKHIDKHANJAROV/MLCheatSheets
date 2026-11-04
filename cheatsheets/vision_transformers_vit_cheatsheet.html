@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -222,7 +222,7 @@
       "An Image is Worth 16x16 Words" - Google Research, 2020
     </blockquote>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-vision_transformers_vit-1"><h2>🖼 Архитектура ViT</h2><figure><svg viewBox="0 0 340 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Архитектура Vision Transformer"><defs><marker id="vit-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="15" y="15" width="96" height="96" rx="2"/><line class="ln s6" x1="47" y1="15" x2="47" y2="111"/><line class="ln s6" x1="15" y1="47" x2="111" y2="47"/><line class="ln s6" x1="79" y1="15" x2="79" y2="111"/><line class="ln s6" x1="15" y1="79" x2="111" y2="79"/><text x="130" y="40" text-anchor="start" style="font-size:11px">224×224×3 → патчи 16×16</text><text x="130" y="60" text-anchor="start" style="font-size:11px">N = (224/16)² = 196</text><text x="130" y="80" text-anchor="start" style="font-size:11px">патч: 16·16·3 = 768</text><line class="ln" x1="63" y1="111" x2="63" y2="126" marker-end="url(#vit-a)"/><rect class="c5" x="15" y="128" width="310" height="26" rx="6"/><text x="170.0" y="145.0" text-anchor="middle">Linear projection E (768 → D)</text><line class="ln" x1="170" y1="154" x2="170" y2="168" marker-end="url(#vit-a)"/><rect class="c3" x="15" y="170" width="50" height="26" rx="6"/><text x="40.0" y="187.0" text-anchor="middle" style="font-size:11px">[CLS]</text><rect class="c1" x="75" y="170" width="30" height="26" rx="6"/><text x="90.0" y="187.0" text-anchor="middle" style="font-size:11px">x₁</text><rect class="c1" x="111" y="170" width="30" height="26" rx="6"/><text x="126.0" y="187.0" text-anchor="middle" style="font-size:11px">x₂</text><rect class="c1" x="147" y="170" width="30" height="26" rx="6"/><text x="162.0" y="187.0" text-anchor="middle" style="font-size:11px">x₃</text><rect class="c1" x="183" y="170" width="30" height="26" rx="6"/><text x="198.0" y="187.0" text-anchor="middle" style="font-size:11px">x₄</text><rect class="c1" x="219" y="170" width="30" height="26" rx="6"/><text x="234.0" y="187.0" text-anchor="middle" style="font-size:11px">…</text><rect class="c1" x="255" y="170" width="30" height="26" rx="6"/><text x="270.0" y="187.0" text-anchor="middle" style="font-size:11px">x₁₉₆</text><text x="190" y="214" class="mut" text-anchor="middle" style="font-size:11px">+ position embeddings E_pos</text><line class="ln" x1="40" y1="196" x2="40" y2="224" marker-end="url(#vit-a)"/><rect class="c1" x="15" y="226" width="310" height="30" rx="6"/><text x="170.0" y="245.0" text-anchor="middle">Transformer Encoder × L (MSA + MLP)</text><line class="ln" x1="40" y1="256" x2="40" y2="272" marker-end="url(#vit-a)"/><rect class="c2" x="15" y="274" width="130" height="28" rx="6"/><text x="80.0" y="292.0" text-anchor="middle" style="font-size:11px">MLP Head → класс</text><text x="155" y="292" class="mut" text-anchor="start" style="font-size:11px">берём выход [CLS]</text></svg><figcaption>Картинка режется на 196 патчей 16×16, каждый проецируется в D = 768; к последовательности добавляют [CLS] и позиционные эмбеддинги, а класс предсказывают по выходу [CLS].</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Архитектура ViT</h2>
     <ol>

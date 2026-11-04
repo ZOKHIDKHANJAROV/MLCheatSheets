@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -218,7 +218,7 @@
       <li><strong>Пример</strong>: робот учится ходить по разным поверхностям</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-multitask_rl-1"><h2>🖼 Distral: общая политика π₀</h2><figure><svg viewBox="0 0 360 258" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Distral"><defs><marker id="mtrl-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><circle class="c5" cx="180" cy="120" r="32"/><text x="180" y="125.76" text-anchor="middle" font-size="16">π₀</text><text x="220" y="150" text-anchor="start" class="mut" font-size="10">дистиллированная</text><rect class="c1" x="20" y="40" width="90" height="40" rx="6"/><text x="65" y="56.32" text-anchor="middle">π₁</text><text x="65" y="71.96" text-anchor="middle" font-size="11">задача 1</text><rect class="c2" x="250" y="40" width="90" height="40" rx="6"/><text x="295" y="56.32" text-anchor="middle">π₂</text><text x="295" y="71.96" text-anchor="middle" font-size="11">задача 2</text><rect class="c3" x="135" y="190" width="90" height="40" rx="6"/><text x="180" y="206.32" text-anchor="middle">π_K</text><text x="180" y="221.96" text-anchor="middle" font-size="11">задача K</text><line class="ln s6" x1="110" y1="70" x2="153" y2="103" stroke-dasharray="4 3" marker-end="url(#mtrl-a)" marker-start="url(#mtrl-a)"/><line class="ln s6" x1="250" y1="70" x2="207" y2="103" stroke-dasharray="4 3" marker-end="url(#mtrl-a)" marker-start="url(#mtrl-a)"/><line class="ln s6" x1="180" y1="190" x2="180" y2="154" stroke-dasharray="4 3" marker-end="url(#mtrl-a)" marker-start="url(#mtrl-a)"/><text x="122" y="100" text-anchor="end" class="mut" font-size="11">KL</text><text x="238" y="100" text-anchor="start" class="mut" font-size="11">KL</text><text x="188" y="176" text-anchor="start" class="mut" font-size="11">KL</text><text x="180" y="250" text-anchor="middle">πᵢ: max E[Rᵢ] − α·KL(πᵢ ‖ π₀)</text></svg><figcaption>Каждая задача учит свою политику πᵢ, но штраф KL(πᵢ ‖ π₀) держит её рядом с общей π₀, а π₀ дистиллируется из всех πᵢ — так знания переносятся между задачами.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Отличие от обычного RL</h2>
     <table>

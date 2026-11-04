@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -217,7 +217,7 @@
       <li><strong>Философия</strong>: функциональное программирование, чистые функции</li>
       <li><strong>Применение</strong>: научные вычисления, deep learning, оптимизация</li>
     </ul>
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-jax_flax-1"><h2>🖼 Преобразования функций и Flax</h2><figure><svg viewBox="0 0 340 278" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Преобразования JAX и Flax"><defs><marker id="jax-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="10" y="62" width="70" height="32" rx="6"/><text x="45" y="81.8" text-anchor="middle">f(x)</text><line class="ln" x1="80" y1="78" x2="118" y2="24" marker-end="url(#jax-a)"/><rect class="c1" x="120" y="10" width="210" height="28" rx="6"/><text x="225" y="27.5" style="font-size:11px" text-anchor="middle">grad(f): ∇f</text><line class="ln" x1="80" y1="78" x2="118" y2="60" marker-end="url(#jax-a)"/><rect class="c2" x="120" y="46" width="210" height="28" rx="6"/><text x="225" y="63.5" style="font-size:11px" text-anchor="middle">jit(f): компиляция XLA</text><line class="ln" x1="80" y1="78" x2="118" y2="96" marker-end="url(#jax-a)"/><rect class="c3" x="120" y="82" width="210" height="28" rx="6"/><text x="225" y="99.5" style="font-size:11px" text-anchor="middle">vmap(f): по батчу</text><line class="ln" x1="80" y1="78" x2="118" y2="132" marker-end="url(#jax-a)"/><rect class="c5" x="120" y="118" width="210" height="28" rx="6"/><text x="225" y="135.5" style="font-size:11px" text-anchor="middle">pmap(f): по устройствам</text><text x="170" y="170" style="font-size:11px" text-anchor="middle">jit(vmap(grad(loss)))  — композиция</text><text x="10" y="192" class="t5" style="font-size:11px;font-weight:bold">Flax:</text><rect class="c1" x="10" y="200" width="100" height="30" rx="6"/><text x="60" y="218.5" style="font-size:11px" text-anchor="middle">init(key, x)</text><line class="ln" x1="110" y1="215" x2="133" y2="215" marker-end="url(#jax-a)"/><rect class="c3" x="135" y="200" width="80" height="30" rx="6"/><text x="175" y="218.5" style="font-size:11px" text-anchor="middle">params</text><line class="ln" x1="215" y1="215" x2="230" y2="215" marker-end="url(#jax-a)"/><rect class="c2" x="232" y="200" width="100" height="30" rx="6"/><text x="282" y="218.2" style="font-size:10px" text-anchor="middle">apply(params, x)</text><text x="170" y="250" class="mut" style="font-size:10px" text-anchor="middle">код (Module) и состояние (params) разделены</text><text x="170" y="268" class="mut" style="font-size:10px" text-anchor="middle">PRNG: key, sub = jax.random.split(key)</text></svg><figcaption>JAX превращает чистую функцию в новую: градиент, скомпилированную, векторизованную, параллельную — и их можно комбинировать. Во Flax параметры живут отдельно от кода модели.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Ключевые возможности JAX</h2>
     <ul>

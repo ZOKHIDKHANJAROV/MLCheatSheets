@@ -25,9 +25,46 @@
         column-count: 1;
       }
     }.block{break-inside:avoid;margin-bottom:1.2em;padding:12px;background:white;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}h1{font-size:1.6em;font-weight:700;color:#1a5fb4;text-align:center;margin:0 0 8px;column-span:all}.subtitle{text-align:center;color:#666;font-size:0.9em;margin-bottom:12px;column-span:all}h2{font-size:1.15em;font-weight:700;color:#1a5fb4;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #e0e7ff}p,ul,ol{font-size:0.92em;margin:0.6em 0}ul,ol{padding-left:18px}li{margin-bottom:4px}code{font-family:'Consolas','Courier New',monospace;background-color:#f0f4ff;padding:1px 4px;border-radius:3px;font-size:0.88em}pre{background-color:#f0f4ff;padding:8px;border-radius:4px;overflow-x:auto;font-size:0.84em;margin:6px 0}pre code{padding:0;background:none;white-space:pre-wrap}table{width:100%;border-collapse:collapse;font-size:0.82em;margin:6px 0}th{background-color:#e6f0ff;text-align:left;padding:4px 6px;font-weight:600}td{padding:4px 6px;border-bottom:1px solid #f0f4ff}tr:nth-child(even){background-color:#f8fbff}.good-vs-bad{display:flex;flex-direction:column;gap:8px}.good-vs-bad div{flex:1;padding:6px 8px;border-radius:4px}.good{background-color:#f0f9f4;border-left:3px solid #2e8b57}.bad{background-color:#fdf0f2;border-left:3px solid #d32f2f}.good h3,.bad h3{margin:0 0 4px;font-size:1em;font-weight:700}.good ul,.bad ul{padding-left:20px;margin:0}.good li::before{content:"✅ ";font-weight:bold}.bad li::before{content:"❌ ";font-weight:bold}blockquote{font-style:italic;margin:8px 0;padding:6px 10px;background:#f8fbff;border-left:2px solid #1a5fb4;font-size:0.88em}.formula{text-align:center;font-family:'Cambria Math',serif;font-size:1em;margin:10px 0;padding:8px;background:#f8fbff;border-radius:4px}@media print{.container{column-gap:12px}.block{box-shadow:none}code,pre,table{font-size:0.78em}h1{font-size:1.4em}h2{font-size:1em}}</style><!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
-</head><body><div class="container"><h1>🔄 GRU (Gated Recurrent Unit)</h1><div class="subtitle">📅 3 января 2026</div><div class="block"><h2>🔷 1. Суть</h2><ul><li><strong>Упрощенная версия LSTM</strong>: 2 гейта вместо 3</li><li><strong>Решает проблему исчезающего градиента</strong></li><li><strong>Меньше параметров</strong>: быстрее обучается</li><li><strong>Для последовательностей</strong>: текст, временные ряды, аудио</li></ul><div class="formula">hₜ = (1 - zₜ) ⊙ hₜ₋₁ + zₜ ⊙ h̃ₜ</div></div><div class="block"><h2>🔷 2. Базовый код (PyTorch)</h2><pre><code>import torch
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
+</head><body><div class="container"><h1>🔄 GRU (Gated Recurrent Unit)</h1><div class="subtitle">📅 3 января 2026</div><div class="block"><h2>🔷 1. Суть</h2><ul><li><strong>Упрощенная версия LSTM</strong>: 2 гейта вместо 3</li><li><strong>Решает проблему исчезающего градиента</strong></li><li><strong>Меньше параметров</strong>: быстрее обучается</li><li><strong>Для последовательностей</strong>: текст, временные ряды, аудио</li></ul><div class="formula">hₜ = (1 - zₜ) ⊙ hₜ₋₁ + zₜ ⊙ h̃ₜ</div></div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-gru-1"><h2>🖼 Схема ячейки GRU</h2><figure><svg viewBox="0 0 420 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Схема ячейки GRU">
+  <defs><marker id="gru-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+  <!-- линия состояния h(t-1) → h(t) -->
+  <text x="8" y="44">hₜ₋₁</text>
+  <line class="ln" x1="40" y1="40" x2="380" y2="40" marker-end="url(#gru-a)"/>
+  <text x="386" y="44">hₜ</text>
+  <!-- вход x(t) -->
+  <text x="20" y="214">xₜ</text>
+  <line class="ln" x1="38" y1="208" x2="300" y2="208"/>
+  <!-- гейты -->
+  <rect class="c4" x="70" y="140" width="70" height="34" rx="6"/>
+  <text x="105" y="161" text-anchor="middle">σ  reset rₜ</text>
+  <rect class="c1" x="170" y="140" width="76" height="34" rx="6"/>
+  <text x="208" y="161" text-anchor="middle">σ  update zₜ</text>
+  <rect class="c2" x="270" y="140" width="70" height="34" rx="6"/>
+  <text x="305" y="161" text-anchor="middle">tanh  h̃ₜ</text>
+  <line class="ln" x1="105" y1="208" x2="105" y2="176" marker-end="url(#gru-a)"/>
+  <line class="ln" x1="208" y1="208" x2="208" y2="176" marker-end="url(#gru-a)"/>
+  <line class="ln" x1="300" y1="208" x2="300" y2="176" marker-end="url(#gru-a)"/>
+  <!-- h(t-1) подаётся в гейты -->
+  <line class="ln s6" x1="60" y1="40" x2="60" y2="128" stroke-dasharray="4 3"/>
+  <line class="ln s6" x1="60" y1="128" x2="105" y2="128" stroke-dasharray="4 3" marker-end="url(#gru-a)"/>
+  <line class="ln s6" x1="60" y1="128" x2="208" y2="128" stroke-dasharray="4 3"/>
+  <line class="ln s6" x1="208" y1="128" x2="208" y2="138" stroke-dasharray="4 3" marker-end="url(#gru-a)"/>
+  <!-- reset влияет на кандидата -->
+  <circle class="c4" cx="250" cy="112" r="10"/><text x="250" y="116" text-anchor="middle">⊙</text>
+  <line class="ln s4" x1="140" y1="150" x2="241" y2="117" marker-end="url(#gru-a)"/>
+  <line class="ln s4" x1="258" y1="120" x2="290" y2="138" marker-end="url(#gru-a)"/>
+  <text class="mut" x="152" y="108" font-size="10">rₜ ⊙ hₜ₋₁</text>
+  <!-- смешивание: (1 − z)·h + z·h̃ -->
+  <circle class="c1" cx="230" cy="40" r="13"/><text x="230" y="44" text-anchor="middle">⊙</text>
+  <circle class="c2" cx="330" cy="40" r="13"/><text x="330" y="44" text-anchor="middle">+</text>
+  <line class="ln s1" x1="208" y1="138" x2="226" y2="54" marker-end="url(#gru-a)"/>
+  <line class="ln s2" x1="305" y1="138" x2="326" y2="55" marker-end="url(#gru-a)"/>
+  <text class="mut" x="160" y="76" font-size="10">1 − zₜ: сколько оставить</text>
+  <text class="mut" x="318" y="98" font-size="10">zₜ ⊙ h̃ₜ</text>
+</svg><figcaption>Reset-гейт решает, сколько прошлого брать в кандидата h̃ₜ; update-гейт zₜ смешивает старое состояние и кандидата: hₜ = (1 − zₜ) ⊙ hₜ₋₁ + zₜ ⊙ h̃ₜ.</figcaption></figure></div><!-- mlcs-visual:end --><div class="block"><h2>🔷 2. Базовый код (PyTorch)</h2><pre><code>import torch
 import torch.nn as nn
 
 # GRU слой

@@ -223,6 +223,29 @@ def check_understanding():
     report(errs, [], f"задач: {len(tasks)}, с интерактивом: {sum(1 for t in tasks if t['demo'])}")
 
 
+def check_visuals():
+    section("Схемы и графики (tools/visuals/)")
+    import add_visuals as av
+    errs, warns, seen, n_fig = [], [], {}, 0
+    for module, visuals in av.modules():
+        for stem, items in visuals.items():
+            if stem in seen:
+                errs.append(f"{stem}: рисунки описаны и в {seen[stem]}, и в {module}")
+            seen[stem] = module
+            errs += av.validate(stem, items)
+            n_fig += len(items)
+            page = CHEATSHEETS / f"{stem}_cheatsheet.html"
+            if page.exists():
+                html = page.read_text(encoding="utf-8")
+                if html.count(av.START) != 1 or html.count(f'id="vis-{stem}-') != len(items):
+                    errs.append(f"{rel(page)}: рисунки не вставлены или устарели — python tools/add_visuals.py")
+    bare = [p.name for p in sorted(CHEATSHEETS.glob("*_cheatsheet.html"))
+            if not re.search(r"<svg|<img|<canvas", p.read_text(encoding="utf-8"))]
+    if bare:
+        warns.append(f"шпаргалок без иллюстраций: {len(bare)} (например, {', '.join(bare[:3])})")
+    report(errs, warns, f"тем с рисунками из tools/visuals: {len(seen)}, рисунков: {n_fig}")
+
+
 def check_lectures():
     section("Лекции (lectures/)")
     import ast
@@ -390,6 +413,7 @@ def main():
     check_glossary()
     check_understanding()
     check_lectures()
+    check_visuals()
     check_exercises(run_solutions=not args.fast)
     check_projects(run_solutions=not args.fast)
     check_portal_fresh()

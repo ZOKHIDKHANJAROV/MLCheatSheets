@@ -50,8 +50,8 @@
     blockquote { font-style: italic; margin: 8px 0; padding: 6px 10px; background: #f8fbff; border-left: 2px solid #1a5fb4; font-size: 0.88em; }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 <div class="container">
@@ -67,7 +67,7 @@
       <li><strong>Применение</strong>: NLP, компиляторы, биоинформатика</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-grammatical_inference-1"><h2>🖼 RPNI на маленьком примере</h2><figure><svg viewBox="0 0 340 236" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="RPNI: PTA и слияние состояний"><defs><marker id="gi-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text x="170" y="18" text-anchor="middle">RPNI:  E⁺ = {a, aa, aaa},   E⁻ = {ε}</text><text x="10" y="42" class="mut" style="font-size:11px">1. Prefix tree acceptor (PTA)</text><line class="ln" x1="8" y1="75" x2="22" y2="75" marker-end="url(#gi-a)"/><circle class="c6" cx="40" cy="75" r="16"/><text x="40" y="79.3" text-anchor="middle">q0</text><line class="ln" x1="56" y1="75" x2="102" y2="75" marker-end="url(#gi-a)"/><text x="80" y="68" class="t3" text-anchor="middle">a</text><circle class="c1" cx="120" cy="75" r="16"/><text x="120" y="79.3" text-anchor="middle">q1</text><circle class="s1" cx="120" cy="75" r="12"/><line class="ln" x1="136" y1="75" x2="182" y2="75" marker-end="url(#gi-a)"/><text x="160" y="68" class="t3" text-anchor="middle">a</text><circle class="c1" cx="200" cy="75" r="16"/><text x="200" y="79.3" text-anchor="middle">q2</text><circle class="s1" cx="200" cy="75" r="12"/><line class="ln" x1="216" y1="75" x2="262" y2="75" marker-end="url(#gi-a)"/><text x="240" y="68" class="t3" text-anchor="middle">a</text><circle class="c1" cx="280" cy="75" r="16"/><text x="280" y="79.3" text-anchor="middle">q3</text><circle class="s1" cx="280" cy="75" r="12"/><text x="10" y="124" class="mut" style="font-size:11px">2. Сливаем q1, q2, q3 — E⁻ не нарушен</text><text x="10" y="142" class="t4" style="font-size:11px">слить q0 с q1 нельзя: принял бы ε ∈ E⁻</text><line class="ln" x1="78" y1="195" x2="92" y2="195" marker-end="url(#gi-a)"/><circle class="c6" cx="110" cy="195" r="16"/><text x="110" y="199.3" text-anchor="middle">q0</text><circle class="c1" cx="220" cy="195" r="16"/><text x="220" y="199.3" text-anchor="middle">q1</text><circle class="s1" cx="220" cy="195" r="12"/><text x="220" y="226" class="mut" style="font-size:10px" text-anchor="middle">q1 ≡ q2 ≡ q3</text><line class="ln" x1="126" y1="195" x2="202" y2="195" marker-end="url(#gi-a)"/><text x="165" y="188" class="t3" text-anchor="middle">a</text><path class="ln" d="M212,181 C198,148 242,148 228,181" marker-end="url(#gi-a)"/><text x="220" y="152" class="t3" text-anchor="middle">a</text><text x="300" y="200" style="font-weight:bold" text-anchor="middle">L = a⁺</text></svg><figcaption>Из положительных примеров строится дерево префиксов, затем состояния сливаются, пока автомат не начинает принимать отрицательные примеры. Получается обобщение a⁺.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Типы формальных грамматик</h2>
     <p><strong>Иерархия Хомского</strong>:</p>

@@ -148,3 +148,55 @@
   html[data-theme="dark"] hr { border-color: var(--t-border) !important; }
   html[data-theme="dark"] ::selection { background: #2f4d7a; }
 }
+
+/* Схемы и графики, вставленные tools/add_visuals.py (.mlcs-visual): SVG рисуется классами,
+   цвета берутся отсюда и подстраиваются под тёмную тему */
+.mlcs-visual figure { margin: 4px 0 0; text-align: center; }
+.mlcs-visual svg { width: 100%; height: auto; font-size: 12px; color: #2b3440; font-family: -apple-system, 'Segoe UI', Arial, sans-serif; }
+.mlcs-visual img { width: 100%; height: auto; }
+.mlcs-visual figcaption { font-size: 0.82em; color: #66707c; margin-top: 4px; text-align: left; }
+.mlcs-visual svg text { fill: currentColor; }   /* размер — от <svg>, атрибут font-size у текста его меняет */
+.mlcs-visual svg .mut { fill: #6b7785; }
+.mlcs-visual svg .ln { stroke: currentColor; fill: none; stroke-width: 1.5; }
+.mlcs-visual svg .ah { fill: currentColor; stroke: none; }
+.mlcs-visual svg .c1 { fill: #dbe8ff; stroke: #1a5fb4; }
+.mlcs-visual svg .c2 { fill: #dff3e7; stroke: #2e8b57; }
+.mlcs-visual svg .c3 { fill: #ffecd6; stroke: #e07b00; }
+.mlcs-visual svg .c4 { fill: #fde2e4; stroke: #d32f2f; }
+.mlcs-visual svg .c5 { fill: #ece3fb; stroke: #7048b8; }
+.mlcs-visual svg .c6 { fill: #eef1f5; stroke: #8a96a3; }
+.mlcs-visual svg .s1 { stroke: #1a5fb4; fill: none; }
+.mlcs-visual svg .s2 { stroke: #2e8b57; fill: none; }
+.mlcs-visual svg .s3 { stroke: #e07b00; fill: none; }
+.mlcs-visual svg .s4 { stroke: #d32f2f; fill: none; }
+.mlcs-visual svg .s5 { stroke: #7048b8; fill: none; }
+.mlcs-visual svg .s6 { stroke: #8a96a3; fill: none; }
+.mlcs-visual svg .t1 { fill: #1a5fb4; }
+.mlcs-visual svg .t2 { fill: #2e8b57; }
+.mlcs-visual svg .t3 { fill: #e07b00; }
+.mlcs-visual svg .t4 { fill: #d32f2f; }
+.mlcs-visual svg .t5 { fill: #7048b8; }
+.mlcs-visual svg .t6 { fill: #8a96a3; }
+@media screen {
+  html[data-theme="dark"] .mlcs-visual svg { color: #e1e7ee; }
+  html[data-theme="dark"] .mlcs-visual figcaption,
+  html[data-theme="dark"] .mlcs-visual svg .mut { color: #98a6b8; fill: #98a6b8; }
+  html[data-theme="dark"] .mlcs-visual svg .c1 { fill: #1d2f4d; stroke: #79a8ff; }
+  html[data-theme="dark"] .mlcs-visual svg .c2 { fill: #163024; stroke: #3fb37a; }
+  html[data-theme="dark"] .mlcs-visual svg .c3 { fill: #3a2a14; stroke: #f0a24a; }
+  html[data-theme="dark"] .mlcs-visual svg .c4 { fill: #361d22; stroke: #ff6b6b; }
+  html[data-theme="dark"] .mlcs-visual svg .c5 { fill: #2b2342; stroke: #b39af0; }
+  html[data-theme="dark"] .mlcs-visual svg .c6 { fill: #252c36; stroke: #8794a5; }
+  html[data-theme="dark"] .mlcs-visual svg .s1 { stroke: #79a8ff; }
+  html[data-theme="dark"] .mlcs-visual svg .s2 { stroke: #3fb37a; }
+  html[data-theme="dark"] .mlcs-visual svg .s3 { stroke: #f0a24a; }
+  html[data-theme="dark"] .mlcs-visual svg .s4 { stroke: #ff6b6b; }
+  html[data-theme="dark"] .mlcs-visual svg .s5 { stroke: #b39af0; }
+  html[data-theme="dark"] .mlcs-visual svg .s6 { stroke: #8794a5; }
+  html[data-theme="dark"] .mlcs-visual svg .t1 { fill: #79a8ff; }
+  html[data-theme="dark"] .mlcs-visual svg .t2 { fill: #3fb37a; }
+  html[data-theme="dark"] .mlcs-visual svg .t3 { fill: #f0a24a; }
+  html[data-theme="dark"] .mlcs-visual svg .t4 { fill: #ff6b6b; }
+  html[data-theme="dark"] .mlcs-visual svg .t5 { fill: #b39af0; }
+  html[data-theme="dark"] .mlcs-visual svg .t6 { fill: #8794a5; }
+}

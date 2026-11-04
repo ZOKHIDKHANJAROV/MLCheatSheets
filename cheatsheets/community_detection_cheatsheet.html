@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -220,7 +220,7 @@
     </ul>
     <blockquote>Community detection - задача разбиения графа на кластеры узлов с плотными внутренними связями и разреженными внешними</blockquote>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-community_detection-1"><h2>🖼 Сообщества и модулярность</h2><figure><svg viewBox="0 0 360 246" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Два сообщества и мост между ними"><defs><marker id="community_detection-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><line class="ln s1" x1="60" y1="60" x2="130" y2="62"/><line class="ln s1" x1="60" y1="60" x2="150" y2="120"/><line class="ln s1" x1="60" y1="60" x2="95" y2="150"/><line class="ln s1" x1="60" y1="60" x2="45" y2="120"/><line class="ln s1" x1="130" y1="62" x2="150" y2="120"/><line class="ln s1" x1="130" y1="62" x2="95" y2="150"/><line class="ln s1" x1="130" y1="62" x2="45" y2="120"/><line class="ln s1" x1="150" y1="120" x2="95" y2="150"/><line class="ln s1" x1="95" y1="150" x2="45" y2="120"/><line class="ln s3" x1="220" y1="70" x2="300" y2="58"/><line class="ln s3" x1="220" y1="70" x2="320" y2="120"/><line class="ln s3" x1="220" y1="70" x2="270" y2="155"/><line class="ln s3" x1="220" y1="70" x2="210" y2="128"/><line class="ln s3" x1="300" y1="58" x2="320" y2="120"/><line class="ln s3" x1="300" y1="58" x2="270" y2="155"/><line class="ln s3" x1="320" y1="120" x2="270" y2="155"/><line class="ln s3" x1="320" y1="120" x2="210" y2="128"/><line class="ln s3" x1="270" y1="155" x2="210" y2="128"/><line class="ln s4" x1="150" y1="120" x2="210" y2="128" stroke-dasharray="4 3" stroke-width="2.5"/><circle class="c1" cx="60" cy="60" r="9"/><circle class="c1" cx="130" cy="62" r="9"/><circle class="c1" cx="150" cy="120" r="9"/><circle class="c1" cx="95" cy="150" r="9"/><circle class="c1" cx="45" cy="120" r="9"/><circle class="c3" cx="220" cy="70" r="9"/><circle class="c3" cx="300" cy="58" r="9"/><circle class="c3" cx="320" cy="120" r="9"/><circle class="c3" cx="270" cy="155" r="9"/><circle class="c3" cx="210" cy="128" r="9"/><text x="180" y="112" text-anchor="middle" class="t4">мост</text><text x="180" y="184" text-anchor="middle" class="t4">max betweenness → удалить (Girvan-Newman)</text><text x="180" y="212" text-anchor="middle">Q = (1/2m) Σᵢⱼ [Aᵢⱼ − kᵢkⱼ/2m] δ(cᵢ, cⱼ)</text><text x="180" y="234" text-anchor="middle" class="mut">здесь m = 19, Q ≈ 0.45 (&gt; 0.3 — структура есть)</text></svg><figcaption>Внутри групп рёбра плотные, между ними — одно. Через мост проходят все кратчайшие пути между группами, поэтому Girvan-Newman удаляет его первым; Q сравнивает долю внутренних рёбер со случайным графом.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Модулярность (Modularity)</h2>
     <p><strong>Метрика качества разбиения:</strong></p>

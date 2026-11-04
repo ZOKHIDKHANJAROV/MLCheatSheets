@@ -202,8 +202,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -235,7 +235,7 @@ stacking = StackingClassifier(
 
 stacking.fit(X_train, y_train)</code></pre>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-advanced_ensembling-1"><h2>🖼 Stacking с out-of-fold предсказаниями</h2><figure><svg viewBox="0 0 340 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Схема стекинга"><defs><marker id="advanced_ensembling-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="120" y="8" width="100" height="30" rx="6"/><text x="170.0" y="27.0" text-anchor="middle">X_train</text><text class="mut" x="228" y="28" text-anchor="start" font-size="11">cv = 5</text><line class="ln" x1="150" y1="38" x2="62" y2="58" marker-end="url(#advanced_ensembling-a)"/><line class="ln" x1="170" y1="38" x2="170" y2="58" marker-end="url(#advanced_ensembling-a)"/><line class="ln" x1="190" y1="38" x2="278" y2="58" marker-end="url(#advanced_ensembling-a)"/><rect class="c1" x="15" y="60" width="90" height="30" rx="6"/><text x="60.0" y="79.0" text-anchor="middle">RF</text><rect class="c1" x="125" y="60" width="90" height="30" rx="6"/><text x="170.0" y="79.0" text-anchor="middle">SVM</text><rect class="c1" x="235" y="60" width="90" height="30" rx="6"/><text x="280.0" y="79.0" text-anchor="middle">LR</text><line class="ln" x1="60" y1="90" x2="60" y2="113" marker-end="url(#advanced_ensembling-a)"/><line class="ln" x1="170" y1="90" x2="170" y2="113" marker-end="url(#advanced_ensembling-a)"/><line class="ln" x1="280" y1="90" x2="280" y2="113" marker-end="url(#advanced_ensembling-a)"/><rect class="c3" x="30" y="115" width="280" height="38" rx="6"/><text x="170.0" y="132.0" text-anchor="middle">OOF-предсказания [p_rf, p_svm, p_lr]</text><text class="mut" x="170.0" y="146.0" text-anchor="middle" font-size="10">мета-признаки, без утечки</text><line class="ln" x1="170" y1="153" x2="170" y2="173" marker-end="url(#advanced_ensembling-a)"/><rect class="c2" x="95" y="175" width="150" height="30" rx="6"/><text x="170.0" y="194.0" text-anchor="middle">мета-модель (LR)</text><line class="ln" x1="170" y1="205" x2="170" y2="226" marker-end="url(#advanced_ensembling-a)"/><text x="178" y="234" text-anchor="start">ŷ</text></svg><figcaption>Базовые модели обучаются по фолдам (cv=5), и их предсказания на отложенных фолдах становятся признаками для мета-модели: так она не видит переобученных прогнозов на train.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Blending</h2>
     <pre><code># Split data

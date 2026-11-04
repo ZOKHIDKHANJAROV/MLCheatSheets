@@ -163,8 +163,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -184,7 +184,7 @@
       <li><strong>Безусловная генерация</strong>: исследовательская постановка (UCF-101, SkyTimelapse)</li>
     </ul>
     <p>Видео — тензор T×H×W×3: 5 секунд 720p при 24 fps — это 120 кадров ≈ 330 млн чисел.</p>
-  </div>
+  </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-video_generation-1"><h2>🖼 Латентная видео-диффузия</h2><figure><svg viewBox="0 0 340 318" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Латентная видео-диффузия на примере CogVideoX"><defs><marker id="vgen-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="10" y="10" width="150" height="28" rx="6"/><text x="85.0" y="28.0" text-anchor="middle">Видео (обучение)</text><line class="ln" x1="85" y1="38" x2="85" y2="56" stroke-dasharray="4 3" marker-end="url(#vgen-a)"/><rect class="c5" x="10" y="58" width="150" height="40" rx="6"/><text x="85.0" y="74.5" text-anchor="middle">3D VAE encoder</text><text x="85.0" y="89.5" text-anchor="middle">÷4 время, ÷8 простр.</text><rect class="c6" x="190" y="10" width="140" height="28" rx="6"/><text x="260.0" y="28.0" text-anchor="middle">шум (генерация)</text><line class="ln" x1="85" y1="98" x2="115" y2="118" stroke-dasharray="4 3" marker-end="url(#vgen-a)"/><line class="ln" x1="260" y1="38" x2="215" y2="118" marker-end="url(#vgen-a)"/><rect class="c1" x="60" y="120" width="200" height="28" rx="6"/><text x="160.0" y="138.0" text-anchor="middle">латент z: 13 × 60 × 90 × C</text><line class="ln" x1="160" y1="148" x2="160" y2="168" marker-end="url(#vgen-a)"/><rect class="c3" x="60" y="170" width="200" height="44" rx="6"/><text x="160.0" y="188.5" text-anchor="middle" style="font-size:11px">DiT: 3D attention + 3D RoPE</text><text x="160.0" y="203.5" text-anchor="middle" style="font-size:11px">денойзинг × T шагов</text><rect class="c6" x="280" y="176" width="52" height="32" rx="6"/><text x="306.0" y="196.0" text-anchor="middle" style="font-size:11px">текст</text><line class="ln" x1="280" y1="192" x2="262" y2="192" marker-end="url(#vgen-a)"/><line class="ln" x1="160" y1="214" x2="160" y2="234" marker-end="url(#vgen-a)"/><rect class="c5" x="60" y="236" width="200" height="28" rx="6"/><text x="160.0" y="254.0" text-anchor="middle">3D VAE decoder</text><line class="ln" x1="160" y1="264" x2="160" y2="280" marker-end="url(#vgen-a)"/><rect class="c2" x="60" y="282" width="200" height="28" rx="6"/><text x="160.0" y="300.0" text-anchor="middle">клип 49 × 480 × 720</text></svg><figcaption>3D VAE сжимает 49 кадров 480×720 в латент 13×60×90; DiT денойзит весь клип сразу с полным 3D-вниманием, что и даёт временную согласованность. Энкодер нужен только при обучении.</figcaption></figure></div><!-- mlcs-visual:end -->
 
   <div class="block">
     <h2>🔷 2. Временная согласованность</h2>

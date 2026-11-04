@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -219,7 +219,7 @@
       <li><strong>Применяется</strong> для последовательностей</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-lstm-1"><h2>🖼 Схема ячейки LSTM</h2><figure><svg viewBox="0 0 380 248" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ячейка LSTM"><defs><marker id="lstm-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text x="8" y="44">Cₜ₋₁</text><line class="ln" x1="40" y1="40" x2="342" y2="40" marker-end="url(#lstm-a)"/><text x="348" y="44">Cₜ</text><text x="8" y="214">hₜ₋₁, xₜ</text><line class="ln" x1="62" y1="210" x2="323" y2="210"/><rect class="c4" x="80" y="150" width="56" height="30" rx="6"/><text x="108" y="169" text-anchor="middle">σ  fₜ</text><rect class="c1" x="150" y="150" width="56" height="30" rx="6"/><text x="178" y="169" text-anchor="middle">σ  iₜ</text><rect class="c2" x="220" y="150" width="60" height="30" rx="6"/><text x="250" y="169" text-anchor="middle">tanh C̃ₜ</text><rect class="c3" x="295" y="150" width="56" height="30" rx="6"/><text x="323" y="169" text-anchor="middle">σ  oₜ</text><line class="ln" x1="108" y1="210" x2="108" y2="182" marker-end="url(#lstm-a)"/><line class="ln" x1="178" y1="210" x2="178" y2="182" marker-end="url(#lstm-a)"/><line class="ln" x1="250" y1="210" x2="250" y2="182" marker-end="url(#lstm-a)"/><line class="ln" x1="323" y1="210" x2="323" y2="182" marker-end="url(#lstm-a)"/><circle class="c4" cx="110" cy="40" r="11"/><text x="110" y="44" text-anchor="middle">×</text><circle class="c2" cx="200" cy="40" r="11"/><text x="200" y="44" text-anchor="middle">+</text><line class="ln" x1="108" y1="150" x2="110" y2="53" marker-end="url(#lstm-a)"/><circle class="c1" cx="215" cy="100" r="10"/><text x="215" y="104" text-anchor="middle">×</text><line class="ln" x1="178" y1="150" x2="208" y2="108" marker-end="url(#lstm-a)"/><line class="ln" x1="250" y1="150" x2="222" y2="108" marker-end="url(#lstm-a)"/><line class="ln" x1="213" y1="90" x2="203" y2="53" marker-end="url(#lstm-a)"/><line class="ln" x1="290" y1="40" x2="290" y2="70"/><rect class="c6" x="272" y="70" width="36" height="22" rx="6"/><text x="290" y="85" text-anchor="middle" style="font-size:11px">tanh</text><circle class="c3" cx="323" cy="112" r="10"/><text x="323" y="116" text-anchor="middle">×</text><line class="ln" x1="304" y1="92" x2="316" y2="104" marker-end="url(#lstm-a)"/><line class="ln" x1="323" y1="150" x2="323" y2="124" marker-end="url(#lstm-a)"/><line class="ln" x1="333" y1="112" x2="358" y2="112" marker-end="url(#lstm-a)"/><text x="362" y="116">hₜ</text><text x="122" y="76" class="t4" style="font-size:11px">забыть</text><text x="140" y="120" class="t1" text-anchor="middle" style="font-size:11px">запомнить</text><text x="190" y="236" text-anchor="middle">Cₜ = fₜ⊙Cₜ₋₁ + iₜ⊙C̃ₜ,   hₜ = oₜ⊙tanh(Cₜ)</text></svg><figcaption>Forget-гейт масштабирует старую память Cₜ₋₁, input-гейт добавляет кандидата C̃ₜ, output-гейт решает, какую часть tanh(Cₜ) выдать как hₜ. Аддитивное обновление Cₜ сохраняет градиент на длинных последовательностях.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Архитектура LSTM</h2>
     <p>Три вентиля управляют информацией:</p>

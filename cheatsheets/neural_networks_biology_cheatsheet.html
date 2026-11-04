@@ -163,8 +163,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -184,7 +184,7 @@
     </ul>
     <blockquote>DeepVariant от Google достиг точности >99.9% в calling SNPs</blockquote>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-neural_networks_biology-1"><h2>🖼 Архитектура AlphaFold2</h2><figure><svg viewBox="0 0 360 298" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AlphaFold2"><defs><marker id="bio-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="60" y="10" width="240" height="30" rx="6"/><text x="180" y="29.32" text-anchor="middle">аминокислотная последовательность</text><line class="ln" x1="140" y1="40" x2="90" y2="68" marker-end="url(#bio-a)"/><line class="ln" x1="220" y1="40" x2="270" y2="68" marker-end="url(#bio-a)"/><rect class="c1" x="15" y="70" width="150" height="36" rx="6"/><text x="90" y="92.32" text-anchor="middle">MSA: гомологи</text><rect class="c3" x="195" y="70" width="150" height="36" rx="6"/><text x="270" y="92.32" text-anchor="middle">pair: пары (i, j)</text><line class="ln" x1="90" y1="106" x2="90" y2="133" marker-end="url(#bio-a)"/><line class="ln" x1="270" y1="106" x2="270" y2="133" marker-end="url(#bio-a)"/><rect class="c5" x="15" y="135" width="330" height="50" rx="6"/><text x="180" y="156.32" text-anchor="middle">Evoformer × 48</text><text x="180" y="171.96" text-anchor="middle" class="mut" font-size="11">обмен MSA ↔ pair</text><line class="ln" x1="180" y1="185" x2="180" y2="213" marker-end="url(#bio-a)"/><rect class="c2" x="60" y="215" width="240" height="34" rx="6"/><text x="180" y="236.32" text-anchor="middle">Structure module (IPA)</text><path class="ln s6" d="M60,232 H25 V187" stroke-dasharray="4 3" marker-end="url(#bio-a)"/><text x="30" y="207" text-anchor="start" class="mut" font-size="10">recycling</text><line class="ln" x1="180" y1="249" x2="180" y2="266" marker-end="url(#bio-a)"/><text x="180" y="284" text-anchor="middle">3D-координаты атомов + pLDDT</text></svg><figcaption>Evoformer обменивается информацией между MSA (эволюция) и парным представлением (контакты остатков), Structure module строит 3D-координаты; результат прогоняется повторно (recycling).</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Protein Structure Prediction</h2>
     <p><strong>AlphaFold2 революция (2020):</strong></p>

@@ -51,8 +51,8 @@
     @media print { .container { column-gap: 12px; } .block { box-shadow: none; } code, pre, table { font-size: 0.78em; } h1 { font-size: 1.4em; } h2 { font-size: 1em; } }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 <div class="container">
@@ -64,7 +64,7 @@
     <ul>
 <li>Геномика и секвенирование</li><li>Протеомика и структура белков</li><li>Транскриптомика и экспрессия генов</li><li>ML для анализа биологических данных</li><li>Применение в медицине и фармацевтике</li>
     </ul>
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-bioinformatics_computational_biology-1"><h2>🖼 Конвейер NGS → варианты</h2><figure><svg viewBox="0 0 340 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Конвейер анализа NGS-данных"><defs><marker id="bioinformatics_computational_biology-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="20" y="8" width="210" height="30" rx="6"/><text x="125.0" y="27.0" text-anchor="middle" font-size="11">Образец ДНК / РНК</text><line class="ln" x1="125" y1="38" x2="125" y2="46" marker-end="url(#bioinformatics_computational_biology-a)"/><rect class="c1" x="20" y="48" width="210" height="30" rx="6"/><text x="125.0" y="67.0" text-anchor="middle" font-size="11">Секвенирование NGS</text><text class="mut" x="244" y="67" text-anchor="start" font-size="11">FASTQ</text><line class="ln" x1="125" y1="78" x2="125" y2="86" marker-end="url(#bioinformatics_computational_biology-a)"/><rect class="c1" x="20" y="88" width="210" height="30" rx="6"/><text x="125.0" y="107.0" text-anchor="middle" font-size="11">QC и фильтрация ридов</text><text class="mut" x="244" y="107" text-anchor="start" font-size="11">FastQC</text><line class="ln" x1="125" y1="118" x2="125" y2="126" marker-end="url(#bioinformatics_computational_biology-a)"/><rect class="c3" x="20" y="128" width="210" height="30" rx="6"/><text x="125.0" y="147.0" text-anchor="middle" font-size="11">Выравнивание на референс</text><text class="mut" x="244" y="147" text-anchor="start" font-size="11">BAM</text><line class="ln" x1="125" y1="158" x2="125" y2="166" marker-end="url(#bioinformatics_computational_biology-a)"/><rect class="c5" x="20" y="168" width="210" height="30" rx="6"/><text x="125.0" y="187.0" text-anchor="middle" font-size="11">Variant calling (DeepVariant)</text><text class="mut" x="244" y="187" text-anchor="start" font-size="11">VCF</text><line class="ln" x1="125" y1="198" x2="125" y2="206" marker-end="url(#bioinformatics_computational_biology-a)"/><rect class="c2" x="20" y="208" width="210" height="30" rx="6"/><text x="125.0" y="227.0" text-anchor="middle" font-size="11">Аннотация, патогенность</text><text class="mut" x="244" y="227" text-anchor="start" font-size="11">отчёт</text></svg><figcaption>Типичный путь от образца до клинической интерпретации; справа — форматы данных на выходе каждого шага. ML (например, DeepVariant) заменяет эвристики на этапе variant calling.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Секвенирование ДНК</h2>
     <p><strong>Основные концепции и применения</strong></p>

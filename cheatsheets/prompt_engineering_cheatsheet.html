@@ -65,8 +65,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 <div class="container">
@@ -91,7 +91,7 @@
 студенту простыми словами. Используй аналогии. 
 Не более 150 слов."</code></pre>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-prompt_engineering-1"><h2>🖼 Анатомия prompt</h2><figure><svg viewBox="0 0 340 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Из чего состоит prompt"><defs><marker id="prompt_engineering-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c5" x="10" y="8" width="205" height="36" rx="6"/><text x="20" y="23" style="font-size:12px;font-weight:600">Role (system)</text><text x="20" y="38" class="mut" style="font-size:11px">«Ты опытный ML-инженер»</text><rect class="c1" x="10" y="50" width="205" height="36" rx="6"/><text x="20" y="65" style="font-size:12px;font-weight:600">Instruction</text><text x="20" y="80" class="mut" style="font-size:11px">что сделать: «Объясни GD»</text><rect class="c3" x="10" y="92" width="205" height="36" rx="6"/><text x="20" y="107" style="font-size:12px;font-weight:600">Context</text><text x="20" y="122" class="mut" style="font-size:11px">аудитория, ограничения</text><rect class="c6" x="10" y="134" width="205" height="36" rx="6"/><text x="20" y="149" style="font-size:12px;font-weight:600">Few-shot примеры</text><text x="20" y="164" class="mut" style="font-size:11px">вход → ответ, 2–5 штук</text><rect class="c2" x="10" y="176" width="205" height="36" rx="6"/><text x="20" y="191" style="font-size:12px;font-weight:600">Input Data</text><text x="20" y="206" class="mut" style="font-size:11px">{user_review}</text><rect class="c4" x="10" y="218" width="205" height="36" rx="6"/><text x="20" y="233" style="font-size:12px;font-weight:600">Output Format</text><text x="20" y="248" class="mut" style="font-size:11px">JSON / ≤ 150 слов</text><path class="ln" d="M219,10 h6 v248 h-6"/><line class="ln" x1="228" y1="134" x2="248" y2="134" marker-end="url(#prompt_engineering-a)"/><rect class="c1" x="250" y="112" width="80" height="44" rx="6"/><text x="290" y="138.7" text-anchor="middle" style="font-size:13px">LLM</text><line class="ln" x1="290" y1="156" x2="290" y2="196" marker-end="url(#prompt_engineering-a)"/><rect class="c2" x="250" y="198" width="80" height="40" rx="6"/><text x="290" y="222.3" text-anchor="middle" style="font-size:12px">ответ</text><text x="290" y="92" class="mut" text-anchor="middle" style="font-size:10px">один prompt</text></svg><figcaption>Хороший prompt собирается из блоков: роль, чёткая инструкция, контекст, примеры (few-shot), сами данные и требуемый формат ответа. Чем явнее каждый блок, тем предсказуемее ответ.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Few-Shot Prompting</h2>
     <pre><code>Классифицируй отзывы.

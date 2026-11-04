@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -220,7 +220,7 @@
       <li><strong>A/B тестирование</strong>: сравнение версий</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-model_serialization-1"><h2>🖼 Форматы сериализации</h2><figure><svg viewBox="0 0 360 268" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Форматы сериализации моделей"><defs><marker id="mser-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="10" y="102" width="95" height="44" rx="6"/><text x="57.5" y="120.5" text-anchor="middle">обученная</text><text x="57.5" y="135.5" class="mut" text-anchor="middle" style="font-size:11px">модель</text><rect class="c3" x="140" y="10" width="210" height="38" rx="6"/><text x="245" y="25.5" text-anchor="middle">pickle / joblib (.pkl)</text><text x="245" y="40.5" class="mut" text-anchor="middle" style="font-size:11px">sklearn; только Python</text><line class="ln" x1="105" y1="124" x2="138" y2="29" marker-end="url(#mser-a)"/><rect class="c1" x="140" y="56" width="210" height="38" rx="6"/><text x="245" y="71.5" text-anchor="middle">torch.save (.pt)</text><text x="245" y="86.5" class="mut" text-anchor="middle" style="font-size:11px">state_dict весов</text><line class="ln" x1="105" y1="124" x2="138" y2="75" marker-end="url(#mser-a)"/><rect class="c1" x="140" y="102" width="210" height="38" rx="6"/><text x="245" y="117.5" text-anchor="middle">Keras (.keras)</text><text x="245" y="132.5" class="mut" text-anchor="middle" style="font-size:11px">SavedModel → TF Serving</text><line class="ln" x1="105" y1="124" x2="138" y2="121" marker-end="url(#mser-a)"/><rect class="c2" x="140" y="148" width="210" height="38" rx="6"/><text x="245" y="163.5" text-anchor="middle">XGBoost / LightGBM</text><text x="245" y="178.5" class="mut" text-anchor="middle" style="font-size:11px">.json / .txt — нативно</text><line class="ln" x1="105" y1="124" x2="138" y2="167" marker-end="url(#mser-a)"/><rect class="c5" x="140" y="194" width="210" height="38" rx="6"/><text x="245" y="209.5" text-anchor="middle">ONNX (.onnx)</text><text x="245" y="224.5" class="mut" text-anchor="middle" style="font-size:11px">ONNX Runtime: C++, Java, JS</text><line class="ln" x1="105" y1="124" x2="138" y2="213" marker-end="url(#mser-a)"/><text x="180" y="258" class="mut" text-anchor="middle" style="font-size:11px">+ метаданные: версии библиотек, метрики</text></svg><figcaption>pickle/joblib удобны для sklearn, но привязаны к Python и небезопасны для недоверенных файлов; ONNX переносит модель в другие языки и рантаймы.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Pickle (базовый метод)</h2>
     <pre><code>import pickle

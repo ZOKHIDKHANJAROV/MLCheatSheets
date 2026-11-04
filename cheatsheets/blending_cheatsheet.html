@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -219,7 +219,7 @@
       <li><strong>Гибкость</strong>: можно комбинировать любые модели</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-blending-1"><h2>🖼 Схема блендинга</h2><figure><svg viewBox="0 0 340 232" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Схема блендинга"><defs><marker id="blending-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c1" x="10" y="18" width="160" height="28"/><text x="90" y="36" text-anchor="middle" font-size="11">train 50%</text><rect class="c3" x="170" y="18" width="80" height="28"/><text x="210" y="36" text-anchor="middle" font-size="11">holdout 25%</text><rect class="c6" x="250" y="18" width="80" height="28"/><text x="290" y="36" text-anchor="middle" font-size="11">test 25%</text><line class="ln" x1="80" y1="46" x2="80" y2="73" marker-end="url(#blending-a)"/><text class="mut" x="86" y="63" text-anchor="start" font-size="10">fit</text><rect class="c1" x="10" y="75" width="140" height="30" rx="6"/><text x="80.0" y="94.0" text-anchor="middle" font-size="11">модели: RF, GB</text><line class="ln" x1="150" y1="90" x2="163" y2="90" marker-end="url(#blending-a)"/><line class="ln" x1="210" y1="46" x2="210" y2="73" marker-end="url(#blending-a)"/><rect class="c3" x="165" y="75" width="135" height="30" rx="6"/><text x="232.5" y="94.0" text-anchor="middle" font-size="11">прогнозы на holdout</text><line class="ln" x1="232" y1="105" x2="232" y2="133" marker-end="url(#blending-a)"/><text class="mut" x="226" y="124" text-anchor="end" font-size="10">fit на y_holdout</text><rect class="c2" x="165" y="135" width="135" height="30" rx="6"/><text x="232.5" y="154.0" text-anchor="middle" font-size="11">мета-модель (LR)</text><line class="ln" x1="232" y1="165" x2="210" y2="188" marker-end="url(#blending-a)"/><path class="ln" d="M 318 46 L 318 205 L 248 205" stroke-dasharray="4 3" marker-end="url(#blending-a)"/><text class="mut" x="312" y="120" text-anchor="end" font-size="10">y_test</text><rect class="c5" x="95" y="190" width="150" height="30" rx="6"/><text x="170.0" y="209.0" text-anchor="middle" font-size="11">оценка на test</text><path class="ln" d="M 80 105 L 80 150 L 163 150" stroke-dasharray="4 3" marker-end="url(#blending-a)"/><text class="mut" x="86" y="126" text-anchor="start" font-size="10">прогнозы</text><text class="mut" x="86" y="140" text-anchor="start" font-size="10">на X_test</text></svg><figcaption>Базовые модели учатся на train, их прогнозы на holdout становятся признаками для мета-модели. На test тот же путь: прогнозы базовых моделей → мета-модель → оценка.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Блендинг vs Стекинг</h2>
     <table>

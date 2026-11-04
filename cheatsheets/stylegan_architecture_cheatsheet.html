@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -219,7 +219,7 @@
       <li><strong>Применение</strong>: лица, искусство, дизайн, data augmentation</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-stylegan_architecture-1"><h2>🖼 Mapping и synthesis network</h2><figure><svg viewBox="0 0 350 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Архитектура StyleGAN: mapping network и synthesis network"><defs><marker id="stg-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="15" y="8" width="100" height="28" rx="6"/><text x="65.0" y="26.0" text-anchor="middle">z ∈ ℝ⁵¹²</text><line class="ln" x1="65" y1="36" x2="65" y2="56" marker-end="url(#stg-a)"/><rect class="c5" x="15" y="58" width="100" height="110" rx="6"/><text x="65.0" y="94.5" text-anchor="middle">Mapping</text><text x="65.0" y="109.5" text-anchor="middle">network</text><text x="65.0" y="124.5" text-anchor="middle">8 × FC</text><text x="65.0" y="139.5" text-anchor="middle">LeakyReLU</text><line class="ln" x1="65" y1="168" x2="65" y2="196" marker-end="url(#stg-a)"/><rect class="c5" x="15" y="198" width="100" height="30" rx="6"/><text x="65.0" y="217.0" text-anchor="middle">w ∈ W</text><text x="65" y="248" class="mut" text-anchor="middle" style="font-size:11px">A: w → (y_s, y_b)</text><text x="65" y="264" class="mut" text-anchor="middle" style="font-size:11px">стиль для AdaIN</text><rect class="c6" x="170" y="8" width="160" height="28" rx="6"/><text x="250.0" y="26.0" text-anchor="middle">Const 4×4×512</text><line class="ln" x1="250" y1="36" x2="250" y2="56" marker-end="url(#stg-a)"/><rect class="c1" x="170" y="58" width="160" height="50" rx="6"/><text x="250.0" y="79.5" text-anchor="middle">4×4: Conv 3×3</text><text x="250.0" y="94.5" text-anchor="middle">+ шум B, AdaIN</text><line class="ln" x1="250" y1="108" x2="250" y2="136" marker-end="url(#stg-a)"/><rect class="c1" x="170" y="138" width="160" height="50" rx="6"/><text x="250.0" y="159.5" text-anchor="middle">8×8: ↑2, Conv 3×3</text><text x="250.0" y="174.5" text-anchor="middle">+ шум B, AdaIN</text><line class="ln" x1="250" y1="188" x2="250" y2="246" marker-end="url(#stg-a)"/><text x="262" y="222" class="mut" text-anchor="start" style="font-size:11px">… 16 → 1024</text><rect class="c2" x="170" y="248" width="160" height="30" rx="6"/><text x="250.0" y="267.0" text-anchor="middle">toRGB → 1024×1024</text><path class="ln" d="M115,213 H140" fill="none"/><line class="ln s5" x1="140" y1="83" x2="140" y2="263"/><line class="ln s5" x1="140" y1="83" x2="168" y2="83" marker-end="url(#stg-a)"/><line class="ln s5" x1="140" y1="163" x2="168" y2="163" marker-end="url(#stg-a)"/><line class="ln s5" x1="140" y1="263" x2="168" y2="263" marker-end="url(#stg-a)"/><text x="146" y="125" class="t5" text-anchor="start">A</text></svg><figcaption>z через 8-слойный MLP превращается в w; на каждом разрешении аффинное A(w) задаёт y_s, y_b для AdaIN, а шум B добавляет стохастические детали. Вход — константа 4×4.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Ключевые инновации</h2>
     <table>

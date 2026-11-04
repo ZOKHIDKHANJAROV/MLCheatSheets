@@ -50,8 +50,8 @@
     blockquote { font-style: italic; margin: 8px 0; padding: 6px 10px; background: #f8fbff; border-left: 2px solid #1a5fb4; font-size: 0.88em; }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 <div class="container">
@@ -68,7 +68,7 @@
       <li><strong>Применение</strong>: классификация, рекомендации, анализ отзывов</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-topic_modeling_lda_nmf-1"><h2>🖼 Темы как разложение матрицы</h2><figure><svg viewBox="0 0 340 236" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Тематическая модель как разложение матрицы документ–слово"><defs><marker id="topic-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="10" y="30" width="110" height="120" rx="3"/><text x="65" y="70" text-anchor="middle">X</text><rect class="s4" x="10" y="78" width="110" height="12" rx="0"/><text x="135" y="96" text-anchor="middle">≈</text><rect class="c1" x="150" y="30" width="40" height="120" rx="3"/><text x="170" y="70" text-anchor="middle">W</text><rect class="s4" x="150" y="78" width="40" height="12" rx="0"/><text x="198" y="96" text-anchor="middle">·</text><rect class="c3" x="206" y="30" width="124" height="40" rx="3"/><text x="268" y="54" text-anchor="middle">H</text><text x="65" y="168" text-anchor="middle">D × V</text><text x="65" y="184" class="mut" text-anchor="middle" style="font-size:11px">документ–слово</text><text x="170" y="168" text-anchor="middle">D × K</text><text x="170" y="184" class="mut" text-anchor="middle" style="font-size:11px">док → тема</text><text x="268" y="88" text-anchor="middle">K × V</text><text x="268" y="104" class="mut" text-anchor="middle" style="font-size:11px">тема → слово</text><text x="268" y="134" class="t4" text-anchor="middle" style="font-size:11px">строка d в X ≈</text><text x="268" y="148" class="t4" text-anchor="middle" style="font-size:11px">смесь тем</text><text x="170" y="212" text-anchor="middle" style="font-size:11px">LDA: θ_d ~ Dir(α), φ_k ~ Dir(β) — вероятности</text><text x="170" y="228" text-anchor="middle" style="font-size:11px">NMF: X ≈ W·H, W ≥ 0, H ≥ 0 (TF-IDF)</text></svg><figcaption>Строка документа в X приближается смесью тем (строка W) по словарям тем (строки H). В LDA это вероятности с априорными Dirichlet, в NMF — просто неотрицательные веса.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Методы</h2>
     <table>

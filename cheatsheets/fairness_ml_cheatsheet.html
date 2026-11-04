@@ -51,8 +51,8 @@
     blockquote{font-style:italic;margin:8px 0;padding:6px 10px;background:#f8fbff;border-left:2px solid #1a5fb4;font-size:0.88em}
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 <div class="container">
@@ -70,7 +70,7 @@
 <li><strong>Counterfactual fairness</strong>: прогноз не меняется, если «переключить» A при прочих равных (в причинной модели)</li>
 <li><strong>Последствия</strong>: вред людям, юридические и репутационные риски</li>
 </ul>
-</div>
+</div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-fairness_ml-1"><h2>🖼 Feedback loop</h2><figure><svg viewBox="0 0 360 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Петля обратной связи bias"><defs><marker id="fml-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="15" y="20" width="150" height="44" rx="6"/><text x="90" y="39" text-anchor="middle" font-size="11">Исторические</text><text x="90" y="53" text-anchor="middle" font-size="11">данные с bias</text><rect class="c1" x="195" y="20" width="150" height="44" rx="6"/><text x="270" y="39" text-anchor="middle" font-size="11">Модель учится</text><text x="270" y="53" text-anchor="middle" font-size="11">на перекосе</text><rect class="c3" x="195" y="140" width="150" height="44" rx="6"/><text x="270" y="159" text-anchor="middle" font-size="11">Решения:</text><text x="270" y="173" text-anchor="middle" font-size="11">больше патрулей</text><rect class="c4" x="15" y="140" width="150" height="44" rx="6"/><text x="90" y="159" text-anchor="middle" font-size="11">Новые данные:</text><text x="90" y="173" text-anchor="middle" font-size="11">больше задержаний</text><line class="ln" x1="165" y1="42" x2="193" y2="42" marker-end="url(#fml-a)"/><line class="ln" x1="270" y1="64" x2="270" y2="138" marker-end="url(#fml-a)"/><line class="ln" x1="195" y1="162" x2="167" y2="162" marker-end="url(#fml-a)"/><line class="ln" x1="90" y1="140" x2="90" y2="66" marker-end="url(#fml-a)"/><text x="180" y="106" text-anchor="middle" class="mut" font-size="11">feedback loop</text><text x="180" y="220" text-anchor="middle" class="t4" font-size="12">Удалить A недостаточно:</text><text x="180" y="238" text-anchor="middle" class="mut" font-size="11">прокси (индекс, имя) восстанавливают A</text></svg><figcaption>Решения модели порождают её будущие обучающие данные, и исходный перекос подтверждает сам себя.</figcaption></figure></div><!-- mlcs-visual:end -->
 
 <div class="block">
 <h2>🔷 2. Источники bias</h2>

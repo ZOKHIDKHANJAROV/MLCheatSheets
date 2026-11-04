@@ -45,8 +45,8 @@
       h2 { font-size: 1em; }
     }
   </style><!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head><body>
 <div class="container"><h1>🔧 ML Pipelines</h1>
 <div class="subtitle">📅 Январь 2026</div>
@@ -60,7 +60,7 @@ pipeline = Pipeline([
 ])
 
 pipeline.fit(X_train, y_train)
-predictions = pipeline.predict(X_test)</code></pre></div>
+predictions = pipeline.predict(X_test)</code></pre></div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-ml_pipelines-1"><h2>🖼 Pipeline с ColumnTransformer</h2><figure><svg viewBox="0 0 360 302" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipeline с ColumnTransformer"><defs><marker id="mlpp-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="120" y="10" width="120" height="28" rx="6"/><text x="180" y="28" text-anchor="middle">X (DataFrame)</text><rect class="c6" x="10" y="52" width="340" height="112" rx="4" stroke-dasharray="4 3"/><text x="344" y="156" class="mut" text-anchor="end" style="font-size:11px">ColumnTransformer</text><line class="ln" x1="160" y1="38" x2="100" y2="72" marker-end="url(#mlpp-a)"/><line class="ln" x1="200" y1="38" x2="260" y2="72" marker-end="url(#mlpp-a)"/><text x="95" y="86" class="mut" text-anchor="middle" style="font-size:11px">num: age, income</text><text x="265" y="86" class="mut" text-anchor="middle" style="font-size:11px">cat: city, category</text><rect class="c1" x="35" y="96" width="120" height="28" rx="6"/><text x="95" y="114" text-anchor="middle">StandardScaler</text><rect class="c3" x="205" y="96" width="120" height="28" rx="6"/><text x="265" y="114" text-anchor="middle">OneHotEncoder</text><text x="180" y="158" class="mut" text-anchor="middle" style="font-size:11px">hstack</text><line class="ln" x1="95" y1="124" x2="150" y2="186" marker-end="url(#mlpp-a)"/><line class="ln" x1="265" y1="124" x2="210" y2="186" marker-end="url(#mlpp-a)"/><rect class="c2" x="80" y="188" width="200" height="30" rx="6"/><text x="180" y="207" text-anchor="middle">RandomForestClassifier</text><line class="ln" x1="180" y1="218" x2="180" y2="238" marker-end="url(#mlpp-a)"/><text x="180" y="254" text-anchor="middle" style="font-weight:600">ŷ</text><text x="180" y="276" class="mut" text-anchor="middle" style="font-size:11px">fit: fit_transform только на train</text><text x="180" y="292" class="mut" text-anchor="middle" style="font-size:11px">predict: transform с теми же параметрами</text></svg><figcaption>Числовые и категориальные столбцы проходят свои трансформеры, результаты склеиваются и идут в модель. Весь pipeline обучается одним fit, поэтому в CV нет утечки.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block"><h2>2. ColumnTransformer</h2><pre><code>from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 

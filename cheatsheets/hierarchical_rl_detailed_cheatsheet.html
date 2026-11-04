@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -225,7 +225,7 @@
       <li>Масштабируемость</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-hierarchical_rl_detailed-1"><h2>🖼 Options во времени</h2><figure><svg viewBox="0 0 340 232" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Временная структура options"><defs><marker id="hrld-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text x="170" y="20" style="font-weight:bold" text-anchor="middle">Option o = (I, π, β)</text><text x="8" y="63" class="mut" style="font-size:11px">опции</text><text x="8" y="108" class="mut" style="font-size:11px">шаги</text><rect class="c5" x="70" y="46" width="120" height="24" rx="6"/><text x="130" y="61.5" style="font-size:11px" text-anchor="middle">o₁: к двери</text><rect class="c3" x="190" y="46" width="120" height="24" rx="6"/><text x="250" y="61.5" style="font-size:11px" text-anchor="middle">o₂: открыть дверь</text><text x="130" y="88" class="mut" style="font-size:10px" text-anchor="middle">π₁ выбирает aₜ</text><text x="250" y="88" class="mut" style="font-size:10px" text-anchor="middle">π₂ выбирает aₜ</text><rect class="c5" x="72" y="96" width="16" height="16" rx="2"/><rect class="c5" x="92" y="96" width="16" height="16" rx="2"/><rect class="c5" x="112" y="96" width="16" height="16" rx="2"/><rect class="c5" x="132" y="96" width="16" height="16" rx="2"/><rect class="c5" x="152" y="96" width="16" height="16" rx="2"/><rect class="c5" x="172" y="96" width="16" height="16" rx="2"/><rect class="c3" x="192" y="96" width="16" height="16" rx="2"/><rect class="c3" x="212" y="96" width="16" height="16" rx="2"/><rect class="c3" x="232" y="96" width="16" height="16" rx="2"/><rect class="c3" x="252" y="96" width="16" height="16" rx="2"/><rect class="c3" x="272" y="96" width="16" height="16" rx="2"/><rect class="c3" x="292" y="96" width="16" height="16" rx="2"/><line class="ln" x1="70" y1="130" x2="318" y2="130" marker-end="url(#hrld-a)"/><text x="326" y="134">t</text><line class="ln" x1="70" y1="124" x2="70" y2="136"/><text x="70" y="150" class="mut" style="font-size:10px" text-anchor="middle">s₀ ∈ I₁</text><line class="ln" x1="190" y1="124" x2="190" y2="136"/><text x="190" y="150" class="mut" style="font-size:10px" text-anchor="middle">β₁(s) = 1</text><line class="ln" x1="310" y1="124" x2="310" y2="136"/><text x="330" y="150" class="mut" style="font-size:10px" text-anchor="end">β₂ = 1</text><text x="170" y="182" style="font-size:11px" text-anchor="middle">Q(s,o) ← Q(s,o) + α[R + γᵏ maxₒ′ Q(s′,o′) − Q(s,o)]</text><text x="170" y="202" class="mut" style="font-size:11px" text-anchor="middle">R — награда за k шагов опции (SMDP)</text><text x="170" y="220" class="mut" style="font-size:10px" text-anchor="middle">I — где можно начать, β — когда остановиться</text></svg><figcaption>Опция стартует в состоянии из I, действует своей политикой π и завершается по β. Над опциями работает SMDP-Q-learning с дисконтом γᵏ за k шагов.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Options Framework</h2>
     <p><strong>Option = (π, β, I):</strong></p>

@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -221,7 +221,7 @@
       Цель: найти начальные веса, которые быстро адаптируются к новым задачам за несколько шагов градиентного спуска.
     </blockquote>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-optimization_based_meta_learning-1"><h2>🖼 MAML: внутренний и внешний цикл</h2><figure><svg viewBox="0 0 340 282" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MAML"><defs><marker id="maml-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><line class="ln s1" x1="170" y1="130" x2="104" y2="83.25" stroke-dasharray="4 3" marker-end="url(#maml-a)"/><line class="ln s6" x1="104" y1="83.25" x2="50" y2="45" stroke-dasharray="4 3"/><circle class="t1" cx="50" cy="45" r="5"/><circle class="t1" cx="104" cy="83.25" r="3"/><line class="ln s2" x1="170" y1="130" x2="241.5" y2="88.75" stroke-dasharray="4 3" marker-end="url(#maml-a)"/><line class="ln s6" x1="241.5" y1="88.75" x2="300" y2="55" stroke-dasharray="4 3"/><circle class="t2" cx="300" cy="55" r="5"/><circle class="t2" cx="241.5" cy="88.75" r="3"/><line class="ln s3" x1="170" y1="130" x2="181" y2="174" stroke-dasharray="4 3" marker-end="url(#maml-a)"/><line class="ln s6" x1="181" y1="174" x2="190" y2="210" stroke-dasharray="4 3"/><circle class="t3" cx="190" cy="210" r="5"/><circle class="t3" cx="181" cy="174" r="3"/><text x="42" y="38" text-anchor="middle" class="t1" font-size="11">θ*₁</text><text x="300" y="46" text-anchor="middle" class="t2" font-size="11">θ*₂</text><text x="204" y="220" text-anchor="start" class="t3" font-size="11">θ*₃</text><text x="96" y="92" text-anchor="end" class="t1" font-size="11">θ′₁</text><text x="248" y="100" text-anchor="start" class="t2" font-size="11">θ′₂</text><text x="170" y="178" text-anchor="end" class="t3" font-size="11">θ′₃</text><circle class="c5" cx="170" cy="130" r="6"/><text x="150" y="140" text-anchor="end" class="t5">θ</text><line class="ln s5" x1="170" y1="130" x2="177" y2="110" marker-end="url(#maml-a)"/><text x="184" y="116" text-anchor="start" class="t5" font-size="11">β</text><text x="170" y="248" text-anchor="middle" font-size="11">θ′ᵢ = θ − α∇θ L_τᵢ(θ)   (inner, support)</text><text x="170" y="268" text-anchor="middle" font-size="11">θ ← θ − β∇θ Σᵢ L_τᵢ(θ′ᵢ)   (outer, query)</text></svg><figcaption>Из общей инициализации θ несколько шагов на support set приводят к θ′ᵢ для каждой задачи; внешний шаг сдвигает θ так, чтобы после адаптации лосс на query set был минимален.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. MAML (Model-Agnostic Meta-Learning)</h2>
     <p><strong>Алгоритм</strong>:</p>

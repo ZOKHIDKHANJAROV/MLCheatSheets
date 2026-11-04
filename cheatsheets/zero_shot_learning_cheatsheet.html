@@ -50,8 +50,8 @@
     blockquote { font-style: italic; margin: 8px 0; padding: 6px 10px; background: #f8fbff; border-left: 2px solid #1a5fb4; font-size: 0.88em; }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 <div class="container">
@@ -67,7 +67,7 @@
       <li><strong>Применение</strong>: новые категории без переобучения</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-zero_shot_learning-1"><h2>🖼 Zero-shot с CLIP</h2><figure><svg viewBox="0 0 340 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Zero-shot классификация с CLIP"><defs><marker id="zsl-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="10" y="10" width="110" height="28" rx="6"/><text x="65.0" y="28.0" text-anchor="middle">Фото</text><line class="ln" x1="65" y1="38" x2="65" y2="56" marker-end="url(#zsl-a)"/><rect class="c1" x="10" y="58" width="110" height="28" rx="6"/><text x="65.0" y="76.0" text-anchor="middle">Image encoder</text><rect class="c6" x="150" y="10" width="180" height="28" rx="6"/><text x="240.0" y="28.0" text-anchor="middle">«a photo of a {class}»</text><line class="ln" x1="240" y1="38" x2="240" y2="56" marker-end="url(#zsl-a)"/><rect class="c3" x="150" y="58" width="180" height="28" rx="6"/><text x="240.0" y="76.0" text-anchor="middle">Text encoder</text><line class="ln" x1="65" y1="86" x2="65" y2="98" marker-end="url(#zsl-a)"/><line class="ln" x1="240" y1="86" x2="240" y2="98" marker-end="url(#zsl-a)"/><text x="65" y="112" class="t1" text-anchor="middle">I</text><text x="240" y="112" class="t3" text-anchor="middle">T₁ … T₄</text><text x="152" y="112" text-anchor="middle" style="font-size:11px">cos(I, Tⱼ)</text><rect class="c6" x="20" y="124" width="72" height="40" rx="6"/><text x="56.0" y="140.5" text-anchor="middle" style="font-size:11px">cat</text><text x="56.0" y="155.5" text-anchor="middle" style="font-size:11px">0.21</text><rect class="c6" x="98" y="124" width="72" height="40" rx="6"/><text x="134.0" y="140.5" text-anchor="middle" style="font-size:11px">dog</text><text x="134.0" y="155.5" text-anchor="middle" style="font-size:11px">0.24</text><rect class="c2" x="176" y="124" width="72" height="40" rx="6"/><text x="212.0" y="140.5" text-anchor="middle" style="font-size:11px">zebra</text><text x="212.0" y="155.5" text-anchor="middle" style="font-size:11px">0.31</text><rect class="c6" x="254" y="124" width="72" height="40" rx="6"/><text x="290.0" y="140.5" text-anchor="middle" style="font-size:11px">airplane</text><text x="290.0" y="155.5" text-anchor="middle" style="font-size:11px">0.12</text><line class="ln" x1="170" y1="164" x2="170" y2="184" marker-end="url(#zsl-a)"/><rect class="c2" x="60" y="186" width="220" height="28" rx="6"/><text x="170.0" y="204.0" text-anchor="middle">softmax(100·cos) → «zebra»</text><text x="170" y="236" class="mut" text-anchor="middle" style="font-size:11px">zebra не было в обучении — класс задан текстом</text></svg><figcaption>Классы задаются текстовыми промптами: побеждает класс с наибольшим косинусным сходством эмбеддингов картинки и текста (значения cos условные).</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. CLIP модель</h2>
     <pre><code>import torch

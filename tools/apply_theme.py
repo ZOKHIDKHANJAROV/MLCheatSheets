@@ -23,7 +23,7 @@ ASSETS = ROOT / "assets"
 TARGETS = ["cheatsheets/*.html"]
 MARKER = b"<!-- mlcs-theme -->"
 # Увеличивайте при заметных изменениях theme.css / theme.js: новый адрес не возьмётся из старого кэша браузера
-VERSION = "2"
+VERSION = "3"
 INCLUDE = re.compile(rb'<link rel="stylesheet" href="([^"]*?)/theme\.css(?:\?v=([^"]*))?">(\r?\n)<script src="[^"]*?/theme\.js(?:\?v=[^"]*)?"></script>')
 
 

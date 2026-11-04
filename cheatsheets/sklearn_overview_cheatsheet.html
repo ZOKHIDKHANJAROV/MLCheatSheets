@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -219,7 +219,7 @@
       <li><strong>Установка</strong>: <code>pip install scikit-learn</code></li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-sklearn_overview-1"><h2>🖼 Pipeline и единый API</h2><figure><svg viewBox="0 0 340 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipeline внутри GridSearchCV"><defs><marker id="sklearn_overview-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text x="170" y="16" text-anchor="middle" style="font-size:11px;font-weight:600;font-family:Consolas,Menlo,monospace">GridSearchCV(pipe, param_grid, cv=5)</text><rect class="s6" x="8" y="24" width="324" height="186" rx="8" stroke-dasharray="4 3"/><text x="110" y="44" class="mut" text-anchor="middle" style="font-size:11px">Pipeline</text><text x="232" y="44" class="t2" text-anchor="middle" style="font-size:11px;font-weight:600">train</text><text x="298" y="44" class="t1" text-anchor="middle" style="font-size:11px;font-weight:600">test</text><rect class="c3" x="35" y="54" width="150" height="36" rx="6"/><text x="110" y="76.3" text-anchor="middle" style="font-size:12px">StandardScaler</text><rect class="c3" x="35" y="110" width="150" height="36" rx="6"/><text x="110" y="132.3" text-anchor="middle" style="font-size:12px">PCA(n_components)</text><rect class="c1" x="35" y="166" width="150" height="36" rx="6"/><text x="110" y="188.3" text-anchor="middle" style="font-size:12px">RandomForest…</text><line class="ln" x1="110" y1="90" x2="110" y2="108" marker-end="url(#sklearn_overview-a)"/><line class="ln" x1="110" y1="146" x2="110" y2="164" marker-end="url(#sklearn_overview-a)"/><text x="232" y="76" class="t2" text-anchor="middle" style="font-size:11px">fit_transform</text><text x="298" y="76" class="t1" text-anchor="middle" style="font-size:11px">transform</text><text x="232" y="132" class="t2" text-anchor="middle" style="font-size:11px">fit_transform</text><text x="298" y="132" class="t1" text-anchor="middle" style="font-size:11px">transform</text><text x="232" y="188" class="t2" text-anchor="middle" style="font-size:11px">fit</text><text x="298" y="188" class="t1" text-anchor="middle" style="font-size:11px">predict</text><text x="170" y="232" class="mut" text-anchor="middle" style="font-size:11px">единый API: fit / transform / predict / score</text><text x="170" y="249" class="mut" text-anchor="middle" style="font-size:11px">лучшие параметры → best_estimator_</text></svg><figcaption>На обучении каждый transformer делает fit_transform, финальная модель — fit; на тесте те же шаги только transform и predict, поэтому статистики не утекают из теста. GridSearchCV перебирает параметры всего Pipeline с кросс-валидацией.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Универсальный API</h2>
     <p>Все модели следуют одному паттерну:</p>

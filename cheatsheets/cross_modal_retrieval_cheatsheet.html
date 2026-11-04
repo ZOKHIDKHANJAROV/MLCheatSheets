@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -218,7 +218,7 @@
       <li><strong>Цель</strong>: схожие объекты близки, разные — далеко</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-cross_modal_retrieval-1"><h2>🖼 Общее embedding-пространство</h2><figure><svg viewBox="0 0 360 246" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Общее пространство эмбеддингов и triplet loss"><defs><marker id="cross_modal_retrieval-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c2" x="8" y="40" width="74" height="28" rx="6"/><text x="45" y="58" text-anchor="middle">Текст</text><line class="ln" x1="82" y1="54" x2="96" y2="54" marker-end="url(#cross_modal_retrieval-a)"/><rect class="c2" x="98" y="40" width="74" height="28" rx="6"/><text x="135" y="58" text-anchor="middle">Text enc.</text><rect class="c1" x="8" y="120" width="74" height="28" rx="6"/><text x="45" y="138" text-anchor="middle">Фото</text><line class="ln" x1="82" y1="134" x2="96" y2="134" marker-end="url(#cross_modal_retrieval-a)"/><rect class="c1" x="98" y="120" width="74" height="28" rx="6"/><text x="135" y="138" text-anchor="middle">Image enc.</text><rect class="c6" x="188" y="12" width="164" height="180" rx="6"/><line class="ln" x1="172" y1="54" x2="225" y2="95" marker-end="url(#cross_modal_retrieval-a)"/><line class="ln" x1="172" y1="134" x2="254" y2="122" marker-end="url(#cross_modal_retrieval-a)"/><circle class="ln s6" cx="232" cy="100" r="58.1" stroke-dasharray="4 3"/><line class="ln s2" x1="232" y1="100" x2="262" y2="120" stroke-width="2"/><line class="ln s4" x1="232" y1="100" x2="318" y2="44" stroke-dasharray="4 3" stroke-width="1.5"/><circle class="t2" cx="232" cy="100" r="5"/><rect class="t1" x="257" y="115" width="10" height="10" rx="1"/><rect class="t4" x="313" y="39" width="10" height="10" rx="1"/><rect class="t4" x="317" y="157" width="10" height="10" rx="1"/><text x="226" y="88" text-anchor="end" class="t2">a</text><text x="270" y="136" text-anchor="start" class="t1">p</text><text x="310" y="40" text-anchor="end" class="t4">n</text><text x="296" y="72" text-anchor="start" class="t4">d(a,n)</text><text x="270" y="184" text-anchor="middle" class="mut">общее пространство</text><text x="180" y="216" text-anchor="middle" class="t1">Triplet: L = max(0, d(a,p) − d(a,n) + m)</text><text x="180" y="236" text-anchor="middle" class="mut">пунктир: d(a,p) + m — негатив должен быть дальше</text></svg><figcaption>Два энкодера переводят текст и фото в одно пространство. Triplet loss тянет позитив p к запросу a и отталкивает негатив n, пока тот не окажется дальше d(a,p) на margin m.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Типы задач</h2>
     <table>

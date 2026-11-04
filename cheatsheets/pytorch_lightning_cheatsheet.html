@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -225,7 +225,7 @@
       <li>Воспроизводимость</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-pytorch_lightning-1"><h2>🖼 Кто за что отвечает</h2><figure><svg viewBox="0 0 340 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LightningModule, DataModule и Trainer"><defs><marker id="pytorch_lightning-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c1" x="10" y="10" width="172" height="130" rx="8"/><text x="96" y="30" text-anchor="middle" style="font-weight:600">LightningModule</text><text x="22" y="52" style="font-size:11px;font-family:Consolas,Menlo,monospace">forward(x)</text><text x="22" y="72" style="font-size:11px;font-family:Consolas,Menlo,monospace">training_step()</text><text x="22" y="92" style="font-size:11px;font-family:Consolas,Menlo,monospace">validation_step()</text><text x="22" y="112" style="font-size:11px;font-family:Consolas,Menlo,monospace">configure_optimizers()</text><text x="96" y="132" class="mut" text-anchor="middle" style="font-size:10px">что считать</text><rect class="c3" x="192" y="10" width="138" height="130" rx="8"/><text x="261" y="30" text-anchor="middle" style="font-weight:600">DataModule</text><text x="202" y="52" style="font-size:11px;font-family:Consolas,Menlo,monospace">setup()</text><text x="202" y="72" style="font-size:11px;font-family:Consolas,Menlo,monospace">train_dataloader()</text><text x="202" y="92" style="font-size:11px;font-family:Consolas,Menlo,monospace">val_dataloader()</text><text x="261" y="132" class="mut" text-anchor="middle" style="font-size:10px">откуда данные</text><line class="ln" x1="96" y1="140" x2="96" y2="172" marker-end="url(#pytorch_lightning-a)"/><line class="ln" x1="261" y1="140" x2="261" y2="172" marker-end="url(#pytorch_lightning-a)"/><rect class="c2" x="10" y="174" width="320" height="50" rx="6"/><text x="170" y="196" text-anchor="middle" style="font-size:11px;font-weight:600">trainer.fit(model, dm)</text><text x="170" y="210" class="mut" text-anchor="middle" style="font-size:11px">эпохи, backward, step, devices, AMP, callbacks</text><text x="170" y="248" class="mut" text-anchor="middle" style="font-size:11px">вы пишете «что», Trainer делает «как»</text></svg><figcaption>В LightningModule остаётся только наука: модель, шаг обучения/валидации и оптимизатор; DataModule отдаёт загрузчики. Цикл эпох, zero_grad/backward/step, перенос на GPU, multi-GPU, mixed precision и логирование берёт на себя Trainer.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. LightningModule</h2>
     <pre><code>import pytorch_lightning as pl

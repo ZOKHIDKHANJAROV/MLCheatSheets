@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -220,7 +220,7 @@
     </ul>
     <blockquote>Adversarial пример - специально созданный вход, вызывающий ошибку ML модели при малом возмущении</blockquote>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-adversarial_robustness-1"><h2>🖼 Почему модель уязвима</h2><figure><svg viewBox="0 0 340 222" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Граница решений обычной и робастной модели"><defs><marker id="adversarial_robustness-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text x="85" y="18" text-anchor="middle" font-size="11">обычная модель</text><text x="262" y="18" text-anchor="middle" font-size="11">робастная модель</text><circle class="t1" cx="40" cy="60" r="4"/><circle class="t1" cx="60" cy="120" r="4"/><circle class="t1" cx="35" cy="155" r="4"/><circle class="t1" cx="80" cy="80" r="4"/><rect class="c4" x="121" y="46" width="8" height="8"/><rect class="c4" x="131" y="106" width="8" height="8"/><rect class="c4" x="111" y="156" width="8" height="8"/><rect class="c4" x="144" y="78" width="8" height="8"/><path class="ln" d="M 100 28 Q 70 60 88 82 T 96 140 T 92 190"/><circle class="s4" cx="80" cy="80" r="14" stroke-dasharray="3 2" fill="none"/><circle class="t1" cx="205" cy="60" r="4"/><circle class="t1" cx="225" cy="120" r="4"/><circle class="t1" cx="210" cy="155" r="4"/><circle class="t1" cx="230" cy="80" r="4"/><rect class="c4" x="291" y="46" width="8" height="8"/><rect class="c4" x="301" y="106" width="8" height="8"/><rect class="c4" x="286" y="156" width="8" height="8"/><rect class="c4" x="314" y="78" width="8" height="8"/><line class="ln" x1="262" y1="28" x2="262" y2="190"/><circle class="s2" cx="230" cy="80" r="14" stroke-dasharray="3 2" fill="none"/><circle class="s2" cx="295" cy="50" r="14" stroke-dasharray="3 2" fill="none"/><line class="ln s6" x1="170" y1="28" x2="170" y2="200" stroke-dasharray="4 3"/><text class="t4" x="85" y="210" text-anchor="middle" font-size="11">ε-шар задел границу</text><text class="t2" x="262" y="210" text-anchor="middle" font-size="11">запас (margin) ≥ ε</text></svg><figcaption>Слева граница проходит ближе ε к точке — внутри ε-шара есть adversarial пример. Робастная модель держит запас (margin) не меньше ε от данных.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. FGSM атака</h2>
     <p><strong>Fast Gradient Sign Method:</strong></p>

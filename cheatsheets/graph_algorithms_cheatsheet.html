@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -220,7 +220,7 @@
       <li><strong>Цикл</strong>: путь, начинающийся и заканчивающийся в одной вершине</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-graph_algorithms-1"><h2>🖼 Порядок обхода BFS и DFS</h2><figure><svg viewBox="0 0 320 246" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BFS и DFS на графе"><defs><marker id="ga-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text x="40" y="24" class="mut" style="font-size:11px" text-anchor="middle">d=0</text><text x="120" y="24" class="mut" style="font-size:11px" text-anchor="middle">d=1</text><text x="200" y="24" class="mut" style="font-size:11px" text-anchor="middle">d=2</text><text x="280" y="24" class="mut" style="font-size:11px" text-anchor="middle">d=3</text><line class="ln" x1="53.4" y1="93.3" x2="106.6" y2="66.7"/><line class="ln" x1="53.4" y1="106.7" x2="106.6" y2="133.3"/><line class="ln" x1="135" y1="60" x2="185" y2="60"/><line class="ln" x1="130.6" y1="129.4" x2="189.4" y2="70.6"/><line class="ln" x1="135" y1="140" x2="185" y2="140"/><line class="ln" x1="213.4" y1="66.7" x2="266.6" y2="93.3"/><line class="ln" x1="213.4" y1="133.3" x2="266.6" y2="106.7"/><circle class="c1" cx="40" cy="100" r="15"/><text x="40" y="104.3" text-anchor="middle">A</text><circle class="c2" cx="120" cy="60" r="15"/><text x="120" y="64.3" text-anchor="middle">B</text><circle class="c2" cx="120" cy="140" r="15"/><text x="120" y="144.3" text-anchor="middle">C</text><circle class="c3" cx="200" cy="60" r="15"/><text x="200" y="64.3" text-anchor="middle">D</text><circle class="c3" cx="200" cy="140" r="15"/><text x="200" y="144.3" text-anchor="middle">E</text><circle class="c5" cx="280" cy="100" r="15"/><text x="280" y="104.3" text-anchor="middle">F</text><text x="14" y="192" class="t1" style="font-weight:bold">BFS (очередь):</text><text x="200" y="192">A B C D E F</text><text x="14" y="212" class="t5" style="font-weight:bold">DFS (стек):</text><text x="200" y="212">A B D C E F</text><text x="170" y="236" class="mut" style="font-size:10px" text-anchor="middle">BFS: уровни d = кратчайший путь по числу рёбер</text></svg><figcaption>BFS идёт слоями по расстоянию d от A, поэтому находит кратчайшие пути в невзвешенном графе; DFS уходит вглубь (соседи по алфавиту) и возвращается назад.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Представление графов</h2>
     <pre><code>import networkx as nx

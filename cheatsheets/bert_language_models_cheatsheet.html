@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -219,7 +219,7 @@
       <li><strong>Transfer learning</strong>: переносит знания между задачами</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-bert_language_models-1"><h2>🖼 Masked Language Model</h2><figure><svg viewBox="0 0 340 244" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Masked Language Model в BERT"><defs><marker id="bert_language_models-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="8" y="196" width="50" height="24" rx="6"/><text x="33.0" y="212.0" text-anchor="middle" font-size="10">[CLS]</text><rect class="c6" x="62" y="196" width="50" height="24" rx="6"/><text x="87.0" y="212.0" text-anchor="middle" font-size="10">кот</text><rect class="c3" x="116" y="196" width="50" height="24" rx="6"/><text x="141.0" y="212.0" text-anchor="middle" font-size="10">[MASK]</text><rect class="c6" x="170" y="196" width="50" height="24" rx="6"/><text x="195.0" y="212.0" text-anchor="middle" font-size="10">на</text><rect class="c6" x="224" y="196" width="50" height="24" rx="6"/><text x="249.0" y="212.0" text-anchor="middle" font-size="10">ковре</text><rect class="c6" x="278" y="196" width="50" height="24" rx="6"/><text x="303.0" y="212.0" text-anchor="middle" font-size="10">[SEP]</text><line class="ln" x1="33" y1="196" x2="33" y2="156" marker-end="url(#bert_language_models-a)"/><line class="ln" x1="87" y1="196" x2="87" y2="156" marker-end="url(#bert_language_models-a)"/><line class="ln" x1="141" y1="196" x2="141" y2="156" marker-end="url(#bert_language_models-a)"/><line class="ln" x1="195" y1="196" x2="195" y2="156" marker-end="url(#bert_language_models-a)"/><line class="ln" x1="249" y1="196" x2="249" y2="156" marker-end="url(#bert_language_models-a)"/><line class="ln" x1="303" y1="196" x2="303" y2="156" marker-end="url(#bert_language_models-a)"/><text class="mut" x="170" y="236" text-anchor="middle" font-size="10">вход = E_tok + E_seg + E_pos</text><rect class="c1" x="8" y="110" width="320" height="44" rx="6"/><text x="168.0" y="130.0" text-anchor="middle">Transformer Encoder × 12</text><text class="mut" x="168.0" y="144.0" text-anchor="middle" font-size="10">self-attention: контекст слева и справа</text><line class="ln" x1="141" y1="110" x2="141" y2="80" marker-end="url(#bert_language_models-a)"/><rect class="c3" x="96" y="50" width="90" height="28" rx="6"/><text x="141.0" y="68.0" text-anchor="middle" font-size="11">«сидит»</text><text class="mut" x="250" y="62" text-anchor="middle" font-size="10">MLM: 15% токенов</text><line class="ln" x1="33" y1="110" x2="33" y2="80" marker-end="url(#bert_language_models-a)"/><rect class="c5" x="4" y="50" width="58" height="28" rx="6"/><text x="33.0" y="68.0" text-anchor="middle" font-size="11">NSP</text><text class="mut" x="170" y="28" text-anchor="middle" font-size="11">предсказать скрытый токен по обеим сторонам</text></svg><figcaption>Вход — сумма токенного, сегментного и позиционного эмбеддингов. BERT предсказывает замаскированный токен по контексту с обеих сторон; [CLS] используется для NSP.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Архитектура BERT</h2>
     <p>Основана на <strong>Transformer Encoder</strong></p>

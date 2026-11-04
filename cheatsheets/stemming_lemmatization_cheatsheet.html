@@ -50,8 +50,8 @@
     blockquote { font-style: italic; margin: 8px 0; padding: 6px 10px; background: #f8fbff; border-left: 2px solid #1a5fb4; font-size: 0.88em; }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 <div class="container">
@@ -68,7 +68,7 @@
       <li><strong>Преимущество</strong>: уменьшение словаря, обобщение</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-stemming_lemmatization-1"><h2>🖼 Stemming против лемматизации</h2><figure><svg viewBox="0 0 340 236" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Сравнение стемминга и лемматизации на примерах"><defs><marker id="stem-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="10" y="8" width="90" height="26" rx="6"/><text x="55.0" y="25.0" text-anchor="middle">Слово</text><rect class="c3" x="115" y="8" width="110" height="26" rx="6"/><text x="170.0" y="25.0" text-anchor="middle">Porter stem</text><rect class="c2" x="240" y="8" width="90" height="26" rx="6"/><text x="285.0" y="25.0" text-anchor="middle">Лемма</text><line class="ln s6" x1="10" y1="76" x2="330" y2="76"/><line class="ln s6" x1="10" y1="106" x2="330" y2="106"/><line class="ln s6" x1="10" y1="136" x2="330" y2="136"/><line class="ln s6" x1="10" y1="166" x2="330" y2="166"/><text x="55" y="66" text-anchor="middle">running</text><text x="170" y="66" text-anchor="middle">run</text><text x="285" y="66" text-anchor="middle">run</text><text x="55" y="96" text-anchor="middle">runs</text><text x="170" y="96" text-anchor="middle">run</text><text x="285" y="96" text-anchor="middle">run</text><text x="55" y="126" text-anchor="middle">ran</text><text x="170" y="126" text-anchor="middle">ran</text><text x="285" y="126" class="t2" text-anchor="middle">run  (pos=v)</text><text x="55" y="156" text-anchor="middle">easily</text><text x="170" y="156" class="t4" text-anchor="middle">easili</text><text x="285" y="156" text-anchor="middle">easily</text><text x="55" y="186" text-anchor="middle">better</text><text x="170" y="186" text-anchor="middle">better</text><text x="285" y="186" class="t2" text-anchor="middle">good  (pos=a)</text><text x="170" y="218" class="mut" text-anchor="middle" style="font-size:11px">красным — не слово; зелёным — помог словарь + POS</text></svg><figcaption>Porter режет окончания по правилам и может выдать не-слово (easili), а нерегулярные формы (ran, better) не трогает; лемматизатор со словарём и POS-тегом возвращает run и good.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Stemming vs Lemmatization</h2>
     <table>

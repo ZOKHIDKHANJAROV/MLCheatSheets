@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -222,7 +222,7 @@
       Задача: научиться классифицировать новые классы, имея всего несколько примеров.
     </blockquote>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-few_shot_learning_traditional-1"><h2>🖼 Prototypical Networks</h2><figure><svg viewBox="0 0 360 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Prototypical Networks"><defs><marker id="fsl-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text x="180" y="16" text-anchor="middle" class="mut" font-size="10">3-way 5-shot: пространство эмбеддингов f(x)</text><circle class="c1" cx="80.8" cy="137.6" r="5"/><circle class="c1" cx="109.4" cy="92.8" r="5"/><circle class="c1" cx="72.8" cy="92.3" r="5"/><circle class="c1" cx="93.7" cy="103.7" r="5"/><circle class="c1" cx="97.9" cy="60.7" r="5"/><circle class="c2" cx="312.6" cy="92.7" r="5"/><circle class="c2" cx="291.3" cy="91.7" r="5"/><circle class="c2" cx="265.9" cy="106.1" r="5"/><circle class="c2" cx="294.8" cy="90.1" r="5"/><circle class="c2" cx="271.3" cy="111.5" r="5"/><circle class="c3" cx="164.1" cy="168.7" r="5"/><circle class="c3" cx="194.5" cy="188.9" r="5"/><circle class="c3" cx="138.9" cy="185.5" r="5"/><circle class="c3" cx="173.8" cy="176.4" r="5"/><circle class="c3" cx="149.2" cy="205.9" r="5"/><line class="ln s6" x1="160" y1="140" x2="90.9323" y2="97.4096" stroke-dasharray="4 3"/><line class="ln s6" x1="160" y1="140" x2="287.19" y2="98.4237" stroke-dasharray="4 3"/><line class="ln s4" x1="160" y1="140" x2="164.092" y2="185.053"/><rect class="c1" x="83.9" y="90.4" width="14" height="14" transform="rotate(45 90.9 97.4)" stroke-width="2.5"/><text x="104.932" y="87.4096" text-anchor="start" font-size="12" font-weight="bold">c₁</text><rect class="c2" x="280.2" y="91.4" width="14" height="14" transform="rotate(45 287.2 98.4)" stroke-width="2.5"/><text x="301.19" y="88.4237" text-anchor="start" font-size="12" font-weight="bold">c₂</text><rect class="c3" x="157.1" y="178.1" width="14" height="14" transform="rotate(45 164.1 185.1)" stroke-width="2.5"/><text x="178.092" y="175.053" text-anchor="start" font-size="12" font-weight="bold">c₃</text><circle class="c4" cx="160.0" cy="140.0" r="7" stroke-width="2"/><text x="148" y="144" text-anchor="end" font-weight="bold">q</text><text x="180" y="262" text-anchor="middle">cₖ = (1/K)·Σ f(xᵢ),  xᵢ ∈ Sₖ (support)</text><text x="180" y="282" text-anchor="middle">p(y = k | q) ∝ exp(−d(f(q), cₖ))</text><text x="180" y="300" text-anchor="middle" class="mut" font-size="10">кружки — support, ромбы — прототипы</text></svg><figcaption>Прототип класса — среднее эмбеддингов его support-примеров; query относится к ближайшему прототипу (сплошная линия).</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Типы подходов</h2>
 

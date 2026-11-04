@@ -163,8 +163,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -178,7 +178,7 @@
     <p>ML революционизирует физику. От анализа данных до теоретических предсказаний. Physics-informed neural networks (PINN). Symbolic regression. Автоматизация экспериментов.</p>
     
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-neural_networks_physics-1"><h2>🖼 Physics-informed neural network</h2><figure><svg viewBox="0 0 360 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PINN"><defs><marker id="pinn-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="15" y="100" width="60" height="34" rx="6"/><text x="45" y="121.32" text-anchor="middle">(x, t)</text><line class="ln" x1="75" y1="117" x2="98" y2="117" marker-end="url(#pinn-a)"/><rect class="c1" x="100" y="90" width="80" height="54" rx="6"/><text x="140" y="113.32" text-anchor="middle">нейросеть</text><text x="140" y="129.32" text-anchor="middle">u_θ(x, t)</text><line class="ln" x1="180" y1="117" x2="208" y2="117" marker-end="url(#pinn-a)"/><rect class="c5" x="210" y="90" width="135" height="54" rx="6"/><text x="277.5" y="113.32" text-anchor="middle">autodiff:</text><text x="277.5" y="129.32" text-anchor="middle">u_t, u_x, u_xx</text><line class="ln" x1="140" y1="144" x2="100" y2="183" marker-end="url(#pinn-a)"/><line class="ln" x1="277" y1="144" x2="270" y2="183" marker-end="url(#pinn-a)"/><rect class="c2" x="15" y="185" width="160" height="40" rx="6"/><text x="95" y="201.32" text-anchor="middle">L_data</text><text x="95" y="216.96" text-anchor="middle" class="mut" font-size="11">u ≈ наблюдения</text><rect class="c3" x="195" y="185" width="150" height="40" rx="6"/><text x="270" y="201.32" text-anchor="middle">L_PDE</text><text x="270" y="216.96" text-anchor="middle" class="mut" font-size="11">невязка ‖N[u]‖²</text><text x="180" y="22" text-anchor="middle" class="mut" font-size="11">точки коллокации (x, t) — без меток</text><text x="180" y="250" text-anchor="middle">L = L_data + λ·L_PDE (+ L_BC, L_IC)</text><text x="180" y="270" text-anchor="middle" class="mut" font-size="11">напр. N[u] = u_t + u·u_x − ν·u_xx</text></svg><figcaption>Сеть u_θ(x, t) учится сразу на данных и на уравнении: производные берутся автодиффом, невязка PDE в точках коллокации входит в лосс вместе с граничными условиями.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Решение PDE</h2>
     <p>Physics-Informed Neural Networks. Вместо численных методов — нейросеть. Loss = data loss + physics loss. Уравнения в теле функции потерь.</p>

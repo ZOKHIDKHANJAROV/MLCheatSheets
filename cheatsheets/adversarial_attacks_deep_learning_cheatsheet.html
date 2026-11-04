@@ -163,8 +163,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -184,7 +184,7 @@
     </ul>
     <blockquote>💡 "Небольшое изменение изображения может превратить панду в гиббона"</blockquote>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-adversarial_attacks_deep_learning-1"><h2>🖼 PGD: шаги и проекция на ε-шар</h2><figure><svg viewBox="0 0 340 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Шаги PGD с проекцией на ε-шар"><defs><marker id="adversarial_attacks_deep_learning-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="70" y="40" width="160" height="160" rx="2" fill-opacity="0.6"/><text class="mut" x="76" y="56" text-anchor="start" font-size="10">‖δ‖∞ ≤ ε</text><path class="ln s4" d="M 225 20 Q 175 120 225 220" stroke-dasharray="4 3"/><text class="t4" x="290" y="134" text-anchor="middle" font-size="11">другой класс</text><text class="t2" x="120" y="182" text-anchor="middle" font-size="11">верный класс</text><circle class="t2" cx="150" cy="120" r="4.5"/><text x="150" y="138" text-anchor="middle" font-size="11">x⁰ = x</text><line class="ln s1" x1="150" y1="120" x2="187" y2="94" marker-end="url(#adversarial_attacks_deep_learning-a)"/><circle class="t1" cx="190" cy="92" r="3.5"/><text x="180" y="82" text-anchor="middle" font-size="11">x¹</text><line class="ln s1" x1="190" y1="92" x2="258" y2="54" stroke-dasharray="4 3" marker-end="url(#adversarial_attacks_deep_learning-a)"/><circle class="t6" cx="262" cy="52" r="3.5"/><text x="270" y="44" text-anchor="start" font-size="11">x̃²</text><line class="ln s3" x1="262" y1="52" x2="233" y2="52" marker-end="url(#adversarial_attacks_deep_learning-a)"/><text class="t3" x="248" y="46" text-anchor="middle" font-size="12">Π</text><circle class="t4" cx="230" cy="52" r="4"/><text x="236" y="68" text-anchor="start" font-size="11">x²</text><text class="mut" x="150" y="216" text-anchor="middle" font-size="10">проекция Π: clip в [x − ε, x + ε]</text><text x="170" y="240" text-anchor="middle" font-size="11">xᵗ⁺¹ = Π( xᵗ + α·sign(∇ₓL(θ, xᵗ, y)) )</text></svg><figcaption>PGD делает несколько шагов α·sign(∇ₓL); если шаг выходит за L∞-шар вокруг x, точка проецируется обратно (clip). Так находится adversarial пример за границей решения внутри шара.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Типы атак</h2>
     <table>

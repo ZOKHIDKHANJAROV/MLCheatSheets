@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -219,7 +219,7 @@
       <li><strong>Цель</strong>: понять, использует ли модель определенные концепции для предсказаний</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-concept_activation_vectors-1"><h2>🖼 CAV в пространстве активаций</h2><figure><svg viewBox="0 0 360 266" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CAV и производная по направлению"><defs><marker id="concept_activation_vectors-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="20" y="12" width="320" height="180" rx="6"/><text x="332" y="186" text-anchor="end" class="mut">активации слоя l</text><line class="ln s6" x1="120" y1="22" x2="240" y2="182" stroke-dasharray="4 3" stroke-width="2"/><circle class="t3" cx="221.5" cy="87.2" r="4"/><circle class="t3" cx="219.2" cy="50.1" r="4"/><circle class="t3" cx="217.1" cy="38" r="4"/><circle class="t3" cx="223.1" cy="98.5" r="4"/><circle class="t3" cx="222.7" cy="87" r="4"/><circle class="t3" cx="249.4" cy="51.2" r="4"/><circle class="t3" cx="226.3" cy="98.9" r="4"/><circle class="t3" cx="216.1" cy="79.9" r="4"/><circle class="t3" cx="272.8" cy="80.5" r="4"/><circle class="t3" cx="221.2" cy="41.6" r="4"/><circle class="t3" cx="226.8" cy="72.3" r="4"/><circle class="t3" cx="229.7" cy="63.1" r="4"/><circle class="t6" cx="127.9" cy="150.2" r="4"/><circle class="t6" cx="110.2" cy="104.7" r="4"/><circle class="t6" cx="136.4" cy="172.3" r="4"/><circle class="t6" cx="120.3" cy="98.9" r="4"/><circle class="t6" cx="112.1" cy="82" r="4"/><circle class="t6" cx="89.7" cy="119.8" r="4"/><circle class="t6" cx="113.3" cy="120.2" r="4"/><circle class="t6" cx="112.3" cy="136.4" r="4"/><circle class="t6" cx="130" cy="177.7" r="4"/><circle class="t6" cx="153.3" cy="134.2" r="4"/><circle class="t6" cx="111.3" cy="121" r="4"/><circle class="t6" cx="79.5" cy="104.5" r="4"/><line class="ln s4" x1="150" y1="62" x2="190" y2="32" marker-end="url(#concept_activation_vectors-a)" stroke-width="2.5"/><text x="196" y="34" text-anchor="start" class="t4">v_C</text><line class="ln s5" x1="194" y1="154" x2="240.1" y2="140.6" marker-end="url(#concept_activation_vectors-a)" stroke-width="2"/><circle class="c5" cx="194" cy="154" r="5"/><text x="186" y="170" text-anchor="middle" class="t5">x</text><text x="244.1" y="144.6" text-anchor="start" class="t5">∇ₕfₖ(x)</text><text x="282" y="44" text-anchor="middle" class="t3">концепт C</text><text x="72" y="168" text-anchor="middle" class="t6">random</text><text x="180" y="214" text-anchor="middle">CAV v_C = w / ‖w‖ — нормаль к границе</text><text x="180" y="234" text-anchor="middle">S(x) = ∇ₕfₖ(x) · v_C</text><text x="180" y="256" text-anchor="middle" class="t1">TCAV = доля x ∈ Xₖ, у которых S(x) &gt; 0</text></svg><figcaption>Линейный классификатор отделяет активации примеров концепта от случайных; CAV — нормаль к границе. Если градиент логита класса k направлен «по» CAV (S > 0), концепт повышает прогноз.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Как работает TCAV</h2>
     <ol>

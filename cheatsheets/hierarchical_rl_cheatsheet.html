@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -218,7 +218,7 @@
       <li><strong>Пример</strong>: робот сначала решает «дойти до кухни», затем «открыть холодильник»</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-hierarchical_rl-1"><h2>🖼 Менеджер и исполнитель</h2><figure><svg viewBox="0 0 340 284" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Двухуровневая иерархия HRL"><defs><marker id="hrl-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c5" x="60" y="16" width="170" height="34" rx="6"/><text x="145" y="36.5" style="font-size:11px" text-anchor="middle">π_hi(g|s): менеджер</text><rect class="c1" x="60" y="118" width="170" height="34" rx="6"/><text x="145" y="138.5" style="font-size:11px" text-anchor="middle">π_lo(a|s,g): исполнитель</text><rect class="c6" x="60" y="220" width="170" height="32" rx="6"/><text x="145" y="239.8" text-anchor="middle">Среда</text><line class="ln" x1="120" y1="50" x2="120" y2="116" marker-end="url(#hrl-a)"/><text x="112" y="82" text-anchor="end">подцель g</text><text x="112" y="97" class="mut" style="font-size:10px" text-anchor="end">раз в k шагов</text><line class="ln" x1="120" y1="152" x2="120" y2="218" marker-end="url(#hrl-a)"/><text x="112" y="190" text-anchor="end">действие aₜ</text><line class="ln" x1="175" y1="220" x2="175" y2="154" marker-end="url(#hrl-a)"/><text x="183" y="184" style="font-size:11px">sₜ, rᵢₙ(s, g)</text><text x="183" y="200" class="mut" style="font-size:10px">внутренняя</text><path class="ln" d="M230,236 H300 V33 H232" marker-end="url(#hrl-a)"/><text x="296" y="88" style="font-size:11px" text-anchor="end">sₜ, Σ R</text><text x="296" y="102" class="mut" style="font-size:10px" text-anchor="end">внешняя</text><text x="170" y="274" class="mut" style="font-size:11px" text-anchor="middle">«дойти до кухни» → шаги к кухне</text></svg><figcaption>Верхний уровень раз в k шагов выбирает подцель по внешней награде; нижний выдаёт примитивные действия и учится на внутренней награде за достижение подцели.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Основные подходы</h2>
     <ul>

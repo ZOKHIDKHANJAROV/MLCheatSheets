@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -218,7 +218,7 @@
       <li><strong>Противоположность RL</strong>: от поведения к награде</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-inverse_rl-1"><h2>🖼 Цикл IRL (feature matching)</h2><figure><svg viewBox="0 0 340 282" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Цикл IRL с feature matching"><defs><marker id="irl-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text x="140" y="22">RL:   R → π*</text><text x="140" y="42">IRL:  π_E (демонстрации) → R</text><rect class="c5" x="10" y="10" width="110" height="34" rx="6"/><text x="65" y="30.5" style="font-size:11px" text-anchor="middle">D эксперта → μ_E</text><line class="ln" x1="60" y1="44" x2="60" y2="118" marker-end="url(#irl-a)"/><rect class="c3" x="150" y="60" width="150" height="30" rx="6"/><text x="225" y="78.5" style="font-size:11px" text-anchor="middle">R(s) = wᵀφ(s)</text><line class="ln" x1="260" y1="90" x2="260" y2="118" marker-end="url(#irl-a)"/><rect class="c1" x="190" y="120" width="140" height="30" rx="6"/><text x="260" y="138.5" style="font-size:11px" text-anchor="middle">RL: найти π для R</text><line class="ln" x1="260" y1="150" x2="230" y2="178" marker-end="url(#irl-a)"/><rect class="c6" x="100" y="180" width="160" height="30" rx="6"/><text x="180" y="198.5" style="font-size:11px" text-anchor="middle">μ_π = E_π[Σ γᵗ φ(sₜ)]</text><line class="ln" x1="130" y1="180" x2="100" y2="152" marker-end="url(#irl-a)"/><rect class="c2" x="10" y="120" width="140" height="30" rx="6"/><text x="80" y="138.5" style="font-size:11px" text-anchor="middle">w ← w + α(μ_E − μ_π)</text><line class="ln" x1="150" y1="122" x2="168" y2="92" marker-end="url(#irl-a)"/><text x="170" y="236" class="mut" style="font-size:11px" text-anchor="middle">цель: μ_π ≈ μ_E (feature matching)</text><text x="170" y="256" class="mut" style="font-size:10px" text-anchor="middle">MaxEnt IRL: π(a|s) ∝ exp(Q(s,a)/α)</text><text x="170" y="272" class="mut" style="font-size:10px" text-anchor="middle">GAIL: R(s,a) = log D − log(1 − D)</text></svg><figcaption>Награда ищется как wᵀφ(s): под текущую R решается RL, ожидания признаков политики сравниваются с экспертными, и w сдвигается в сторону эксперта.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Мотивация</h2>
     <ul>

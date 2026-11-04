@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -219,7 +219,7 @@
       <li><strong>Недетерминированные (NFA)</strong>: множественные возможные переходы</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-regex_finite_state-1"><h2>🖼 Regex как конечный автомат</h2><figure><svg viewBox="0 0 340 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Конечный автомат для регулярного выражения ab*c"><defs><marker id="regex_finite_state-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text x="170" y="20" text-anchor="middle" style="font-size:13px;font-weight:600;font-family:Consolas,Menlo,monospace">regex:  ab*c</text><line class="ln" x1="8" y1="100" x2="36" y2="100" marker-end="url(#regex_finite_state-a)"/><text x="10" y="90" class="mut" style="font-size:10px">start</text><circle class="c1" cx="60" cy="100" r="22"/><text x="60" y="105" text-anchor="middle">q0</text><circle class="c3" cx="170" cy="100" r="22"/><text x="170" y="105" text-anchor="middle">q1</text><circle class="c2" cx="280" cy="100" r="22"/><circle class="s2" cx="280" cy="100" r="17"/><text x="280" y="105" text-anchor="middle">q2</text><line class="ln" x1="82" y1="100" x2="146" y2="100" marker-end="url(#regex_finite_state-a)"/><text x="114" y="92" text-anchor="middle" style="font-size:13px;font-weight:600;font-family:Consolas,Menlo,monospace">a</text><line class="ln" x1="192" y1="100" x2="256" y2="100" marker-end="url(#regex_finite_state-a)"/><text x="224" y="92" text-anchor="middle" style="font-size:13px;font-weight:600;font-family:Consolas,Menlo,monospace">c</text><path class="ln" d="M158,81 C140,38 200,38 182,81" marker-end="url(#regex_finite_state-a)"/><text x="170" y="38" text-anchor="middle" style="font-size:13px;font-weight:600;font-family:Consolas,Menlo,monospace">b</text><text x="280" y="140" class="t2" text-anchor="middle" style="font-size:11px">принимающее</text><text x="170" y="160" text-anchor="middle" style="font-size:11px;font-family:Consolas,Menlo,monospace">abbc:  q0 →a q1 →b q1 →b q1 →c q2  ✓</text><text x="170" y="180" class="mut" text-anchor="middle" style="font-size:10px">нет перехода по символу → строка отвергнута</text></svg><figcaption>Каждый символ входа переводит автомат по одному ребру; b* превращается в петлю на q1. Строка подходит, если после последнего символа автомат стоит в принимающем состоянии (двойной круг).</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Основные операторы Regex</h2>
     <table>

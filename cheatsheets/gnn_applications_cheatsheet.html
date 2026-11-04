@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -219,7 +219,7 @@
       <li><strong>Транспорт</strong>: дорожные сети</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-gnn_applications-1"><h2>🖼 Одни эмбеддинги — три задачи</h2><figure><svg viewBox="0 0 340 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Задачи GNN"><defs><marker id="gnna-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><line class="ln" x1="45.7" y1="37.4" x2="74.3" y2="30.6"/><line class="ln" x1="90.1" y1="37.7" x2="102.9" y2="62.3"/><line class="ln" x1="98.6" y1="77.7" x2="77.4" y2="90.3"/><line class="ln" x1="57.3" y1="93.6" x2="34.7" y2="88.4"/><line class="ln" x1="26.6" y1="75.3" x2="32.4" y2="50.7"/><line class="ln" x1="40.6" y1="49.5" x2="62.4" y2="86.5"/><circle class="c1" cx="35" cy="40" r="11"/><circle class="c2" cx="85" cy="28" r="11"/><circle class="c1" cx="108" cy="72" r="11"/><circle class="c2" cx="68" cy="96" r="11"/><circle class="c2" cx="24" cy="86" r="11"/><text x="66" y="13" class="mut" style="font-size:10px" text-anchor="middle">граф G = (V, E), X</text><line class="ln" x1="122" y1="62" x2="143" y2="62" marker-end="url(#gnna-a)"/><rect class="c5" x="145" y="38" width="110" height="48" rx="6"/><text x="200" y="59.3" text-anchor="middle">GNN</text><text x="200" y="72.7" class="mut" style="font-size:10px" text-anchor="middle">message passing</text><line class="ln" x1="255" y1="62" x2="274" y2="62" marker-end="url(#gnna-a)"/><text x="304" y="66" text-anchor="middle">hᵥ ∈ ℝᵈ</text><line class="ln" x1="200" y1="86" x2="60" y2="140" marker-end="url(#gnna-a)"/><rect class="c3" x="8" y="142" width="104" height="40" rx="6"/><text x="60" y="158.5" style="font-size:11px" text-anchor="middle">Node</text><text x="60" y="172.5" style="font-size:11px" text-anchor="middle">classification</text><text x="60" y="202" style="font-size:11px" text-anchor="middle">softmax(W·hᵥ)</text><text x="60" y="220" class="mut" style="font-size:10px" text-anchor="middle">класс узла</text><line class="ln" x1="200" y1="86" x2="170" y2="140" marker-end="url(#gnna-a)"/><rect class="c3" x="118" y="142" width="104" height="40" rx="6"/><text x="170" y="158.5" style="font-size:11px" text-anchor="middle">Link</text><text x="170" y="172.5" style="font-size:11px" text-anchor="middle">prediction</text><text x="170" y="202" style="font-size:11px" text-anchor="middle">σ(hᵤ · hᵥ)</text><text x="170" y="220" class="mut" style="font-size:10px" text-anchor="middle">есть ли ребро</text><line class="ln" x1="200" y1="86" x2="280" y2="140" marker-end="url(#gnna-a)"/><rect class="c3" x="228" y="142" width="104" height="40" rx="6"/><text x="280" y="158.5" style="font-size:11px" text-anchor="middle">Graph</text><text x="280" y="172.5" style="font-size:11px" text-anchor="middle">classification</text><text x="280" y="202" style="font-size:11px" text-anchor="middle">pool → MLP</text><text x="280" y="220" class="mut" style="font-size:10px" text-anchor="middle">класс графа</text><text x="170" y="242" class="mut" style="font-size:10px" text-anchor="middle">Cora · соцсети, рекомендации · молекулы</text></svg><figcaption>GNN строит эмбеддинги узлов hᵥ передачей сообщений; дальше меняется только голова: классификатор узла, скор пары узлов или pooling всего графа.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Node Classification</h2>
     <p><strong>Задача:</strong> предсказать метку узла</p>

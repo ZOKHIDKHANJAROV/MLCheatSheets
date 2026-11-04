@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -219,7 +219,7 @@
       <li><strong>Проблемы</strong>: окклюзии, смена масштаба, деформация, освещение</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-object_tracking_video-1"><h2>🖼 Цикл SORT / DeepSORT</h2><figure><svg viewBox="0 0 360 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SORT"><defs><marker id="trk-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="110" y="10" width="140" height="30" rx="6"/><text x="180" y="29.32" text-anchor="middle">кадр t</text><line class="ln" x1="150" y1="40" x2="100" y2="63" marker-end="url(#trk-a)"/><rect class="c1" x="20" y="65" width="150" height="40" rx="6"/><text x="95" y="81.32" text-anchor="middle">детектор (YOLO)</text><text x="95" y="96.96" text-anchor="middle" class="mut" font-size="11">боксы D_t</text><rect class="c3" x="190" y="65" width="150" height="40" rx="6"/><text x="265" y="81.32" text-anchor="middle">Kalman: predict</text><text x="265" y="96.96" text-anchor="middle" class="mut" font-size="11">треки T_t|t−1</text><line class="ln" x1="95" y1="105" x2="140" y2="133" marker-end="url(#trk-a)"/><line class="ln" x1="265" y1="105" x2="220" y2="133" marker-end="url(#trk-a)"/><rect class="c5" x="60" y="135" width="240" height="40" rx="6"/><text x="180" y="151.32" text-anchor="middle">сопоставление: IoU + Hungarian</text><text x="180" y="166.96" text-anchor="middle" class="mut" font-size="11">DeepSORT: + appearance</text><line class="ln" x1="130" y1="175" x2="64" y2="208" marker-end="url(#trk-a)"/><line class="ln" x1="180" y1="175" x2="180" y2="208" marker-end="url(#trk-a)"/><line class="ln" x1="230" y1="175" x2="296" y2="208" marker-end="url(#trk-a)"/><rect class="c2" x="10" y="210" width="105" height="40" rx="6"/><text x="62.5" y="226.46" text-anchor="middle" font-size="11">совпали:</text><text x="62.5" y="241.46" text-anchor="middle" font-size="11">Kalman update</text><rect class="c2" x="127" y="210" width="106" height="40" rx="6"/><text x="180" y="226.1" text-anchor="middle" font-size="10">новая детекция</text><text x="180" y="241.46" text-anchor="middle" font-size="11">новый трек</text><rect class="c4" x="244" y="210" width="106" height="40" rx="6"/><text x="297" y="226.46" text-anchor="middle" font-size="11">трек без пары:</text><text x="297" y="241.1" text-anchor="middle" font-size="10">age+1 → удаление</text><path class="ln s6" d="M62,250 V275 H352 V85 H342" stroke-dasharray="4 3" marker-end="url(#trk-a)"/><text x="200" y="291" text-anchor="middle" class="mut" font-size="10">следующий кадр: t → t+1</text></svg><figcaption>Kalman предсказывает положение треков, детекции сопоставляются с ними по IoU венгерским алгоритмом; несопоставленные детекции открывают треки, а треки без детекций стареют и удаляются.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Типы трекинга</h2>
     <table>

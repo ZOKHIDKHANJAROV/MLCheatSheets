@@ -199,8 +199,8 @@
     }
   </style>
 <!-- mlcs-theme -->
-<link rel="stylesheet" href="../assets/theme.css?v=2">
-<script src="../assets/theme.js?v=2"></script>
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
 </head>
 <body>
 
@@ -220,7 +220,7 @@
       <li><strong>Отличие от AE</strong>: упорядоченное латентное пространство</li>
     </ul>
 
-    </div>
+    </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-vae-1"><h2>🖼 Архитектура VAE</h2><figure><svg viewBox="0 0 340 306" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Архитектура VAE с reparameterization trick"><defs><marker id="vae-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="95" y="8" width="90" height="26" rx="6"/><text x="140.0" y="25.0" text-anchor="middle">x</text><line class="ln" x1="140" y1="34" x2="140" y2="44" marker-end="url(#vae-a)"/><polygon class="c1" points="70,46 210,46 180,86 100,86"/><text x="140" y="63" text-anchor="middle">Encoder</text><text x="140" y="79" text-anchor="middle" style="font-size:11px">q_φ(z|x)</text><line class="ln" x1="125" y1="86" x2="100" y2="98" marker-end="url(#vae-a)"/><line class="ln" x1="155" y1="86" x2="180" y2="98" marker-end="url(#vae-a)"/><rect class="c1" x="70" y="100" width="60" height="26" rx="6"/><text x="100.0" y="117.0" text-anchor="middle">μ</text><rect class="c1" x="150" y="100" width="60" height="26" rx="6"/><text x="180.0" y="117.0" text-anchor="middle">log σ²</text><text x="275" y="112" class="t4" text-anchor="middle" style="font-size:11px">KL → N(0, I)</text><line class="ln" x1="100" y1="126" x2="110" y2="148" marker-end="url(#vae-a)"/><line class="ln" x1="180" y1="126" x2="170" y2="148" marker-end="url(#vae-a)"/><rect class="c5" x="60" y="150" width="160" height="30" rx="6"/><text x="140.0" y="169.0" text-anchor="middle">z = μ + σ ⊙ ε</text><rect class="c6" x="240" y="150" width="90" height="30" rx="6"/><text x="285.0" y="169.0" text-anchor="middle">ε ~ N(0, I)</text><line class="ln" x1="240" y1="165" x2="222" y2="165" marker-end="url(#vae-a)"/><line class="ln" x1="140" y1="180" x2="140" y2="193" marker-end="url(#vae-a)"/><polygon class="c2" points="100,195 180,195 210,235 70,235"/><text x="140" y="212" text-anchor="middle">Decoder</text><text x="140" y="228" text-anchor="middle" style="font-size:11px">p_θ(x|z)</text><text x="275" y="206" class="mut" text-anchor="middle" style="font-size:11px">градиент идёт</text><text x="275" y="220" class="mut" text-anchor="middle" style="font-size:11px">через μ и σ</text><line class="ln" x1="140" y1="235" x2="140" y2="246" marker-end="url(#vae-a)"/><rect class="c2" x="95" y="248" width="90" height="26" rx="6"/><text x="140.0" y="265.0" text-anchor="middle">x̂</text><text x="170" y="296" text-anchor="middle" style="font-size:11px">Loss = Reconstruction + KL(q(z|x) ‖ N(0, I))</text></svg><figcaption>Энкодер выдаёт μ и log σ², случайность вынесена в ε, поэтому градиент проходит через z к энкодеру. KL тянет q(z|x) к N(0, I) и делает латентное пространство гладким.</figcaption></figure></div><!-- mlcs-visual:end -->
 <div class="block">
     <h2>🔷 2. Архитектура</h2>
     <p><strong>Encoder</strong>: x → μ, log(σ²)</p>
