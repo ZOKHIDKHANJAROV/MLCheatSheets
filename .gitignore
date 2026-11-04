@@ -87,3 +87,6 @@ my_predictions.csv
 solution_predictions.csv
 
 my_progress.json
+
+# Профили учеников (хеши PIN и ключ подписи) — только на сервере
+my_profiles.json

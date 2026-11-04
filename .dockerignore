@@ -6,3 +6,4 @@ venv
 **/my_answer.csv
 **/my_predictions.csv
 my_progress.json
+my_profiles.json

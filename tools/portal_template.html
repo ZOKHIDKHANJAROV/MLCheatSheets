@@ -209,7 +209,58 @@
   .kbd { font-size: 12px; color: var(--muted); }
   .kbd b { border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; font-weight: 500; }
 
+  /* ---- уровни, награды, профиль (префикс gx-) ---- */
+  .gx-chip { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; text-decoration: none !important; color: var(--text); }
+  .gx-mini { display: inline-block; width: 38px; height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; }
+  .gx-mini i { display: block; height: 100%; background: var(--done); }
+  .gx-xp-txt { font-size: 12px; color: var(--muted); }
+  #userBtn, #lvlBtn { flex-shrink: 0; }
+  #userBtn { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gx-bar { height: 10px; margin: 10px 0 4px; }
+  .gx-sub { font-size: 13px; color: var(--muted); }
+  .gx-big { font-size: 44px; line-height: 1; }
+  .gx-row { display: flex; gap: 14px; align-items: center; }
+  .gx-badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .gx-badge { border: 1px solid var(--border); background: var(--panel); border-radius: 10px; padding: 10px; text-align: center; opacity: .5; filter: grayscale(1); }
+  .gx-badge.on { opacity: 1; filter: none; border-color: var(--done); background: var(--done-soft); }
+  .gx-badge span { font-size: 28px; display: block; }
+  .gx-badge small { display: block; color: var(--muted); font-size: 12px; }
+  .gx-stages { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .gx-dot { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--border); display: grid; place-items: center; text-decoration: none !important; color: var(--muted); }
+  .gx-dot.on { border-color: var(--done); background: var(--done-soft); color: var(--done); }
+  .gx-dot.star { border-color: var(--warn); background: rgba(226, 168, 75, .2); }
+  .gx-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .gx-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .gx-table td:last-child { text-align: right; white-space: nowrap; font-weight: 600; }
+  .gx-table tr.cur td { background: var(--accent-soft); }
+  .gx-goal { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .gx-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(10, 16, 28, .6); display: grid; place-items: center; padding: 16px; overflow-y: auto; }
+  .gx-overlay[hidden] { display: none; }
+  .gx-modal { position: relative; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; width: min(500px, 100%); box-shadow: 0 18px 50px rgba(0, 0, 0, .35); animation: gx-pop .25s ease-out; }
+  @keyframes gx-pop { from { transform: scale(.92); opacity: 0; } to { transform: none; opacity: 1; } }
+  .gx-modal h2 { margin: 0 0 8px; }
+  .gx-tabs { display: flex; gap: 6px; margin: 10px 0; }
+  .gx-tabs .btn { flex: 1; }
+  .gx-form label { display: block; margin: 10px 0 4px; font-size: 13px; color: var(--muted); }
+  .gx-form input { width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; }
+  .gx-err { color: #d64545; min-height: 20px; font-size: 14px; margin-top: 8px; }
+  .gx-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+  .gx-line { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .gx-line small { display: block; color: var(--muted); }
+  .gx-gain { color: var(--done); font-weight: 700; white-space: nowrap; }
+  .gx-level { display: flex; gap: 14px; align-items: center; margin: 14px 0 4px; padding: 12px; border-radius: 10px; background: var(--accent-soft); }
+  .gx-cheer { font-style: italic; color: var(--muted); margin: 12px 0 0; }
+  .gx-toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 60; max-width: min(520px, calc(100% - 24px)); background: var(--panel); border: 1px solid var(--done); border-radius: 10px; padding: 10px 16px; box-shadow: 0 8px 24px rgba(0, 0, 0, .3); }
+  .gx-toast[hidden] { display: none; }
+  .gx-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; border-radius: 14px; }
+  .gx-confetti span { position: absolute; top: -30px; font-size: 20px; animation: gx-fall 2.6s linear forwards; }
+  @keyframes gx-fall { to { transform: translateY(560px) rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .gx-confetti { display: none; } .gx-modal { animation: none; } }
+  body.gx-lock { overflow: hidden; }
+
   @media (max-width: 800px) {
+    .gx-xp-txt, .gx-uname { display: none; }
+    .gx-modal { padding: 18px 16px; }
     body { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "main"; }
     header { gap: 8px; padding: 8px 10px; }
     .search { min-width: 0; }
@@ -223,6 +274,16 @@
     .qpanel { width: 100%; border-left: 0; }
     .viewer.qopen iframe { display: none; }   /* на телефоне вопросы показываются вместо шпаргалки */
   }
+  @media (max-width: 560px) {
+    /* кнопок в шапке много: логотип — значком, уровень и профиль — первыми, поиск — в конце, лишнее прокручивается */
+    header { overflow-x: auto; scrollbar-width: none; gap: 6px; }
+    header::-webkit-scrollbar { display: none; }
+    header > * { flex-shrink: 0; }
+    .brand { max-width: 1.5em; overflow: hidden; }
+    #menuBtn { order: -3; } .brand { order: -2; } #lvlBtn, #userBtn { order: -1; }
+    .search { order: 20; flex: 0 0 150px; min-width: 150px; }
+    .gx-mini { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -234,6 +295,8 @@
   <a class="btn" href="#/g" title="План занятий на сегодня">📅</a>
   <a class="btn" href="#/e" title="Режим экзамена: случайные вопросы с самооценкой">🎓</a>
   <a class="btn" href="#/r" id="reviewBtn" title="Интервальное повторение">🔁 <span id="dueCount"></span></a>
+  <a class="btn gx-chip" id="lvlBtn" href="#/me" title="Ваш уровень"></a>
+  <button class="btn" id="userBtn" data-gx="user" title="Профиль"></button>
   <button class="btn" id="themeBtn" data-theme-toggle title="Тема оформления"></button>
   <div class="overall" title="Общий прогресс">
     <div class="bar"><span id="overallBar"></span></div><span id="overallText"></span>
@@ -248,10 +311,22 @@
   <div id="navList"></div>
 </nav>
 <main id="main"></main>
+<div id="overlay" class="gx-overlay" hidden></div>
+<div id="toast" class="gx-toast" hidden role="status"></div>
 
 <script>
 const DATA = /*__DATA__*/null;
 const STORE_KEY = "mlcs-progress-v1";
+// Профиль: без входа прогресс лежит под STORE_KEY («гость»), после входа — под STORE_KEY:u:<имя>.
+// session = { name, token } — профиль на сервере (start.py); { name, local: true } — только в этом браузере.
+const SESSION_KEY = "mlcs-session-v1", USERS_KEY = "mlcs-users-v1";
+function readSession() {
+  try { const s = JSON.parse(localStorage.getItem(SESSION_KEY)); return s && s.name ? s : null; } catch (e) { return null; }
+}
+let session = readSession();
+// таймеры и состояние связи объявлены здесь, чтобы save() можно было вызывать в любой момент загрузки
+let gamTimer, pushTimer, toastTimer, serverMode = null, serverPromise = null, syncInfo = { s: "idle", t: 0 };
+const storeKey = () => session ? STORE_KEY + ":u:" + session.name.toLowerCase() : STORE_KEY;
 // Версия сборки в адресах файлов: после обновления проекта браузер не покажет старые копии из кэша
 const V = "?v=" + DATA.build;
 // Для страниц во фрейме (интерактивы): открыть шпаргалку в самом портале
@@ -259,15 +334,17 @@ window.mlcsPortal = { open: f => { if (!DATA.titles[f]) return false; location.h
 
 // ---------- состояние и прогресс ----------
 function emptyState() {
-  return { done: {}, exDone: {}, exAuto: {}, exRev: {}, hints: {}, reveal: {}, und: {}, lec: {}, projDone: {}, review: {}, notes: {}, exams: [], plan: null, activity: {}, last: null, tab: "sections", qOpen: false };
+  return { done: {}, exDone: {}, exAuto: {}, exRev: {}, hints: {}, reveal: {}, und: {}, lec: {}, projDone: {}, review: {}, notes: {}, exams: [], plan: null, activity: {}, last: null, tab: "sections", qOpen: false, gam: null, savedAt: 0 };
 }
 function loadState() {
   const empty = emptyState();
-  try { return Object.assign(empty, JSON.parse(localStorage.getItem(STORE_KEY))); }
+  try { return Object.assign(empty, JSON.parse(localStorage.getItem(storeKey()))); }
   catch (e) { return empty; }
 }
 let state = loadState();
-function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+// persist — только записать (и отправить на сервер); save — записать и проверить уровни/этапы (см. «Уровни»)
+function persist() { state.savedAt = Date.now(); try { localStorage.setItem(storeKey(), JSON.stringify(state)); } catch (e) {} pushSoon(); }
+function save() { persist(); gamSoon(); }
 
 const title = f => DATA.titles[f] || f;
 const isDone = f => !!state.done[f];
@@ -426,6 +503,7 @@ function rateButtons(f) {
 // #/g                        план занятий
 // #/k/<термин>               глоссарий (термин — подсветить)
 // #/u, #/u/<i>                задачи на понимание: «предскажи результат» и «выбери подход»
+// #/me                       профиль: уровень, XP, награды, вход
 function parseHash() {
   const [route, query] = decodeURIComponent(location.hash.slice(1) || "/").split("?ctx=");
   return { parts: route.split("/").filter(Boolean), ctx: query || "" };
@@ -459,6 +537,7 @@ function render() {
   else if (kind === "g") main.innerHTML = viewPlan();
   else if (kind === "u") main.innerHTML = a === undefined ? viewUnderstandingList() : viewUnderstanding(+a);
   else if (kind === "l") { main.innerHTML = a === undefined ? viewLectureList() : viewLecture(parts.slice(1).join("/"), ctx); if (a !== undefined) loadLecture(parts.slice(1).join("/")); }
+  else if (kind === "me") main.innerHTML = viewProfile();
   else if (kind === "k") { if (parts[1]) glossaryQuery = ""; main.innerHTML = viewGlossary(); requestAnimationFrame(() => glossaryJump(parts.slice(1).join("/"))); }   // после сброса прокрутки ниже
   else main.innerHTML = viewHome();
   if (kind === "t" || kind === "d") forwardFrameKeys(main.querySelector("iframe"));
@@ -512,6 +591,7 @@ function viewHome() {
     <p>${last ? `<a class="cta" href="#/t/${encodeURIComponent(last)}${state.lastCtx ? "?ctx=" + state.lastCtx : ""}">▶ Продолжить: ${esc(title(last))}</a>`
              : nextInPath ? `<a class="cta" href="#/t/${encodeURIComponent(nextInPath)}?ctx=p:0">▶ Начать с первой темы пути новичка</a>` : ""}</p>
 
+    ${levelCard()}
     ${planCard()}
     ${reviewCard()}
     ${examCard()}
@@ -1370,6 +1450,7 @@ function renderThemeButton() {
 
 function refreshChrome() {
   renderThemeButton();
+  renderLevelChip();
   const p = progress(allTopics);
   document.getElementById("overallBar").style.width = p.pct + "%";
   document.getElementById("overallText").textContent = `${p.n} / ${p.total} изучено`;
@@ -1390,6 +1471,438 @@ function rerenderKeepScroll() {
   }
   render(); main.scrollTop = top;
 }
+
+// ---------- уровни, награды, профиль ----------
+// XP не хранится, а считается из прогресса: отметили — получили, сняли отметку — потеряли.
+// После каждого пройденного этапа (все его темы изучены) портал поздравляет: бонус XP, новый уровень, награды и следующая цель.
+const XP = { topic: 10, lecture: 15, calc: 30, bug: 40, und: 5, project: 100, stage: 50, star: 30, path: 150, examCap: 200 };
+const LEVELS = [
+  { n: 1, xp: 0, icon: "🌱", name: "Новичок", msg: "Каждый эксперт начинал с первой шпаргалки. Вы уже на пути." },
+  { n: 2, xp: 100, icon: "🔍", name: "Любопытный", msg: "Вы задаёте правильные вопросы — это главный навык исследователя данных." },
+  { n: 3, xp: 250, icon: "📊", name: "Аналитик данных", msg: "Данные уже не пугают: вы умеете их готовить и читать." },
+  { n: 4, xp: 500, icon: "🛠", name: "Практик", msg: "Теория стала привычкой, а руки сами тянутся к коду." },
+  { n: 5, xp: 900, icon: "🤖", name: "Инженер ML", msg: "Вы строите модели осознанно и знаете, почему они работают." },
+  { n: 6, xp: 1400, icon: "🧠", name: "Нейросетевик", msg: "Слои, градиенты, внимание — вы говорите на языке нейросетей." },
+  { n: 7, xp: 2100, icon: "🏗", name: "Архитектор моделей", msg: "Вы видите систему целиком: данные, модель, продакшн." },
+  { n: 8, xp: 3000, icon: "🎓", name: "Эксперт", msg: "Вы объясняете сложное просто — это и есть мастерство." },
+  { n: 9, xp: 4200, icon: "🏆", name: "Мастер ML", msg: "Мало кто прошёл так далеко. Поделитесь знаниями с другими!" },
+  { n: 10, xp: 6000, icon: "👑", name: "Легенда ML", msg: "Высший уровень. Теперь вы сами создаёте то, чему учатся другие." },
+];
+const CHEERS = [
+  "Маленькие шаги каждый день дают большой результат.",
+  "Этап закрыт — это уже опора для следующих тем.",
+  "Темп важнее скорости: главное — не останавливаться.",
+  "Каждый пройденный этап — ещё одно «я это умею».",
+  "Ошибки в коде — не провал, а обратная связь. Вы уже умеете её читать.",
+  "Сегодня вы знаете больше, чем вчера. Этого достаточно, чтобы идти дальше.",
+  "Хороший специалист доводит тему до конца. Вы довели.",
+  "Закрепите этап повторением — и знания не выветрятся.",
+  "Сложное становится простым, когда пройдено по шагам.",
+  "Гордитесь собой: большинство останавливается на первой теме.",
+  "Практика превращает знание в навык — загляните в упражнения этапа.",
+  "Ещё этап — и вы заметите, как выросли.",
+];
+const BADGES = [
+  { id: "first", icon: "👣", name: "Первый шаг", desc: "Изучена первая тема", ok: c => c.topics >= 1 },
+  { id: "topics25", icon: "📚", name: "Библиотекарь", desc: "25 изученных тем", ok: c => c.topics >= 25 },
+  { id: "lect10", icon: "📖", name: "Книгочей", desc: "10 прочитанных лекций", ok: c => c.lectures >= 10 },
+  { id: "ex10", icon: "💪", name: "Практик", desc: "10 решённых упражнений", ok: c => c.calc + c.bug >= 10 },
+  { id: "bug3", icon: "🐞", name: "Охотник за багами", desc: "3 задания «Найди ошибку»", ok: c => c.bug >= 3 },
+  { id: "und10", icon: "🧩", name: "Логик", desc: "10 верных задач на понимание", ok: c => c.und >= 10 },
+  { id: "exam", icon: "📝", name: "Экзаменатор", desc: "Пройден первый экзамен", ok: c => c.exams >= 1 },
+  { id: "excellent", icon: "🌟", name: "Отличник", desc: "Экзамен от 10 вопросов на 90% и выше", ok: c => c.examBest >= 90 },
+  { id: "proj", icon: "🏗", name: "Мастер проектов", desc: "Сдан мини-проект", ok: c => c.projects >= 1 },
+  { id: "streak3", icon: "🔥", name: "Три дня подряд", desc: "Занятия 3 дня подряд", ok: c => c.streak >= 3 },
+  { id: "streak7", icon: "🔥", name: "Неделя огня", desc: "Занятия 7 дней подряд", ok: c => c.streak >= 7 },
+  { id: "streak30", icon: "☄️", name: "Месяц упорства", desc: "Занятия 30 дней подряд", ok: c => c.streak >= 30 },
+  { id: "stage", icon: "🚩", name: "Этап пройден", desc: "Пройден первый этап", ok: c => c.stages >= 1 },
+  { id: "star", icon: "⭐", name: "Звезда этапа", desc: "Этап пройден и все его упражнения решены", ok: c => c.stars >= 1 },
+  { id: "path", icon: "🏅", name: "Путь пройден", desc: "Пройден учебный путь", ok: c => c.paths >= 1 },
+  { id: "alumni", icon: "🎓", name: "Выпускник", desc: "Пройдены все учебные пути", ok: c => c.paths >= DATA.paths.length },
+];
+const fmtXp = n => n.toLocaleString("ru-RU");
+const prevDay = t => { const d = new Date(t); d.setDate(d.getDate() - 1); return d.getTime(); };
+function streakDays() {
+  const days = activityByDay();
+  let d = startOfDay(Date.now()), n = 0;
+  if (!days[dayKey(d)]) d = prevDay(d);          // сегодня ещё не занимались — серия не прервана
+  while (days[dayKey(d)]) { n++; d = prevDay(d); }
+  return n;
+}
+function levelOf(xp) {
+  let i = LEVELS.length - 1;
+  while (i > 0 && xp < LEVELS[i].xp) i--;
+  const cur = LEVELS[i], next = LEVELS[i + 1] || null;
+  return { cur, next, pct: next ? Math.round(100 * (xp - cur.xp) / (next.xp - cur.xp)) : 100 };
+}
+// Этап пройден, когда изучены все его темы; ⭐ — когда решены ещё и все упражнения этапа
+function stageList() {
+  return DATA.paths.flatMap((p, pi) => p.stages.map((s, si) => {
+    const ex = DATA.exercises.filter(e => s.exercises.includes(e.topic));
+    const done = s.items.length > 0 && s.items.every(isDone);
+    return { key: pi + "." + si, pi, si, title: s.title, stage: s, done, exTotal: ex.length,
+      exLeft: ex.filter(e => !state.exDone[e.id]).length, left: s.items.filter(f => !isDone(f)).length,
+      star: done && ex.length > 0 && ex.every(e => state.exDone[e.id]) };
+  }));
+}
+function gamStats() {
+  const stages = stageList(), solved = DATA.exercises.filter(e => state.exDone[e.id]), exams = state.exams || [];
+  const c = {
+    topics: Object.keys(state.done).filter(f => DATA.titles[f]).length,
+    lectures: Object.keys(state.lec).filter(f => LECT[f]).length,
+    calc: solved.filter(e => e.kind !== "bug").length, bug: solved.filter(e => e.kind === "bug").length,
+    und: UND.filter(u => state.und[u.id] && state.und[u.id].ok).length,
+    projects: DATA.projects.filter(p => state.projDone[p.id]).length,
+    exams: exams.length, examBest: Math.max(0, ...exams.filter(x => x.n >= 10).map(x => x.pct)),
+    stages: stages.filter(s => s.done).length, stars: stages.filter(s => s.star).length,
+    paths: DATA.paths.filter((p, pi) => p.stages.length && stages.filter(s => s.pi === pi).every(s => s.done)).length,
+    streak: streakDays(),
+  };
+  const examXp = Math.min(XP.examCap, exams.reduce((a, x) => a + Math.round(x.n * x.pct / 100), 0));
+  const rows = [
+    { icon: "📘", label: "Изученные темы", n: c.topics, xp: c.topics * XP.topic, per: `${XP.topic} за тему` },
+    { icon: "🎓", label: "Прочитанные лекции", n: c.lectures, xp: c.lectures * XP.lecture, per: `${XP.lecture} за лекцию` },
+    { icon: "💪", label: "Решённые упражнения", n: c.calc, xp: c.calc * XP.calc, per: `${XP.calc} за упражнение` },
+    { icon: "🐞", label: "Задания «Найди ошибку»", n: c.bug, xp: c.bug * XP.bug, per: `${XP.bug} за задание` },
+    { icon: "🧩", label: "Верные задачи на понимание", n: c.und, xp: c.und * XP.und, per: `${XP.und} за задачу` },
+    { icon: "🏗", label: "Мини-проекты", n: c.projects, xp: c.projects * XP.project, per: `${XP.project} за проект` },
+    { icon: "📝", label: "Экзамены", n: c.exams, xp: examXp, per: `1 XP за верный ответ, не больше ${XP.examCap}` },
+    { icon: "🚩", label: "Пройденные этапы", n: c.stages, xp: c.stages * XP.stage, per: `${XP.stage} за этап` },
+    { icon: "⭐", label: "Этапы со всеми упражнениями", n: c.stars, xp: c.stars * XP.star, per: `ещё ${XP.star} к этапу` },
+    { icon: "🏅", label: "Пройденные пути", n: c.paths, xp: c.paths * XP.path, per: `${XP.path} за путь` },
+  ];
+  const xp = rows.reduce((a, r) => a + r.xp, 0), kept = (state.gam && state.gam.badges) || {};
+  const badges = BADGES.map(b => { const ok = b.ok(c); return Object.assign({}, b, { ok, earned: ok || !!kept[b.id] }); });   // награды не пропадают, если серия прервалась
+  return { c, rows, xp, lv: levelOf(xp), stages, badges };
+}
+
+// Проверка после каждого сохранения: новый этап, уровень, награда → поздравление
+function gamSoon() { clearTimeout(gamTimer); gamTimer = setTimeout(gamTick, 60); }
+function gamSeed() {    // уже набранное не празднуем: фиксируем текущее положение без поздравлений
+  const g = gamStats();
+  state.gam = { celebrated: {}, lvl: g.lv.cur.n, badges: {} };
+  g.stages.forEach(s => { if (s.done) state.gam.celebrated[s.key] = 1; if (s.star) state.gam.celebrated[s.key + "*"] = 1; });
+  g.badges.forEach(b => { if (b.ok) state.gam.badges[b.id] = 1; });
+  persist();
+}
+function gamTick() {
+  if (!state.gam) { gamSeed(); renderLevelChip(); return; }
+  const g = gamStats(), G = state.gam, ev = { stages: [], level: null, badges: [], stars: [] };
+  g.stages.forEach(s => {
+    if (s.done && !G.celebrated[s.key]) { G.celebrated[s.key] = Date.now(); ev.stages.push(s); }
+    if (s.star && !G.celebrated[s.key + "*"]) { G.celebrated[s.key + "*"] = Date.now(); if (!ev.stages.includes(s)) ev.stars.push(s); }
+  });
+  if (g.lv.cur.n > G.lvl) { ev.level = g.lv.cur; G.lvl = g.lv.cur.n; }
+  g.badges.forEach(b => { if (b.ok && !G.badges[b.id]) { G.badges[b.id] = Date.now(); ev.badges.push(b); } });
+  if (ev.stages.length || ev.stars.length || ev.level || ev.badges.length) persist();
+  renderLevelChip();
+  if (parseHash().parts[0] === "me") rerenderKeepScroll();
+  if (ev.stages.length || ev.level) showCelebration(ev, g);
+  else if (ev.stars.length) toast(`⭐ <b>${esc(ev.stars[0].title)}</b>: все упражнения решены — <b>+${XP.star} XP</b>`);
+  else if (ev.badges.length) toast(`🎖 Новая награда: ${ev.badges.map(b => `${b.icon} <b>${esc(b.name)}</b>`).join(", ")} — <a href="#/me">к наградам</a>`);
+}
+function gamBoot() {
+  gamTick();
+  detectServer().then(async ok => {
+    if (ok && session && session.token) {
+      const sig = s => JSON.stringify(Object.assign({}, s, { savedAt: 0 })), before = sig(state);
+      await pullMerge();
+      if (sig(state) !== before) { render(); refreshChrome(); }
+    }
+    refreshChrome();
+  });
+}
+
+// ---------- поздравления и окна ----------
+function showModal(html) {
+  const ov = document.getElementById("overlay");
+  ov.innerHTML = `<div class="gx-modal" role="dialog" aria-modal="true">${html}</div>`;
+  ov.hidden = false; document.body.classList.add("gx-lock");
+  const f = ov.querySelector("[autofocus]") || ov.querySelector(".cta,button,input");
+  if (f) f.focus();
+}
+function closeModal() {
+  const ov = document.getElementById("overlay");
+  ov.hidden = true; ov.innerHTML = ""; document.body.classList.remove("gx-lock");
+}
+function toast(html) {
+  const t = document.getElementById("toast");
+  t.innerHTML = html; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 6000);
+}
+function levelBar(g) {
+  const lv = g.lv;
+  return `<div class="bar gx-bar"><span style="width:${lv.pct}%"></span></div>
+    <div class="gx-sub">${lv.next ? `${fmtXp(g.xp)} из ${fmtXp(lv.next.xp)} XP · до уровня «${esc(lv.next.name)}» ещё ${fmtXp(lv.next.xp - g.xp)} XP` : `${fmtXp(g.xp)} XP · высший уровень 🎉`}</div>`;
+}
+const firstUndone = x => x.stage.items.find(f => !isDone(f));
+const stageHref = x => { const f = firstUndone(x); return f ? `#/t/${encodeURIComponent(f)}?ctx=p:${x.pi}` : `#/p/${x.pi}`; };
+const nextStageAfter = (s, g) => (s && g.stages.find(x => x.pi === s.pi && !x.done)) || g.stages.find(x => !x.done) || null;
+
+function showCelebration(ev, g) {
+  const lv = g.lv, paths = [...new Set(ev.stages.map(s => s.pi))].filter(pi => g.stages.filter(x => x.pi === pi).every(x => x.done));
+  const head = paths.length ? "🏅 Путь пройден!" : ev.stages.length > 1 ? `🎉 Пройдено этапов: ${ev.stages.length}` : ev.stages.length ? "🎉 Этап пройден!" : "🆙 Новый уровень!";
+  const next = nextStageAfter(ev.stages[ev.stages.length - 1], g);
+  const confetti = ["🎉", "⭐", "✨", "🎊", "🏅"].flatMap((c, i) => Array.from({ length: 5 }, (_, k) =>
+    `<span style="left:${(i * 5 + k) * 4 + 2}%;animation-delay:${((i * 7 + k * 3) % 10) / 10}s">${c}</span>`)).join("");
+  showModal(`<div class="gx-confetti">${confetti}</div>
+    <h2>${head}</h2>
+    ${ev.stages.map(s => `<div class="gx-line"><div><b>${esc(s.title)}</b>
+        <small>${s.star ? `⭐ все ${s.exTotal} упражнений этапа решены (+${XP.star} XP)` : s.exTotal ? `💪 Решите упражнения этапа (осталось ${s.exLeft}) — и получите ⭐ +${XP.star} XP` : "Все темы этапа изучены"}</small></div>
+        <span class="gx-gain">+${XP.stage + (s.star ? XP.star : 0)} XP</span></div>`).join("")}
+    ${paths.map(pi => `<div class="gx-line"><div><b>🏅 «${esc(DATA.paths[pi].title)}»</b><small>Весь путь пройден — вы большой молодец!</small></div><span class="gx-gain">+${XP.path} XP</span></div>`).join("")}
+    ${ev.level ? `<div class="gx-level"><span class="gx-big">${ev.level.icon}</span><div><b>Уровень ${ev.level.n} · ${esc(ev.level.name)}</b><div>${esc(ev.level.msg)}</div></div></div>`
+               : `<div class="gx-row" style="margin-top:12px"><span class="gx-big" style="font-size:30px">${lv.cur.icon}</span><b>Уровень ${lv.cur.n} · ${esc(lv.cur.name)}</b></div>`}
+    ${levelBar(g)}
+    ${ev.badges.length ? `<p>🎖 Новые награды: ${ev.badges.map(b => `${b.icon} <b>${esc(b.name)}</b>`).join(" · ")}</p>` : ""}
+    <p class="gx-cheer">${esc(CHEERS[(ev.stages.length ? ev.stages[0].pi * 7 + ev.stages[0].si : lv.cur.n) % CHEERS.length])}</p>
+    <div class="gx-actions">
+      ${next ? `<a class="cta" data-gx="close" href="${stageHref(next)}">▶ Дальше: ${esc(next.title)}</a>` : `<b>🎓 Вы прошли все этапы всех путей!</b>`}
+      <a class="btn" data-gx="close" href="#/me">🏅 Профиль</a>
+      <button class="btn" data-gx="close">Закрыть</button>
+    </div>
+    ${session ? "" : `<p class="note" style="margin-top:12px">👤 <a href="#" data-gx="auth" data-mode="register">Создайте профиль</a> — уровень и награды запишутся в нём.</p>`}`);
+}
+
+// ---------- профиль и вход ----------
+function detectServer() {          // start.py отвечает на api/ping; GitHub Pages и file:// — нет, профиль тогда остаётся в браузере
+  if (!serverPromise) serverPromise = (async () => {
+    if (!/^https?:$/.test(location.protocol)) return (serverMode = false);
+    try { const r = await fetch("api/ping", { cache: "no-store" }); serverMode = r.ok && (await r.json()).ok === true; }
+    catch (e) { serverMode = false; }
+    return serverMode;
+  })();
+  return serverPromise;
+}
+async function api(method, url, body) {
+  const headers = { "Content-Type": "application/json" };
+  if (session && session.token) headers.Authorization = "Bearer " + session.token;
+  const res = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), cache: "no-store" });
+  let data = {};
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) {
+    if (res.status === 401 && session && session.token && url.includes("progress")) sessionExpired();
+    throw new Error(data.error || `Ошибка сервера (${res.status})`);
+  }
+  return data;
+}
+function setSync(s) {
+  syncInfo = { s, t: Date.now() };
+  const el = document.getElementById("syncInfo");
+  if (el) el.textContent = syncText();
+  renderLevelChip();
+}
+function syncText() {
+  if (!session) return "";
+  if (session.local) return "💾 Профиль хранится только в этом браузере: сервера портала здесь нет.";
+  if (!session.token) return "⚠ Сессия истекла — войдите снова, чтобы изменения сохранялись на сервере.";
+  if (syncInfo.s === "err") return "⚠ Нет связи с сервером — изменения отправятся при следующем сохранении.";
+  if (syncInfo.s === "ok") return `☁ Сохранено на сервере портала в ${new Date(syncInfo.t).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}.`;
+  return "☁ Профиль хранится на сервере портала.";
+}
+function sessionExpired() {
+  session = Object.assign({}, session, { token: null });
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) {}
+  setSync("err"); refreshChrome();
+}
+function pushSoon() {
+  if (!(session && session.token)) return;
+  clearTimeout(pushTimer); pushTimer = setTimeout(pushNow, 1200);
+}
+async function pushNow() {
+  if (!(session && session.token)) return;
+  clearTimeout(pushTimer);
+  const g = gamStats();
+  try { await api("PUT", "api/progress", { state, xp: g.xp, level: g.lv.cur.n }); setSync("ok"); }
+  catch (e) { setSync("err"); }
+}
+// Сводим прогресс устройства и сервера: отметки объединяются (берём более раннюю дату), остальное — из более свежей копии
+function mergeStates(a, b) {
+  const newer = (a.savedAt || 0) >= (b.savedAt || 0) ? a : b, older = newer === a ? b : a;
+  const out = Object.assign(emptyState(), older, newer);
+  const combine = (key, pick) => {
+    const r = Object.assign({}, older[key]);
+    for (const [k, v] of Object.entries(newer[key] || {})) r[k] = k in r ? pick(r[k], v) : v;
+    out[key] = r;
+  };
+  const min = (x, y) => Math.min(x, y), max = (x, y) => Math.max(x, y), later = (x, y) => ((y && y.t) || 0) >= ((x && x.t) || 0) ? y : x;
+  ["done", "lec", "projDone", "reveal"].forEach(k => combine(k, min));
+  ["exDone", "exAuto", "hints", "activity"].forEach(k => combine(k, max));
+  ["und", "notes"].forEach(k => combine(k, later));
+  ["review", "exRev"].forEach(k => combine(k, (x, y) => y));
+  const seen = new Set();
+  out.exams = [...(older.exams || []), ...(newer.exams || [])].filter(x => !seen.has(x.t) && seen.add(x.t)).sort((x, y) => x.t - y.t).slice(-50);
+  const ga = a.gam, gb = b.gam;
+  out.gam = ga && gb ? { celebrated: Object.assign({}, ga.celebrated, gb.celebrated), badges: Object.assign({}, ga.badges, gb.badges), lvl: Math.max(ga.lvl, gb.lvl) } : (ga || gb || null);
+  out.savedAt = Math.max(a.savedAt || 0, b.savedAt || 0);
+  return out;
+}
+async function pullMerge() {
+  if (!(session && session.token)) return;
+  try {
+    const remote = await api("GET", "api/progress");
+    state = mergeStates(state, Object.assign(emptyState(), remote.state || {}));
+    if (!state.gam) gamSeed();
+    persist(); setSync("ok");
+  } catch (e) { setSync("err"); }
+}
+function adoptSession(s, takeGuest) {         // takeGuest: при регистрации прогресс из этого браузера переходит в профиль
+  const guest = session ? null : state;
+  session = s;
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
+  if (takeGuest && guest) { try { localStorage.removeItem(STORE_KEY); } catch (e) {} state = guest; persist(); }
+  else state = loadState();
+  if (!state.gam) gamSeed();
+}
+const readUsers = () => { try { return JSON.parse(localStorage.getItem(USERS_KEY)) || {}; } catch (e) { return {}; } };
+async function hashPin(pin, salt) {
+  const text = salt + "|" + pin;
+  if (window.crypto && crypto.subtle) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join("");
+  }
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;       // запасной вариант для http вне localhost, где нет crypto.subtle
+  for (let i = 0; i < text.length; i++) { const ch = text.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return "f" + (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
+}
+async function authServer(mode, name, pin) {
+  const g = gamStats();
+  const body = mode === "register" ? { name, pin, state: session ? {} : state, xp: session ? 0 : g.xp, level: session ? 1 : g.lv.cur.n } : { name, pin };
+  const res = await api("POST", "api/" + mode, body);
+  adoptSession({ name: res.name, token: res.token }, mode === "register");
+  if (mode === "login") await pullMerge(); else setSync("ok");
+}
+async function authLocal(mode, name, pin) {
+  const users = readUsers(), key = name.toLowerCase();
+  if (mode === "register") {
+    if (users[key]) throw new Error("Такое имя уже есть в этом браузере");
+    const salt = Array.from(crypto.getRandomValues(new Uint8Array(8)), b => b.toString(16).padStart(2, "0")).join("");
+    users[key] = { name, salt, hash: await hashPin(pin, salt), created: Date.now() };
+    try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch (e) { throw new Error("Браузер не даёт сохранить профиль"); }
+    adoptSession({ name, local: true }, true);
+  } else {
+    const u = users[key];
+    if (!u || u.hash !== await hashPin(pin, u.salt)) throw new Error("Неверное имя или PIN");
+    adoptSession({ name: u.name, local: true }, false);
+  }
+}
+async function authSubmit(form) {
+  const mode = form.dataset.mode, name = form.elements.uname.value.trim(), pin = form.elements.pin.value;
+  const btn = form.querySelector("[type=submit]"), err = document.getElementById("authErr");
+  const fail = msg => { err.textContent = msg; btn.disabled = false; };
+  if (!/^[\p{L}\p{N}_\-]{2,24}$/u.test(name)) return fail("Имя — 2–24 символа: буквы, цифры, «_» и «-»");
+  if (pin.length < 4 || pin.length > 32) return fail("PIN — от 4 до 32 символов");
+  btn.disabled = true; err.textContent = "";
+  try { if (await detectServer()) await authServer(mode, name, pin); else await authLocal(mode, name, pin); }
+  catch (e) { return fail(e.message || "Не удалось войти"); }
+  closeModal(); render(); refreshChrome();
+  const g = gamStats();
+  toast(`✔ ${mode === "register" ? "Профиль создан" : "Вы вошли"}, <b>${esc(session.name)}</b>! ${g.lv.cur.icon} Уровень ${g.lv.cur.n} · ${fmtXp(g.xp)} XP`);
+}
+async function logout() {
+  if (session && session.token) await pushNow();
+  session = null;
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+  state = loadState();
+  if (!state.gam) gamSeed();
+  closeModal(); render(); refreshChrome();
+}
+async function openAuth(mode = "login", msg = "", name = "") {
+  await detectServer();
+  const reg = mode === "register";
+  showModal(`<h2>${reg ? "Создать профиль" : "Вход в профиль"}</h2>
+    <div class="gx-tabs"><button class="btn ${reg ? "" : "on"}" data-gx="tab" data-mode="login">Вход</button><button class="btn ${reg ? "on" : ""}" data-gx="tab" data-mode="register">Регистрация</button></div>
+    <p class="note">${reg ? "Уровень, XP и награды запишутся в профиль, а прогресс из этого браузера перейдёт в него. " : ""}${serverMode
+      ? "Профиль хранится на сервере портала — войти можно с любого устройства."
+      : "Профиль хранится только в этом браузере (сервера портала нет). Запустите <code>python start.py</code>, чтобы профили были общими."}</p>
+    <form class="gx-form" id="authForm" data-mode="${mode}" autocomplete="on">
+      <label for="gxName">Имя</label>
+      <input id="gxName" name="uname" value="${esc(name)}" autocomplete="username" maxlength="24" required ${name ? "" : "autofocus"}>
+      <label for="gxPin">PIN (4–32 символа)</label>
+      <input id="gxPin" name="pin" type="password" autocomplete="${reg ? "new-password" : "current-password"}" maxlength="32" required ${name ? "autofocus" : ""}>
+      <div class="gx-err" id="authErr" role="alert">${esc(msg)}</div>
+      <div class="gx-actions"><button class="cta" type="submit">${reg ? "Создать профиль" : "Войти"}</button><button class="btn" type="button" data-gx="close">Продолжить как гость</button></div>
+    </form>
+    ${reg ? '<p class="note">PIN восстановить нельзя — запомните его.</p>' : ""}`);
+}
+
+function renderLevelChip() {
+  const g = gamStats(), cur = g.lv.cur, next = g.lv.next, btn = document.getElementById("lvlBtn");
+  btn.innerHTML = `${cur.icon} <b>${cur.n}</b><span class="gx-mini"><i style="width:${g.lv.pct}%"></i></span><span class="gx-xp-txt">${fmtXp(g.xp)} XP</span>`;
+  btn.title = `Уровень ${cur.n} · ${cur.name}: ${fmtXp(g.xp)} XP` + (next ? `. До «${next.name}» — ещё ${fmtXp(next.xp - g.xp)} XP` : "");
+  const u = document.getElementById("userBtn"), expired = session && !session.token && !session.local;
+  u.innerHTML = session ? `👤<span class="gx-uname"> ${esc(session.name)}${expired || syncInfo.s === "err" ? " ⚠" : ""}</span>` : `👤<span class="gx-uname"> Войти</span>`;
+  u.title = session ? `Профиль «${session.name}»` + (syncText() ? " — " + syncText() : "") : "Войти или создать профиль: уровень запишется в профиль";
+}
+
+function goalList(g) {   // ближайший непройденный этап каждого пути
+  return DATA.paths.map((p, pi) => g.stages.find(s => s.pi === pi && !s.done)).filter(Boolean);
+}
+function levelCard() {
+  const g = gamStats(), goals = goalList(g).sort((a, b) => a.left - b.left).slice(0, 1);
+  return `<h2>🏅 Ваш уровень</h2>
+    <div class="card gx-card">
+      <div class="gx-row"><span class="gx-big">${g.lv.cur.icon}</span>
+        <div><b>Уровень ${g.lv.cur.n} · ${esc(g.lv.cur.name)}</b><div class="meta">${esc(g.lv.cur.msg)}</div></div></div>
+      ${levelBar(g)}
+      ${goals.map(s => `<div class="meta">🎯 Ближайшая цель: <a href="${stageHref(s)}">${esc(s.title)}</a> — ${s.left ? `осталось ${s.left} ${plural(s.left, "тема", "темы", "тем")}` : "осталось отметить"} · +${XP.stage} XP</div>`).join("")}
+      <div class="gx-actions"><a class="btn" href="#/me">🏅 Профиль и награды</a>
+        ${session ? `<span class="meta">👤 ${esc(session.name)}</span>` : `<button class="btn" data-gx="auth" data-mode="register">👤 Войти или создать профиль</button><span class="meta">Без входа уровень виден только вам и только в этом браузере.</span>`}</div>
+    </div>`;
+}
+function viewProfile() {
+  const g = gamStats(), lv = g.lv, expired = session && !session.token && !session.local;
+  const account = session
+    ? `<div class="card"><b>👤 ${esc(session.name)}</b><div class="meta" id="syncInfo">${esc(syncText())}</div>
+        <div class="gx-actions">${expired ? `<button class="cta" data-gx="auth" data-mode="login" data-name="${esc(session.name)}">Войти снова</button>` : ""}<button class="btn" data-gx="logout">Выйти</button></div></div>`
+    : `<div class="card"><b>👤 Вы не вошли</b>
+        <div class="meta">Прогресс и уровень лежат только в этом браузере и пропадут, если очистить данные сайта. Войдите (имя и PIN), и уровень запишется в профиль${serverMode ? " — его увидите с любого устройства" : ""}.</div>
+        <div class="gx-actions"><button class="cta" data-gx="auth" data-mode="register">Создать профиль</button><button class="btn" data-gx="auth" data-mode="login">Войти</button></div></div>`;
+  const goals = goalList(g);
+  const earned = g.badges.filter(b => b.earned).length;
+  return `<div class="page">
+    <h1>🏅 Профиль</h1>
+    ${account}
+    <h2>Уровень</h2>
+    <div class="card"><div class="gx-row"><span class="gx-big">${lv.cur.icon}</span>
+      <div><b style="font-size:19px">Уровень ${lv.cur.n} · ${esc(lv.cur.name)}</b><div class="meta">${esc(lv.cur.msg)}</div></div></div>${levelBar(g)}</div>
+    <h2>🎯 Ближайшие цели</h2>
+    ${goals.length ? goals.map(s => `<div class="gx-goal"><div><a href="${stageHref(s)}"><b>${esc(s.title)}</b></a>
+        <div class="meta">${esc(DATA.paths[s.pi].title)} · ${s.left ? `осталось ${s.left} ${plural(s.left, "тема", "темы", "тем")}` : "осталось отметить"}</div></div><span class="gx-gain">+${XP.stage} XP</span></div>`).join("")
+      : `<p class="note">🎓 Все этапы всех путей пройдены!</p>`}
+    <h2>🎖 Награды · ${earned} из ${g.badges.length}</h2>
+    <div class="gx-badges">${g.badges.map(b => `<div class="gx-badge ${b.earned ? "on" : ""}"><span>${b.icon}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small></div>`).join("")}</div>
+    <h2>🗺 Этапы по путям</h2>
+    <div class="cards">${DATA.paths.map((p, pi) => {
+      const st = g.stages.filter(s => s.pi === pi), all = st.length && st.every(s => s.done);
+      return `<div class="card"><b>${all ? "🏅 " : ""}${esc(p.title)}</b><div class="meta">Пройдено этапов: ${st.filter(s => s.done).length} из ${st.length} · ⭐ — и все упражнения решены</div>
+        <div class="gx-stages">${st.map(s => `<a class="gx-dot ${s.star ? "star" : s.done ? "on" : ""}" href="#/p/${pi}" title="${esc(s.title)}">${s.star ? "⭐" : s.done ? "✔" : "○"}</a>`).join("")}</div></div>`;
+    }).join("")}</div>
+    <h2>🧮 Откуда берётся XP</h2>
+    <table class="gx-table">${g.rows.map(r => `<tr><td>${r.icon} ${esc(r.label)}<div class="meta">${esc(r.per)}</div></td><td>${r.n}</td><td>${fmtXp(r.xp)} XP</td></tr>`).join("")}
+      <tr><td><b>Итого</b></td><td></td><td>${fmtXp(g.xp)} XP</td></tr></table>
+    <p class="note">XP считается из вашего прогресса: если снять отметку «Изучено», очки за неё вернутся. Награды остаются навсегда.</p>
+    <h2>🪜 Уровни</h2>
+    <table class="gx-table">${LEVELS.map(l => `<tr class="${l.n === lv.cur.n ? "cur" : ""}"><td>${l.icon} <b>${l.n}. ${esc(l.name)}</b>${l.n === lv.cur.n ? " ← вы здесь" : ""}</td><td>${fmtXp(l.xp)} XP</td></tr>`).join("")}</table>
+  </div>`;
+}
+
+document.addEventListener("click", e => {
+  if (e.target.id === "overlay") { closeModal(); return; }
+  const t = e.target.closest("[data-gx]");
+  if (!t) return;
+  const a = t.dataset.gx;
+  if (a === "close") closeModal();                       // ссылки с data-gx="close" ещё и переходят по href
+  else if (a === "auth") { e.preventDefault(); openAuth(t.dataset.mode || "login", "", t.dataset.name || ""); }
+  else if (a === "tab") { const f = document.getElementById("authForm"); openAuth(t.dataset.mode, "", f ? f.elements.uname.value : ""); }
+  else if (a === "logout") logout();
+  else if (a === "user") { if (session) location.hash = "#/me"; else openAuth("login"); }
+});
+document.addEventListener("submit", e => {
+  if (e.target.id === "authForm") { e.preventDefault(); authSubmit(e.target); }
+});
 
 // ---------- события ----------
 document.addEventListener("click", e => {
@@ -1484,6 +1997,7 @@ search.addEventListener("input", () => {
 });
 
 document.addEventListener("keydown", e => {
+  if (!document.getElementById("overlay").hidden) { if (e.key === "Escape") closeModal(); return; }   // окно открыто — горячие клавиши молчат
   const typing = /INPUT|TEXTAREA/.test(document.activeElement.tagName);
   if (e.key === "/" && !typing) { e.preventDefault(); search.focus(); search.select(); return; }
   if (typing) { if (e.key === "Escape") search.blur(); return; }
@@ -1516,6 +2030,7 @@ setTab(state.tab || "sections", false);
 render();
 syncProgress();
 window.addEventListener("focus", syncProgress);   // вернулись из терминала после проверки — подхватить результат
+gamBoot();
 </script>
 </body>
 </html>

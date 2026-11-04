@@ -246,6 +246,35 @@ def check_visuals():
     report(errs, warns, f"тем с рисунками из tools/visuals: {len(seen)}, рисунков: {n_fig}")
 
 
+def check_profiles():
+    section("Профили учеников (start.py)")
+    sys.path.insert(0, str(ROOT))
+    import start
+    errs = []
+    with tempfile.TemporaryDirectory() as tmp:
+        file = Path(tmp) / "profiles.json"
+        store = start.ProfileStore(file)
+        try:
+            session = store.register("Аня", "1234", {"done": {"a": 1}}, 40, 1)
+            store.login("аня", "1234")                                   # имя без учёта регистра
+            key = store.user_of(session["token"])
+            store.put_progress(key, {"done": {"a": 1, "b": 2}}, 90, 2)
+            if store.get_progress(key)["level"] != 2:
+                errs.append("start.py: уровень не сохраняется в профиле")
+        except start.ApiError as e:
+            errs.append(f"start.py: регистрация или вход не работают — {e.message}")
+        for what, call in [("неверный PIN", lambda: store.login("Аня", "0000")), ("занятое имя", lambda: store.register("аня", "9999", {}, 0, 1)),
+                           ("чужой токен", lambda: store.user_of("мусор.подпись")), ("короткий PIN", lambda: store.register("Боб", "12", {}, 0, 1))]:
+            try:
+                call()
+                errs.append(f"start.py: {what} не отклонён")
+            except start.ApiError:
+                pass
+        if "1234" in file.read_text(encoding="utf-8"):
+            errs.append("start.py: PIN лежит в файле профилей открытым текстом")
+    report(errs, [], "регистрация, вход, токен, уровень в профиле и отказ при неверном PIN работают")
+
+
 def check_lectures():
     section("Лекции (lectures/)")
     import ast
@@ -414,6 +443,7 @@ def main():
     check_understanding()
     check_lectures()
     check_visuals()
+    check_profiles()
     check_exercises(run_solutions=not args.fast)
     check_projects(run_solutions=not args.fast)
     check_portal_fresh()
