@@ -257,6 +257,26 @@
   @keyframes gx-fall { to { transform: translateY(560px) rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .gx-confetti { display: none; } .gx-modal { animation: none; } }
   body.gx-lock { overflow: hidden; }
+  .zchip, .zgrade { color: #fff; }
+  .zchip { display: inline-grid; place-items: center; min-width: 22px; height: 22px; border-radius: 11px; padding: 0 6px; font-size: 13px; font-weight: 700; }
+  .zchip.g5, .zgrade.g5 { background: #1f9d55; } .zchip.g4, .zgrade.g4 { background: #2f6fde; }
+  .zchip.g3, .zgrade.g3 { background: #c27c0e; } .zchip.g2, .zgrade.g2 { background: #d64545; }
+  .zgrade { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; font-size: 46px; font-weight: 800; flex: none; }
+  .zres { display: flex; gap: 22px; align-items: center; margin: 14px 0; }
+  .ztest { max-width: 760px; }
+  .zq { font-size: 17px; margin-top: 16px; }
+  .zopts { display: grid; gap: 8px; margin: 14px 0; }
+  .zopt { text-align: left; display: flex; gap: 12px; align-items: flex-start; padding: 11px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); color: var(--text); }
+  .zopt:hover:not(:disabled) { border-color: var(--accent); }
+  .zopt:disabled { cursor: default; }
+  .zopt .k { flex: none; width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--border); display: grid; place-items: center; font-size: 12px; color: var(--muted); }
+  .zopt p { margin: 0; }
+  .zopt.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .zopt.ok { border-color: var(--done); background: var(--done-soft); }
+  .zopt.bad { border-color: #d64545; background: rgba(214, 69, 69, .13); }
+  .zwhy { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 6px; margin: 12px 0; }
+  .zwhy .md p:first-child, .zq p:first-child { margin-top: 0; }
+  .zmiss { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 12px 0; background: var(--panel); }
 
   @media (max-width: 800px) {
     .gx-xp-txt, .gx-uname { display: none; }
@@ -334,7 +354,7 @@ window.mlcsPortal = { open: f => { if (!DATA.titles[f]) return false; location.h
 
 // ---------- состояние и прогресс ----------
 function emptyState() {
-  return { done: {}, exDone: {}, exAuto: {}, exRev: {}, hints: {}, reveal: {}, und: {}, lec: {}, projDone: {}, review: {}, notes: {}, exams: [], plan: null, activity: {}, last: null, tab: "sections", qOpen: false, gam: null, savedAt: 0 };
+  return { done: {}, exDone: {}, exAuto: {}, exRev: {}, hints: {}, reveal: {}, und: {}, lec: {}, projDone: {}, review: {}, notes: {}, exams: [], plan: null, activity: {}, last: null, tab: "sections", qOpen: false, gam: null, savedAt: 0, tests: {}, testLog: [] };
 }
 function loadState() {
   const empty = emptyState();
@@ -504,6 +524,7 @@ function rateButtons(f) {
 // #/k/<термин>               глоссарий (термин — подсветить)
 // #/u, #/u/<i>                задачи на понимание: «предскажи результат» и «выбери подход»
 // #/me                       профиль: уровень, XP, награды, вход
+// #/z, #/z/t/<файл>, #/z/s/<путь.этап>   тесты: список, мини-тест темы, тест этапа
 function parseHash() {
   const [route, query] = decodeURIComponent(location.hash.slice(1) || "/").split("?ctx=");
   return { parts: route.split("/").filter(Boolean), ctx: query || "" };
@@ -538,12 +559,13 @@ function render() {
   else if (kind === "u") main.innerHTML = a === undefined ? viewUnderstandingList() : viewUnderstanding(+a);
   else if (kind === "l") { main.innerHTML = a === undefined ? viewLectureList() : viewLecture(parts.slice(1).join("/"), ctx); if (a !== undefined) loadLecture(parts.slice(1).join("/")); }
   else if (kind === "me") main.innerHTML = viewProfile();
+  else if (kind === "z") main.innerHTML = a === undefined ? viewTestHub() : viewTest(a, parts.slice(2).join("/"), ctx);
   else if (kind === "k") { if (parts[1]) glossaryQuery = ""; main.innerHTML = viewGlossary(); requestAnimationFrame(() => glossaryJump(parts.slice(1).join("/"))); }   // после сброса прокрутки ниже
   else main.innerHTML = viewHome();
   if (kind === "t" || kind === "d") forwardFrameKeys(main.querySelector("iframe"));
   else main.scrollTop = 0;
   if (kind === "s") setTab("sections", false);
-  if (kind === "p" || kind === "l") setTab("paths", false);
+  if (kind === "p" || kind === "l" || kind === "z") setTab("paths", false);
   if (kind === "x" || kind === "u") setTab("exercises", false);
   refreshChrome();
 }
@@ -571,6 +593,7 @@ function topicRow(f, ctx, showWhere) {
     <input type="checkbox" data-done="${esc(f)}" ${isDone(f) ? "checked" : ""} title="Отметить как изученное">
     <a href="#/t/${encodeURIComponent(f)}${ctx ? "?ctx=" + ctx : ""}">${esc(title(f))}</a>${where}
     ${LECT[f] ? `<a class="badge" href="${lectureLink(f, ctx)}" title="Лекция по теме${state.lec[f] ? " (прочитана)" : ""}">🎓${state.lec[f] ? "✔" : ""}</a>` : ""}
+    ${TESTS[f] ? `<a class="badge" href="${testHref("t", f, ctx)}" title="Мини-тест по теме${testPassed(testRes("t", f)) ? " (сдан)" : ""}">📝${testPassed(testRes("t", f)) ? "✔" : ""}</a>` : ""}
     ${demosOf(f).length ? `<a class="badge" href="#/d/${encodeURIComponent(demosOf(f)[0].file)}" title="Интерактивная демонстрация">🎮</a>` : ""}
     ${noteOf(f) ? `<span class="badge" title="Есть заметка">📝</span>` : ""}
     ${questionsOf(f).length ? `<span class="badge" title="Есть вопросы для самопроверки">❓${questionsOf(f).length}</span>` : ""}</li>`;
@@ -608,6 +631,7 @@ function viewHome() {
       <div class="card"><b>Все шпаргалки</b><div class="meta">${all.n} из ${all.total} (${all.pct}%)</div>${bar(allTopics)}</div>
       <div class="card"><b>Практика</b><div class="meta">решено ${DATA.exercises.filter(e => state.exDone[e.id]).length} из ${DATA.exercises.length} упражнений${dueExercises().length ? ` · на повтор: ${dueExercises().length}` : ""}</div></div>
       ${lectureCard()}
+      ${testCard()}
       ${understandingCard()}
       <div class="card"><b>Недавно изучено</b><div class="meta">${recent.length ? recent.map(f => `<a href="#/t/${encodeURIComponent(f)}">${esc(title(f))}</a>`).join("<br>") : "пока ничего — отметьте тему галочкой ✔"}</div></div>
     </div>
@@ -712,6 +736,7 @@ function viewLecture(f, ctx) {
         ${demosOf(f).map(d => `<a class="btn" href="#/d/${encodeURIComponent(d.file)}">🎮 ${esc(d.title)}</a>`).join("")}
         ${ex >= 0 ? `<a class="btn" href="#/x/${ex}">💪 Практика</a>` : ""}
         ${undOf(f).length ? `<a class="btn" href="#/u/${undOf(f)[0][1]}">🧩 Задачи на понимание (${undOf(f).length})</a>` : ""}
+        ${TESTS[f] ? `<a class="btn" href="${testHref("t", f, ctx)}">📝 Мини-тест ${gradeChip(testRes("t", f))}</a>` : ""}
         ${DATA.quizzes[f] ? `<a class="btn" href="cheatsheets/${encodeURIComponent(DATA.quizzes[f])}${V}" target="_blank">📝 Тест</a>` : ""}
       </p>
       <p>${readBtn} ${next ? `<a class="cta" href="${lectureLink(next, ctx)}">▶ Следующая лекция: ${esc(LECT[next].title)}</a>` : ""}</p>
@@ -873,6 +898,7 @@ function viewPath(i) {
       ${s.notes.map(n => `<p class="note">ℹ ${esc(n)}</p>`).join("")}
       <ol class="topics">${s.items.map(f => topicRow(f, ctx)).join("")}</ol>
       ${stageExercises(s)}
+      ${stageTestBtn(i, p.stages.indexOf(s)) ? `<p class="files" style="margin-top:8px">${stageTestBtn(i, p.stages.indexOf(s))}</p>` : ""}
     </div>`).join("")}
     ${relatedExercises(items, p.stages.flatMap(s => s.exercises))}
     ${pathProject(i)}
@@ -909,6 +935,7 @@ function viewTopic(f, ctx) {
       <a class="btn" ${prev ? `href="${link(prev)}" title="${esc(title(prev))} (←)"` : 'style="opacity:.4;pointer-events:none"'} data-nav="prev">← Назад</a>
       <div class="title">${esc(title(f))} ${c ? `<span class="ctx">· ${esc(c.label)} · ${idx + 1}/${c.items.length}</span>` : ""}</div>
       ${LECT[f] ? `<a class="btn ${state.lec[f] ? "on" : ""}" href="${lectureLink(f, ctx)}" title="Лекция по теме: ≈ ${LECT[f].minutes} мин">🎓 Лекция</a>` : ""}
+      ${TESTS[f] ? `<a class="btn ${testPassed(testRes("t", f)) ? "on" : ""}" href="${testHref("t", f, ctxStr)}" title="Мини-тест по теме: ${TESTS[f].n} вопросов">📝 Мини-тест ${gradeChip(testRes("t", f))}</a>` : ""}
       ${demosOf(f).map(d => `<a class="btn" href="#/d/${encodeURIComponent(d.file)}" title="Интерактивная демонстрация: ${esc(d.title)}">🎮 ${demosOf(f).length > 1 ? esc(d.title) : "Интерактив"}</a>`).join("")}
       <button class="btn" data-qtoggle title="Вопросы для самопроверки и заметки (Q)">❓ Вопросы${questionsOf(f).length ? ` (${questionsOf(f).length})` : ""}<span id="noteMark">${noteOf(f) ? " · 📝" : ""}</span></button>
       ${ex >= 0 ? `<a class="btn" href="#/x/${ex}">💪 Практика</a>` : ""}
@@ -1421,6 +1448,7 @@ function renderNav() {
   let html = "";
   if (tab === "paths") {
     html = (Object.keys(LECT).length ? `<a class="navitem ${hash.startsWith("#/l") ? "active" : ""}" href="#/l"><span>🎓 Лекции</span><small class="full">${lecRead()}/${Object.keys(LECT).length}</small></a>` : "")
+      + (Object.keys(TESTS).length ? `<a class="navitem ${hash.startsWith("#/z") ? "active" : ""}" href="#/z"><span>📝 Тесты</span><small class="full">${Object.keys(TESTS).filter(f => testPassed(testRes("t", f))).length}/${Object.keys(TESTS).length}</small></a>` : "")
       + DATA.paths.map((p, i) => item(`#/p/${i}`, p.title, pathItems(p))).join("");
   } else if (tab === "exercises") {
     html = (UND.length ? `<a class="navitem ${hash.startsWith("#/u") ? "active" : ""}" href="#/u"><span>🧩 Задачи на понимание</span><small class="full">${UND.filter(u => state.und[u.id]).length}/${UND.length}</small></a>` : "")
@@ -1518,6 +1546,10 @@ const BADGES = [
   { id: "stage", icon: "🚩", name: "Этап пройден", desc: "Пройден первый этап", ok: c => c.stages >= 1 },
   { id: "star", icon: "⭐", name: "Звезда этапа", desc: "Этап пройден и все его упражнения решены", ok: c => c.stars >= 1 },
   { id: "path", icon: "🏅", name: "Путь пройден", desc: "Пройден учебный путь", ok: c => c.paths >= 1 },
+  { id: "test1", icon: "📝", name: "Первый зачёт", desc: "Сдан первый тест", ok: c => c.miniPassed + c.stagePassed >= 1 },
+  { id: "mini10", icon: "📋", name: "Знаток тем", desc: "Сдано 10 мини-тестов", ok: c => c.miniPassed >= 10 },
+  { id: "perfect", icon: "💯", name: "Сто из ста", desc: "Тест без единой ошибки", ok: c => c.perfect >= 1 },
+  { id: "attest", icon: "🎖", name: "Аттестован", desc: "Сданы тесты всех этапов одного пути", ok: c => c.pathsTested >= 1 },
   { id: "alumni", icon: "🎓", name: "Выпускник", desc: "Пройдены все учебные пути", ok: c => c.paths >= DATA.paths.length },
 ];
 const fmtXp = n => n.toLocaleString("ru-RU");
@@ -1558,6 +1590,13 @@ function gamStats() {
     paths: DATA.paths.filter((p, pi) => p.stages.length && stages.filter(s => s.pi === pi).every(s => s.done)).length,
     streak: streakDays(),
   };
+  const tr = Object.entries(state.tests || {}).filter(([k]) => testInfo(k[0], k.slice(2))), trOf = kind => tr.filter(([k]) => k[0] === kind).map(([, r]) => r);
+  Object.assign(c, {
+    miniPassed: trOf("t").filter(testPassed).length, stagePassed: trOf("s").filter(testPassed).length,
+    perfect: tr.filter(([, r]) => r.pct === 100 && r.n >= 5).length,
+    pathsTested: DATA.paths.filter((p, pi) => { const ks = p.stages.map((s, si) => stageFiles(pi, si).length ? pi + "." + si : null).filter(Boolean); return ks.length && ks.every(k => testPassed(testRes("s", k))); }).length,
+  });
+  const testXpSum = kind => trOf(kind).reduce((a, r) => a + testXp(kind, r), 0);
   const examXp = Math.min(XP.examCap, exams.reduce((a, x) => a + Math.round(x.n * x.pct / 100), 0));
   const rows = [
     { icon: "📘", label: "Изученные темы", n: c.topics, xp: c.topics * XP.topic, per: `${XP.topic} за тему` },
@@ -1567,6 +1606,8 @@ function gamStats() {
     { icon: "🧩", label: "Верные задачи на понимание", n: c.und, xp: c.und * XP.und, per: `${XP.und} за задачу` },
     { icon: "🏗", label: "Мини-проекты", n: c.projects, xp: c.projects * XP.project, per: `${XP.project} за проект` },
     { icon: "📝", label: "Экзамены", n: c.exams, xp: examXp, per: `1 XP за верный ответ, не больше ${XP.examCap}` },
+    { icon: "📋", label: "Мини-тесты к темам", n: c.miniPassed, xp: testXpSum("t"), per: "10 за зачёт (от 70%), 15 за «отлично»" },
+    { icon: "📝", label: "Тесты этапов", n: c.stagePassed, xp: testXpSum("s"), per: "40 за зачёт, 60 за «отлично»" },
     { icon: "🚩", label: "Пройденные этапы", n: c.stages, xp: c.stages * XP.stage, per: `${XP.stage} за этап` },
     { icon: "⭐", label: "Этапы со всеми упражнениями", n: c.stars, xp: c.stars * XP.star, per: `ещё ${XP.star} к этапу` },
     { icon: "🏅", label: "Пройденные пути", n: c.paths, xp: c.paths * XP.path, per: `${XP.path} за путь` },
@@ -1658,6 +1699,7 @@ function showCelebration(ev, g) {
     <p class="gx-cheer">${esc(CHEERS[(ev.stages.length ? ev.stages[0].pi * 7 + ev.stages[0].si : lv.cur.n) % CHEERS.length])}</p>
     <div class="gx-actions">
       ${next ? `<a class="cta" data-gx="close" href="${stageHref(next)}">▶ Дальше: ${esc(next.title)}</a>` : `<b>🎓 Вы прошли все этапы всех путей!</b>`}
+      ${ev.stages.length === 1 && stageFiles(ev.stages[0].pi, ev.stages[0].si).length ? `<a class="btn" data-gx="close" href="${testHref("s", ev.stages[0].key, "p:" + ev.stages[0].pi)}">📝 Тест этапа</a>` : ""}
       <a class="btn" data-gx="close" href="#/me">🏅 Профиль</a>
       <button class="btn" data-gx="close">Закрыть</button>
     </div>
@@ -1730,6 +1772,9 @@ function mergeStates(a, b) {
   ["exDone", "exAuto", "hints", "activity"].forEach(k => combine(k, max));
   ["und", "notes"].forEach(k => combine(k, later));
   ["review", "exRev"].forEach(k => combine(k, (x, y) => y));
+  combine("tests", (x, y) => (y.pct >= x.pct ? Object.assign({}, y, { tries: Math.max(x.tries || 0, y.tries || 0) }) : Object.assign({}, x, { tries: Math.max(x.tries || 0, y.tries || 0) })));
+  const seenLog = new Set();
+  out.testLog = [...(older.testLog || []), ...(newer.testLog || [])].filter(x => !seenLog.has(x.t) && seenLog.add(x.t)).sort((x, y) => x.t - y.t).slice(-60);
   const seen = new Set();
   out.exams = [...(older.exams || []), ...(newer.exams || [])].filter(x => !seen.has(x.t) && seen.add(x.t)).sort((x, y) => x.t - y.t).slice(-50);
   const ga = a.gam, gb = b.gam;
@@ -1872,6 +1917,7 @@ function viewProfile() {
     ${goals.length ? goals.map(s => `<div class="gx-goal"><div><a href="${stageHref(s)}"><b>${esc(s.title)}</b></a>
         <div class="meta">${esc(DATA.paths[s.pi].title)} · ${s.left ? `осталось ${s.left} ${plural(s.left, "тема", "темы", "тем")}` : "осталось отметить"}</div></div><span class="gx-gain">+${XP.stage} XP</span></div>`).join("")
       : `<p class="note">🎓 Все этапы всех путей пройдены!</p>`}
+    ${testsSection()}
     <h2>🎖 Награды · ${earned} из ${g.badges.length}</h2>
     <div class="gx-badges">${g.badges.map(b => `<div class="gx-badge ${b.earned ? "on" : ""}"><span>${b.icon}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small></div>`).join("")}</div>
     <h2>🗺 Этапы по путям</h2>
@@ -1888,6 +1934,208 @@ function viewProfile() {
     <table class="gx-table">${LEVELS.map(l => `<tr class="${l.n === lv.cur.n ? "cur" : ""}"><td>${l.icon} <b>${l.n}. ${esc(l.name)}</b>${l.n === lv.cur.n ? " ← вы здесь" : ""}</td><td>${fmtXp(l.xp)} XP</td></tr>`).join("")}</table>
   </div>`;
 }
+
+// ---------- тесты: оценка знаний ----------
+// Мини-тест к каждой теме (tests/<тема>.md, вопросы с вариантами) и итоговый тест этапа: вопросы берутся из тестов тем этапа.
+// Оценка по проценту верных: 5 — от 90, 4 — от 80, 3 — от 70 (зачёт), 2 — ниже. В зачёт идёт лучшая попытка, за зачёт начисляется XP.
+const TESTS = DATA.tests || {};
+const GRADES = { 5: "Отлично", 4: "Хорошо", 3: "Удовлетворительно", 2: "Нужно повторить" };
+const TEST_Q = 12;                                   // вопросов в тесте этапа
+const gradeOf = pct => pct >= 90 ? 5 : pct >= 80 ? 4 : pct >= 70 ? 3 : 2;
+const testKey = (kind, id) => kind + ":" + id;
+const testRes = (kind, id) => (state.tests || {})[testKey(kind, id)] || null;
+const testPassed = r => !!r && r.grade >= 3;
+const testXp = (kind, r) => !testPassed(r) ? 0 : kind === "t" ? (r.grade === 5 ? 15 : 10) : (r.grade === 5 ? 60 : 40);
+const gradeChip = r => r ? `<span class="zchip g${r.grade}" title="Лучший результат: ${r.pct}% · ${GRADES[r.grade]}">${r.grade}</span>` : "";
+const testHref = (kind, id, ctx) => `#/z/${kind}/${encodeURIComponent(id)}${ctx ? "?ctx=" + ctx : ""}`;
+const stageFiles = (pi, si) => ((DATA.paths[pi] || { stages: [] }).stages[si] || { items: [] }).items.filter(f => TESTS[f]);
+const zShuffle = a => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
+const zInline = t => markdown(t).replace(/^<p>|<\/p>$/g, "");
+let quiz = null;      // { kind, id, title, items, pos, done … } — текущая попытка; живёт, пока открыта страница
+
+function parseTestMd(md) {
+  return md.split(/^## /m).slice(1).map(chunk => {
+    const body = [], opts = [], why = []; let inWhy = false, inCode = false;
+    for (const line of chunk.replace(/\s+$/, "").split("\n")) {
+      if (/^\s*```/.test(line)) inCode = !inCode;
+      const m = !inCode && !inWhy && line.match(/^- \[( |x|X)\] (.*\S)\s*$/);
+      if (m) opts.push({ t: m[2], ok: m[1] !== " " });
+      else if (!inCode && line.startsWith("**Почему.**")) { inWhy = true; why.push(line.slice(11).trim()); }
+      else if (inWhy) why.push(line);
+      else if (!opts.length) body.push(line);
+    }
+    return { q: body.join("\n").trim(), opts, why: why.join("\n").trim(), multi: opts.filter(o => o.ok).length > 1 };
+  });
+}
+const testCache = {};
+function loadTestFile(f) {
+  if (!testCache[f]) testCache[f] = fetch(`tests/${f.replace("_cheatsheet.html", "")}.md${V}`)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(parseTestMd)
+    .catch(e => { delete testCache[f]; throw e; });
+  return testCache[f];
+}
+function testInfo(kind, id) {       // что за тест: название, число вопросов, куда вернуться
+  if (kind === "t" && TESTS[id]) return { title: `Мини-тест: ${title(id)}`, n: TESTS[id].n, back: `#/t/${encodeURIComponent(id)}`, backLabel: "К шпаргалке", files: [id] };
+  const [pi, si] = String(id).split(".").map(Number), files = kind === "s" ? stageFiles(pi, si) : [];
+  if (kind === "s" && files.length) {
+    return { title: `Тест этапа: ${DATA.paths[pi].stages[si].title}`, n: Math.min(TEST_Q, files.reduce((a, f) => a + TESTS[f].n, 0)), back: `#/p/${pi}`, backLabel: "К этапу", files };
+  }
+  return null;
+}
+const stageTestBtn = (pi, si) => {
+  if (!stageFiles(pi, si).length) return "";
+  const r = testRes("s", pi + "." + si);
+  return `<a class="btn ${testPassed(r) ? "on" : ""}" href="${testHref("s", pi + "." + si, "p:" + pi)}" title="Итоговый тест по темам этапа: ${TEST_Q} вопросов">📝 Тест этапа ${gradeChip(r)}</a>`;
+};
+
+async function startTest(kind, id, ctx) {
+  const info = testInfo(kind, id);
+  if (!info) return;
+  quiz = { kind, id, ctx, title: info.title, loading: true };
+  render();
+  try {
+    const sets = await Promise.all(info.files.map(loadTestFile));
+    const pools = sets.map((qs, i) => zShuffle(qs.map(q => ({ f: info.files[i], q }))));
+    const want = kind === "t" ? Infinity : TEST_Q, picked = [];
+    while (picked.length < want && pools.some(p => p.length)) pools.forEach(p => { if (p.length && picked.length < want) picked.push(p.pop()); });   // по кругу: каждая тема этапа представлена
+    quiz = { kind, id, ctx, title: info.title, pos: 0, done: false, items: zShuffle(picked).map(x => ({
+      f: x.f, q: x.q.q, why: x.q.why, multi: x.q.multi, opts: zShuffle(x.q.opts), picked: [], answered: false, ok: false })) };
+  } catch (e) { quiz = { kind, id, ctx, title: info.title, error: true }; }
+  render();
+}
+function zPick(i) {
+  const it = quiz && quiz.items && quiz.items[quiz.pos];
+  if (!it || it.answered || i >= it.opts.length) return;
+  if (it.multi) it.picked = it.picked.includes(i) ? it.picked.filter(x => x !== i) : it.picked.concat([i]);
+  else it.picked = [i];
+  render();
+}
+function zAnswer() {
+  const it = quiz.items[quiz.pos];
+  if (it.answered || !it.picked.length) return;
+  const right = it.opts.map((o, i) => o.ok ? i : -1).filter(i => i >= 0);
+  it.ok = right.length === it.picked.length && right.every(i => it.picked.includes(i));
+  it.answered = true; render();
+}
+function zNext() {
+  if (!quiz.items[quiz.pos].answered) return;
+  quiz.pos++;
+  if (quiz.pos >= quiz.items.length) finishTest(quiz);
+  render();
+}
+function finishTest(z) {
+  const n = z.items.length, ok = z.items.filter(i => i.ok).length, pct = Math.round(100 * ok / n), key = testKey(z.kind, z.id), before = testRes(z.kind, z.id);
+  Object.assign(z, { done: true, ok, pct, grade: gradeOf(pct) });
+  const r = Object.assign({ pct: 0, grade: 2, n }, before);
+  if (!before || pct >= before.pct) Object.assign(r, { pct, grade: gradeOf(pct), n, t: Date.now() });
+  r.tries = (before && before.tries || 0) + 1;
+  z.gain = testXp(z.kind, r) - testXp(z.kind, before);
+  state.tests = Object.assign({}, state.tests, { [key]: r });
+  state.testLog = (state.testLog || []).concat([{ k: key, pct, n, t: Date.now() }]).slice(-60);
+  logActivity(); save();
+}
+
+function viewTest(kind, id, ctx) {
+  const info = testInfo(kind, id);
+  if (!info) return `<div class="page"><p class="empty">Такого теста нет. <a href="#/z">К списку тестов</a></p></div>`;
+  const z = quiz && quiz.kind === kind && quiz.id === id ? quiz : null;
+  if (z && z.loading) return `<div class="page"><p class="empty">Загружаю вопросы…</p></div>`;
+  if (z && z.error) return `<div class="page"><h1>${esc(info.title)}</h1><p class="note">Не удалось загрузить вопросы. Тесты читаются из папки <code>tests/</code>:
+    откройте портал через <code>python start.py</code> или с сайта, а не как файл.</p><a class="btn" href="${info.back}">${info.backLabel}</a></div>`;
+  if (z && z.items && z.done) return viewTestResult(z, info);
+  if (z && z.items) return viewQuestion(z);
+  const r = testRes(kind, id);
+  const lec = kind === "t" && LECT[id] ? `<a class="btn" href="${lectureLink(id, ctx)}">🎓 Лекция</a>` : "";
+  return `<div class="page">
+    <h1>${esc(info.title)}</h1>
+    <p class="sub">${kind === "s" ? `${info.n} вопросов из тестов тем этапа — каждый раз другой набор.` : `${info.n} вопросов по теме.`}
+      После каждого ответа показывается разбор. Оценка: 5 — от 90%, 4 — от 80%, 3 — от 70% (зачёт), 2 — ниже. В зачёт идёт лучшая попытка.</p>
+    ${r ? `<div class="card"><b>Лучший результат: ${gradeChip(r)} ${r.pct}% · ${GRADES[r.grade]}</b><div class="meta">Попыток: ${r.tries || 1}${testPassed(r) ? " · зачёт ✔" : ""}</div></div>` : ""}
+    <p><button class="cta" data-zstart>▶ ${r ? "Пройти ещё раз" : "Начать тест"}</button> <a class="btn" href="${info.back}">${info.backLabel}</a> ${lec}</p>
+    <p class="note">Перед тестом загляните в шпаргалку и лекцию: тест проверяет понимание, а не заучивание.</p>
+  </div>`;
+}
+function viewQuestion(z) {
+  const it = z.items[z.pos], n = z.items.length, last = z.pos === n - 1;
+  const cls = (o, i) => !it.answered ? (it.picked.includes(i) ? "sel" : "") : o.ok ? "ok" : it.picked.includes(i) ? "bad" : "";
+  return `<div class="page ztest">
+    <p class="sub">${esc(z.title)} · вопрос ${z.pos + 1} из ${n}</p>
+    <div class="bar"><span style="width:${Math.round(100 * z.pos / n)}%"></span></div>
+    <div class="md zq">${markdown(it.q)}</div>
+    ${it.multi ? `<p class="note">Верных вариантов несколько — выберите все.</p>` : ""}
+    <div class="zopts">${it.opts.map((o, i) => `<button class="zopt ${cls(o, i)}" data-zpick="${i}" ${it.answered ? "disabled" : ""} aria-pressed="${it.picked.includes(i)}">
+      <span class="k">${i + 1}</span><span>${zInline(o.t)}${it.answered && o.ok && !it.picked.includes(i) ? ' <b class="gx-gain">← верный ответ</b>' : ""}</span></button>`).join("")}</div>
+    ${it.answered ? `<div class="zwhy"><b>${it.ok ? "✔ Верно." : "✖ Неверно."}</b> <div class="md">${markdown(it.why)}</div></div>` : ""}
+    <p>${it.answered ? `<button class="cta" data-znext>${last ? "Завершить тест" : "Дальше →"}</button>` : `<button class="cta" data-zanswer ${it.picked.length ? "" : "disabled"}>Ответить</button>`}
+      <button class="btn" data-zquit>Прервать</button></p>
+    <p class="kbd">Клавиши: <b>1</b>–<b>${it.opts.length}</b> — выбрать, <b>Enter</b> — ответить / дальше</p>
+  </div>`;
+}
+function viewTestResult(z, info) {
+  const n = z.items.length, by = {}, miss = z.items.filter(i => !i.ok), best = testRes(z.kind, z.id);
+  z.items.forEach(i => { (by[i.f] = by[i.f] || []).push(i.ok ? 1 : 0); });
+  const weak = Object.entries(by).filter(([, g]) => g.reduce((a, b) => a + b, 0) / g.length < 0.75).map(([f]) => f);
+  const list = (it, flag) => it.opts.filter((o, i) => flag === "ok" ? o.ok : it.picked.includes(i)).map(o => zInline(o.t)).join("; ") || "не выбрано";
+  return `<div class="page">
+    <h1>${esc(z.title)}</h1>
+    <div class="zres"><div class="zgrade g${z.grade}">${z.grade}</div>
+      <div><b style="font-size:20px">${GRADES[z.grade]}</b><div>${z.ok} из ${n} верно · ${z.pct}%</div>
+        <div class="meta">${z.grade >= 3 ? "✔ Зачёт" : "✖ Не зачтено: нужно от 70%"}${z.gain ? ` · <span class="gx-gain">+${z.gain} XP</span>` : ""}${best && best.pct > z.pct ? ` · лучший результат ${best.pct}%` : ""}</div></div></div>
+    ${z.kind === "s" ? `<h2>По темам</h2><table class="gx-table">${Object.entries(by).map(([f, g]) => `<tr><td><a href="#/t/${encodeURIComponent(f)}">${esc(title(f))}</a></td><td>${g.reduce((a, b) => a + b, 0)} из ${g.length}</td></tr>`).join("")}</table>` : ""}
+    <p><button class="cta" data-zstart>🔁 Пройти ещё раз</button>
+      ${weak.length ? `<button class="btn" data-zreview>🔁 Слабые темы (${weak.length}) — в повторение</button>` : ""}
+      <a class="btn" href="${info.back}">${info.backLabel}</a> <a class="btn" href="#/me">🏅 Профиль</a></p>
+    ${miss.length ? `<h2>Разбор ошибок (${miss.length})</h2>${miss.map(it => `<div class="zmiss"><div class="md">${markdown(it.q)}</div>
+      <p>Ваш ответ: ${list(it, "pick")}<br>Верно: <b>${list(it, "ok")}</b></p><div class="zwhy"><div class="md">${markdown(it.why)}</div></div>
+      <a href="#/t/${encodeURIComponent(it.f)}">📘 ${esc(title(it.f))}</a>${LECT[it.f] ? ` · <a href="${lectureLink(it.f, "")}">🎓 Лекция</a>` : ""}</div>`).join("")}`
+      : `<p class="note">🎉 Ни одной ошибки!</p>`}
+  </div>`;
+}
+function viewTestHub() {
+  const files = Object.keys(TESTS), done = files.filter(f => testPassed(testRes("t", f))).length;
+  return `<div class="page">
+    <h1>📝 Тесты</h1>
+    <p class="sub">Мини-тест к каждой теме и итоговый тест этапа (${TEST_Q} вопросов из тестов его тем). Оценка: 5 — от 90%, 4 — от 80%, 3 — от 70% (зачёт), 2 — ниже.
+      За зачёт начисляется XP, в зачёт идёт лучшая попытка. Сдано мини-тестов: <b>${done} из ${files.length}</b>.</p>
+    ${DATA.paths.map((p, pi) => `<h2>${esc(p.title)}</h2>${p.stages.map((s, si) => `<div class="stage">
+      <h3>${esc(s.title)} ${stageTestBtn(pi, si)}</h3>
+      <ol class="topics">${s.items.filter(f => TESTS[f]).map(f => { const r = testRes("t", f);
+        return `<li class="${testPassed(r) ? "done" : ""}"><a href="${testHref("t", f, "p:" + pi)}">${testPassed(r) ? "✔ " : ""}${esc(title(f))}</a><span class="where">${TESTS[f].n} вопр.</span> ${gradeChip(r)}</li>`; }).join("")}</ol></div>`).join("")}`).join("")}
+  </div>`;
+}
+function testCard() {
+  const files = Object.keys(TESTS);
+  if (!files.length) return "";
+  const res = Object.values(state.tests || {}), passedN = files.filter(f => testPassed(testRes("t", f))).length;
+  const avg = res.length ? (res.reduce((a, r) => a + r.grade, 0) / res.length).toFixed(1) : null;
+  return `<div class="card"><b>📝 Тесты</b><div class="meta">сдано ${passedN} из ${files.length} мини-тестов${avg ? ` · средняя оценка ${avg}` : ""}</div>
+    <div class="meta"><a href="#/z">К тестам →</a></div></div>`;
+}
+const testKeyTitle = k => { const kind = k[0], id = k.slice(2); const i = testInfo(kind, id); return i ? i.title : id; };
+function testsSection() {
+  const res = Object.entries(state.tests || {}).filter(([k]) => testInfo(k[0], k.slice(2)));
+  if (!res.length) return `<h2>📝 Оценки знаний</h2><p class="note">Тестов пока нет: откройте <a href="#/z">список тестов</a> — мини-тест к теме или итоговый тест этапа.</p>`;
+  const avg = (res.reduce((a, [, r]) => a + r.grade, 0) / res.length).toFixed(1);
+  const hist = (state.testLog || []).filter(h => testInfo(h.k[0], h.k.slice(2))).slice(-6).reverse();
+  return `<h2>📝 Оценки знаний</h2>
+    <div class="card"><b>Средняя оценка: ${avg}</b><div class="meta">Сдано мини-тестов: ${res.filter(([k, r]) => k[0] === "t" && testPassed(r)).length} · тестов этапов: ${res.filter(([k, r]) => k[0] === "s" && testPassed(r)).length} · <a href="#/z">к тестам</a></div></div>
+    <table class="gx-table">${hist.map(h => `<tr><td><a href="${testHref(h.k[0], h.k.slice(2))}">${esc(testKeyTitle(h.k))}</a><div class="meta">${new Date(h.t).toLocaleDateString("ru-RU")}</div></td><td>${h.pct}%</td><td>${gradeChip({ grade: gradeOf(h.pct), pct: h.pct })}</td></tr>`).join("")}</table>`;
+}
+
+document.addEventListener("click", e => {
+  const z = e.target.closest("[data-zstart],[data-zpick],[data-zanswer],[data-znext],[data-zquit],[data-zreview]");
+  if (!z) return;
+  if (z.hasAttribute("data-zstart")) { const { parts, ctx } = parseHash(); startTest(parts[1], parts.slice(2).join("/"), ctx); }
+  else if (z.dataset.zpick !== undefined) zPick(+z.dataset.zpick);
+  else if (z.hasAttribute("data-zanswer")) zAnswer();
+  else if (z.hasAttribute("data-znext")) zNext();
+  else if (z.hasAttribute("data-zquit")) { const back = (testInfo(quiz.kind, quiz.id) || {}).back; quiz = null; location.hash = back || "#/z"; }
+  else if (z.hasAttribute("data-zreview")) {
+    const weak = [...new Set(quiz.items.filter(i => !i.ok).map(i => i.f))];
+    weak.forEach(f => { state.review[f] = { step: 0, due: Date.now() - 1000 }; });   // отметку «Изучено» не трогаем
+    save(); toast(`🔁 Слабых тем в повторении: ${weak.length} — <a href="#/r">к повторению</a>`);
+  }
+});
 
 document.addEventListener("click", e => {
   if (e.target.id === "overlay") { closeModal(); return; }
@@ -1998,6 +2246,11 @@ search.addEventListener("input", () => {
 
 document.addEventListener("keydown", e => {
   if (!document.getElementById("overlay").hidden) { if (e.key === "Escape") closeModal(); return; }   // окно открыто — горячие клавиши молчат
+  if (parseHash().parts[0] === "z" && quiz && quiz.items && !quiz.done && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const it = quiz.items[quiz.pos];
+    if (/^[1-6]$/.test(e.key) && !it.answered) { e.preventDefault(); zPick(+e.key - 1); return; }
+    if (e.key === "Enter") { e.preventDefault(); if (it.answered) zNext(); else if (it.picked.length) zAnswer(); return; }
+  }
   const typing = /INPUT|TEXTAREA/.test(document.activeElement.tagName);
   if (e.key === "/" && !typing) { e.preventDefault(); search.focus(); search.select(); return; }
   if (typing) { if (e.key === "Escape") search.blur(); return; }

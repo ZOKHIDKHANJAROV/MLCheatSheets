@@ -24,6 +24,7 @@ EXERCISES = ROOT / "exercises"
 QUESTIONS = ROOT / "questions"
 INTERACTIVE = ROOT / "interactive"
 LECTURES = ROOT / "lectures"
+TESTS = ROOT / "tests"
 TEMPLATE = Path(__file__).resolve().parent / "portal_template.html"
 OUTPUT = ROOT / "index.html"
 
@@ -246,6 +247,61 @@ def parse_lectures():
     return lectures, errors
 
 
+def split_test(text):
+    """tests/<тема>.md → список вопросов: «## вопрос» (+ текст и код до вариантов), «- [x] верный» / «- [ ] неверный», «**Почему.** разбор»."""
+    questions = []
+    for chunk in re.split(r"^## ", text, flags=re.M)[1:]:
+        lines = chunk.rstrip().split("\n")
+        body, opts, why, in_why, in_code = [], [], [], False, False
+        for line in lines:
+            if line.lstrip().startswith("```"):
+                in_code = not in_code
+            m = None if in_code else re.match(r"^- \[( |x|X)\] (.*\S)\s*$", line)
+            if m and not in_why:
+                opts.append((m.group(2), m.group(1) != " "))
+            elif not in_code and line.startswith("**Почему.**"):
+                in_why = True
+                why.append(line[len("**Почему.**"):].strip())
+            elif in_why:
+                why.append(line)
+            elif not opts:
+                body.append(line)
+        questions.append({"q": "\n".join(body).strip(), "opts": opts, "why": "\n".join(why).strip()})
+    return questions
+
+
+def parse_tests():
+    """tests/<тема>.md — мини-тест к теме (вопросы с вариантами). Текст портал загружает сам при запуске теста."""
+    tests, errors = {}, []
+    for md in sorted(TESTS.glob("*.md")):
+        if md.name.lower() == "readme.md":
+            continue
+        where = md.relative_to(ROOT).as_posix()
+        file_name = f"{md.stem}_cheatsheet.html"
+        if not (CHEATSHEETS / file_name).exists():
+            errors.append(f"{where}: нет шпаргалки {file_name}")
+            continue
+        questions = split_test(md.read_text(encoding="utf-8"))
+        if not 4 <= len(questions) <= 12:
+            errors.append(f"{where}: вопросов {len(questions)}, нужно от 4 до 12")
+        for n, q in enumerate(questions, 1):
+            tag = f"{where}, вопрос {n}"
+            texts = [t.lower() for t, _ in q["opts"]]
+            right = sum(ok for _, ok in q["opts"])
+            if not q["q"]:
+                errors.append(f"{tag}: пустой вопрос")
+            if not 3 <= len(q["opts"]) <= 6:
+                errors.append(f"{tag}: вариантов {len(q['opts'])}, нужно от 3 до 6")
+            elif right < 1 or right == len(q["opts"]):
+                errors.append(f"{tag}: нужен хотя бы один верный и один неверный вариант («- [x]» и «- [ ]»)")
+            if len(set(texts)) != len(texts):
+                errors.append(f"{tag}: одинаковые варианты")
+            if not q["why"]:
+                errors.append(f"{tag}: нет разбора «**Почему.** …»")
+        tests[file_name] = {"title": first_heading(md.read_text(encoding="utf-8"), md.stem), "n": len(questions)}
+    return tests, errors
+
+
 UNDERSTANDING = {"predict": "predict.md", "case": "cases.md"}
 
 
@@ -350,7 +406,7 @@ def parse_demos():
 def build_version():
     """Метка сборки для адресов файлов в портале (…/x.html?v=метка) — сбрасывает старый кэш браузера.
     Зависит от времени изменения материалов, поэтому повторная сборка без изменений даёт ту же метку."""
-    sources = [*CHEATSHEETS.glob("*.html"), *INTERACTIVE.glob("*"), *(ROOT / "assets").glob("*"), *EXERCISES.rglob("*.*"), *LECTURES.glob("*.md")]
+    sources = [*CHEATSHEETS.glob("*.html"), *INTERACTIVE.glob("*"), *(ROOT / "assets").glob("*"), *EXERCISES.rglob("*.*"), *LECTURES.glob("*.md"), *TESTS.glob("*.md")]
     return format(int(max(p.stat().st_mtime for p in sources)), "x")
 
 
@@ -402,12 +458,13 @@ def main():
     for e in understanding_errors:
         print(f"  ⚠ {e}")
     lectures, lecture_errors = parse_lectures()
-    for e in lecture_errors:
+    tests, test_errors = parse_tests()
+    for e in lecture_errors + test_errors:
         print(f"  ⚠ {e}")
 
     data = {"parts": parts, "paths": paths, "exercises": exercises, "titles": titles,
             "quizzes": quizzes, "questions": questions, "demos": demos, "prereqs": prereqs, "projects": projects,
-            "glossary": glossary, "understanding": understanding, "lectures": lectures, "build": build_version()}
+            "glossary": glossary, "understanding": understanding, "lectures": lectures, "tests": tests, "build": build_version()}
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     page = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
     OUTPUT.write_text(page, encoding="utf-8")
@@ -416,7 +473,7 @@ def main():
     print(f"  тем: {len(titles)}, разделов: {sum(len(p['sections']) for p in parts)}, "
           f"путей: {len(paths)}, упражнений: {len(exercises)}, проектов: {len(projects)}, тестов: {len(quizzes)}, "
           f"вопросов: {sum(map(len, questions.values()))} к {len(questions)} темам, "
-          f"интерактивов: {len(demos)}, тем со связями: {len(prereqs)}, терминов: {len(glossary)}, задач на понимание: {len(understanding)}, лекций: {len(lectures)}, вне README: {len(orphans)}")
+          f"интерактивов: {len(demos)}, тем со связями: {len(prereqs)}, терминов: {len(glossary)}, задач на понимание: {len(understanding)}, лекций: {len(lectures)}, тестов к темам: {len(tests)}, вне README: {len(orphans)}")
 
 
 if __name__ == "__main__":

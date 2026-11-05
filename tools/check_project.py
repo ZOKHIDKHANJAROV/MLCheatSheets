@@ -11,6 +11,7 @@
     вложенные друг в друга блоки (незакрытый <div>);
   • ссылки портала: темы, разделы, пути, упражнения, тесты и интерактивы из index.html;
   • лекции (lectures/*.md): формат, синтаксис примеров кода, покрытие тем учебных путей;
+  • тесты (tests/*.md): формат вопросов, верные варианты, код в вопросах, покрытие тем с лекциями;
   • вопросы (questions/*.md) и интерактивы (interactive/*.html) с несуществующими темами;
   • упражнения без нужных файлов и с решением, не совпадающим с эталоном;
   • устаревший index.html (портал не пересобран после изменений).
@@ -275,6 +276,42 @@ def check_profiles():
     report(errs, [], "регистрация, вход, токен, уровень в профиле и отказ при неверном PIN работают")
 
 
+def check_tests():
+    section("Тесты (tests/)")
+    import ast
+    from build_portal import parse_tests, split_test, parse_lectures
+    tests, errs = parse_tests()
+    warns, longest, total = [], 0, 0
+    for md in sorted((ROOT / "tests").glob("*.md")):
+        if md.name.lower() == "readme.md":
+            continue
+        questions = split_test(md.read_text(encoding="utf-8"))
+        if len(questions) < 5:
+            warns.append(f"{rel(md)}: вопросов {len(questions)} — для теста этапа лучше 5")
+        for n, q in enumerate(questions, 1):
+            for code in re.findall(r"^```python\n(.*?)^```", q["q"], flags=re.M | re.S):
+                try:
+                    ast.parse(code)
+                except SyntaxError as e:
+                    errs.append(f"{rel(md)}, вопрос {n}: код в вопросе не разбирается Python (строка {e.lineno}: {e.msg})")
+            right = [t for t, ok in q["opts"] if ok]
+            many = "все верные" in q["q"].lower()
+            if len(right) > 1 and not many:
+                warns.append(f"{rel(md)}, вопрос {n}: верных вариантов несколько, а в тексте нет «(выберите все верные)»")
+            if len(right) == 1 and many:
+                warns.append(f"{rel(md)}, вопрос {n}: в тексте «все верные», а верный вариант один")
+            if len(right) == 1 and len(q["opts"]) >= 4:
+                total += 1
+                longest += len(right[0]) == max(len(t) for t, _ in q["opts"])
+    if total and longest / total > 0.45:
+        warns.append(f"верный вариант самый длинный в {longest} из {total} вопросов ({100 * longest // total}%) — ответ выдаёт длина, выровняйте варианты")
+    lectures, _ = parse_lectures()
+    missing = sorted(f.replace("_cheatsheet.html", "") for f in lectures if f not in tests)
+    if missing:
+        warns.append(f"нет мини-теста у {len(missing)} тем с лекциями (например, {', '.join(missing[:4])})")
+    report(errs, warns, f"тестов к темам: {len(tests)}, вопросов: {sum(t['n'] for t in tests.values())}")
+
+
 def check_lectures():
     section("Лекции (lectures/)")
     import ast
@@ -422,7 +459,7 @@ def check_portal_fresh():
     sources = [ROOT / n for n in ("README.md", "ROADMAP.md", "glossary.md", "prerequisites.md", "tools/portal_template.html") if (ROOT / n).exists()]
     sources += list((ROOT / "exercises").rglob("task.md")) + list((ROOT / "questions").glob("*.md"))
     sources += list((ROOT / "interactive").glob("*.html")) + list((ROOT / "projects").glob("*/README.md"))
-    sources += list((ROOT / "understanding").glob("*.md")) + list((ROOT / "lectures").glob("*.md"))
+    sources += list((ROOT / "understanding").glob("*.md")) + list((ROOT / "lectures").glob("*.md")) + list((ROOT / "tests").glob("*.md"))
     newer = [rel(p) for p in sources if p.stat().st_mtime > index.stat().st_mtime]
     warns = [f"index.html старше {len(newer)} исходных файлов (например, {newer[0]}) — пересоберите: python tools/build_portal.py"] if newer else []
     report([], warns, "собран после последних изменений")
@@ -442,6 +479,7 @@ def main():
     check_glossary()
     check_understanding()
     check_lectures()
+    check_tests()
     check_visuals()
     check_profiles()
     check_exercises(run_solutions=not args.fast)
