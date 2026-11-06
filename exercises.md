@@ -2,7 +2,7 @@
 
 > **Практические задания для закрепления теории из [cheatsheets](README.md)**
 
-Всего упражнений: **116**, из них 🐞 «Найди ошибку» — 6. Удобнее всего решать их в портале (`python start.py` → вкладка «Практика»): там подсказки открываются по одной, решённое упражнение отмечается само, после решения открывается разбор, а через 2 недели упражнение возвращается на повтор.
+Всего упражнений: **127**, из них 🐞 «Найди ошибку» — 6. Удобнее всего решать их в портале (`python start.py` → вкладка «Практика»): там подсказки открываются по одной, решённое упражнение отмечается само, после решения открывается разбор, а через 2 недели упражнение возвращается на повтор.
 
 ## 🎯 Как устроено упражнение
 
@@ -213,6 +213,31 @@ python tools/check_exercise.py --list                  # все упражнен
 - **REINFORCE: возвраты, baseline и градиент softmax-политики** — [условие](exercises/policy_gradient/task.md) · [папка](exercises/policy_gradient/) · теория: [Policy Gradient методы](cheatsheets/policy_gradient_cheatsheet.html)
 - **PPO: преимущества GAE и clipped-цель по шагам роллаута** — [условие](exercises/ppo_reinforcement_learning/task.md) · [папка](exercises/ppo_reinforcement_learning/) · теория: [PPO](cheatsheets/ppo_reinforcement_learning_cheatsheet.html)
 - **DQN: мини-батч из replay buffer, цели target-сети и Double DQN** — [условие](exercises/dqn/task.md) · [папка](exercises/dqn/) · теория: [DQN](cheatsheets/dqn_cheatsheet.html)
+
+### 🤖 Путь 5: ИИ-агенты (2-3 месяца)
+
+**Этап 1: Основы агентов**
+
+- **Симулятор цикла агента: шаги, стоимость и успешность при лимите шагов** — [условие](exercises/ai_agents_basics/task.md) · [папка](exercises/ai_agents_basics/) · теория: [Основы ИИ-агентов](cheatsheets/ai_agents_basics_cheatsheet.html)
+- **Валидатор вызовов инструментов по JSON-схеме** — [условие](exercises/tool_use_function_calling/task.md) · [папка](exercises/tool_use_function_calling/) · теория: [Вызов инструментов (function calling)](cheatsheets/tool_use_function_calling_cheatsheet.html)
+- **Разбор лога ReAct: повторы действий, зацикливание и эффективность** — [условие](exercises/react_agents/task.md) · [папка](exercises/react_agents/) · теория: [ReAct: рассуждение и действие](cheatsheets/react_agents_cheatsheet.html)
+
+**Этап 2: Знания и память**
+
+- **Векторный поиск: косинус, нормализация и IVF-подобное приближение** — [условие](exercises/vector_search/task.md) · [папка](exercises/vector_search/) · теория: [Векторный поиск (ANN, HNSW, FAISS)](cheatsheets/vector_search_cheatsheet.html)
+- **RAG: чанкинг с перекрытием, recall@k и MRR** — [условие](exercises/rag/task.md) · [папка](exercises/rag/) · теория: [RAG: генерация с поиском](cheatsheets/rag_cheatsheet.html)
+- **Память агента: буфер с вытеснением и подсчёт попаданий** — [условие](exercises/agent_memory/task.md) · [папка](exercises/agent_memory/) · теория: [Память агента](cheatsheets/agent_memory_cheatsheet.html)
+
+**Этап 3: Планирование и команды агентов**
+
+- **План агента: порядок подзадач, критический путь и бюджет токенов** — [условие](exercises/agent_planning/task.md) · [папка](exercises/agent_planning/) · теория: [Планирование и рефлексия агентов](cheatsheets/agent_planning_cheatsheet.html)
+- **Стоимость координации: supervisor, все-со-всеми и конвейер** — [условие](exercises/multi_agent_systems/task.md) · [папка](exercises/multi_agent_systems/) · теория: [Мультиагентные системы](cheatsheets/multi_agent_systems_cheatsheet.html)
+- **Разбор лога JSON-RPC: запросы, ответы, ошибки и таймауты** — [условие](exercises/mcp_protocol/task.md) · [папка](exercises/mcp_protocol/) · теория: [Model Context Protocol (MCP)](cheatsheets/mcp_protocol_cheatsheet.html)
+
+**Этап 4: Надёжность и безопасность**
+
+- **Оценка агента: несмещённые pass@k и pass^k по таблице попыток** — [условие](exercises/agent_evaluation/task.md) · [папка](exercises/agent_evaluation/) · теория: [Оценка агентов](cheatsheets/agent_evaluation_cheatsheet.html)
+- **Безопасность агента: политика вызовов инструментов и «смертельная триада»** — [условие](exercises/agent_safety/task.md) · [папка](exercises/agent_safety/) · теория: [Безопасность агентов](cheatsheets/agent_safety_cheatsheet.html)
 
 ## Требования
 

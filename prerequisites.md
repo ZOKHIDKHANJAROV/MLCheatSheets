@@ -136,3 +136,17 @@
 - concept_drift: model_monitoring_ab_testing
 - fairness_ml: classification_metrics
 - adversarial_robustness: cnn_basics, backpropagation
+
+## ИИ-агенты
+
+- ai_agents_basics: prompt_engineering
+- tool_use_function_calling: ai_agents_basics
+- react_agents: ai_agents_basics, tool_use_function_calling
+- vector_search: word_embeddings
+- rag: vector_search, prompt_engineering
+- agent_memory: rag, ai_agents_basics
+- agent_planning: react_agents
+- multi_agent_systems: agent_planning, tool_use_function_calling
+- mcp_protocol: tool_use_function_calling
+- agent_evaluation: react_agents
+- agent_safety: tool_use_function_calling

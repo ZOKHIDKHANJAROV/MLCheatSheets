@@ -210,6 +210,35 @@
 
 ---
 
+### 🤖 Путь 5: ИИ-агенты (2-3 месяца)
+
+**Предварительные требования:** трансформеры и Prompt Engineering (Этап 5 Пути 2), базовый Python
+
+#### Этап 1: Основы агентов (1-2 недели) 🟡
+1. [Основы ИИ-агентов](cheatsheets/ai_agents_basics_cheatsheet.html)
+2. [Вызов инструментов (function calling)](cheatsheets/tool_use_function_calling_cheatsheet.html)
+3. [ReAct: рассуждение и действие](cheatsheets/react_agents_cheatsheet.html)
+4. **Упражнения:** ai_agents_basics, tool_use_function_calling, react_agents
+
+#### Этап 2: Знания и память (2 недели) 🟡-🔴
+1. [Векторный поиск (ANN, HNSW, FAISS)](cheatsheets/vector_search_cheatsheet.html)
+2. [RAG: генерация с поиском](cheatsheets/rag_cheatsheet.html)
+3. [Память агента](cheatsheets/agent_memory_cheatsheet.html)
+4. **Упражнения:** vector_search, rag, agent_memory
+
+#### Этап 3: Планирование и команды агентов (2 недели) 🔴
+1. [Планирование и рефлексия агентов](cheatsheets/agent_planning_cheatsheet.html)
+2. [Мультиагентные системы](cheatsheets/multi_agent_systems_cheatsheet.html)
+3. [Model Context Protocol (MCP)](cheatsheets/mcp_protocol_cheatsheet.html)
+4. **Упражнения:** agent_planning, multi_agent_systems, mcp_protocol
+
+#### Этап 4: Надёжность и безопасность (1-2 недели) 🔴
+1. [Оценка агентов](cheatsheets/agent_evaluation_cheatsheet.html)
+2. [Безопасность агентов](cheatsheets/agent_safety_cheatsheet.html)
+3. **Упражнения:** agent_evaluation, agent_safety
+
+---
+
 ## 📚 Дополнительные ресурсы
 
 ### По категориям сложности

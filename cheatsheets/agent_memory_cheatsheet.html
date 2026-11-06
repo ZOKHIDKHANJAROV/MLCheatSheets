@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Память агента — Cheatsheet — 3 колонки</title>
+  <style>
+    @media screen { body { font-family: -apple-system, sans-serif; color: #333; background: #fafcff; padding: 10px;
+        min-width: 900px;
+      } }
+        .container {
+      max-width: 100%;
+    }
+
+    /* Responsive columns: 3 columns on wide screens, fewer on narrow */
+    @media (min-width: 900px) {
+      .container {
+        column-count: 3;
+        column-gap: 20px;
+      }
+    }
+
+    @media (min-width: 600px) and (max-width: 899px) {
+      .container {
+        column-count: 2;
+        column-gap: 20px;
+      }
+    }
+
+    @media (max-width: 599px) {
+      .container {
+        column-count: 1;
+      }
+    }
+    .block { break-inside: avoid; margin-bottom: 1.2em; padding: 12px; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    h1 { font-size: 1.6em; font-weight: 700; color: #1a5fb4; text-align: center; margin: 0 0 8px; column-span: all; }
+    .subtitle { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 12px; column-span: all; }
+    h2 { font-size: 1.15em; font-weight: 700; color: #1a5fb4; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid #e0e7ff; }
+    p, ul, ol { font-size: 0.92em; margin: 0.6em 0; }
+    ul, ol { padding-left: 18px; }
+    code { font-family: 'Consolas', monospace; background-color: #f0f4ff; padding: 1px 4px; border-radius: 3px; font-size: 0.88em; }
+    pre { background-color: #f0f4ff; padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 0.84em; margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82em; margin: 6px 0; }
+    th { background-color: #e6f0ff; text-align: left; padding: 4px 6px; font-weight: 600; }
+    td { padding: 4px 6px; border-bottom: 1px solid #f0f4ff; }
+    blockquote { font-style: italic; margin: 8px 0; padding: 6px 10px; background: #f8fbff; border-left: 2px solid #1a5fb4; font-size: 0.88em; }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+    }
+
+    @media print {
+      .container { column-gap: 12px; }
+      .block { box-shadow: none; }
+      code, pre, table { font-size: 0.78em; }
+      h1 { font-size: 1.4em; }
+      h2 { font-size: 1em; }
+    }
+  </style>
+<!-- mlcs-theme -->
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
+</head>
+<body>
+<div class="container">
+  <h1>🧠 Память агента</h1>
+  <div class="subtitle">📅 Ноябрь 2026</div>
+
+  <div class="block">
+    <h2>🔷 1. Суть: зачем агенту память</h2>
+
+    <p>LLM сама по себе не помнит прошлые вызовы: всё, что она «знает» о диалоге, — это текст в её <strong>контекстном окне</strong>. Окно конечно и стоит денег, поэтому агенту нужна <strong>память</strong> — механизм, который решает, что держать в контексте, что сохранить на потом и что забыть.</p>
+    <ul>
+      <li><strong>Кратковременная:</strong> текущий диалог и состояние задачи в окне</li>
+      <li><strong>Долговременная:</strong> внешнее хранилище (векторное, база фактов), живёт между сессиями</li>
+    </ul>
+    <p>Цикл: прочитать нужное из хранилища → действовать → записать важное → время от времени чистить.</p>
+
+  </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-agent_memory-1"><h2>🖼 Кратковременная и долговременная память</h2><figure><svg viewBox="0 0 340 246" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Кратковременная и долговременная память агента"><defs><marker id="am-a-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text x="85" y="14" class="mut" text-anchor="middle" style="font-size:10px">Кратковременная память</text><rect class="s1" x="10" y="20" width="150" height="200" rx="8"/><rect class="c6" x="20" y="30" width="130" height="36" rx="6"/><text x="85.0" y="52.0" text-anchor="middle" style="font-size:10px">Системная инструкция</text><rect class="c5" x="20" y="72" width="130" height="36" rx="6"/><text x="85.0" y="94.0" text-anchor="middle" style="font-size:10px">Сводка истории</text><rect class="c2" x="20" y="114" width="130" height="36" rx="6"/><text x="85.0" y="136.0" text-anchor="middle" style="font-size:10px">Недавние сообщения</text><rect class="c3" x="20" y="156" width="130" height="36" rx="6"/><text x="85.0" y="178.0" text-anchor="middle" style="font-size:10px">Найденные воспоминания</text><text x="85" y="211" class="mut" text-anchor="middle" style="font-size:9px">контекстное окно</text><text x="270" y="14" class="mut" text-anchor="middle" style="font-size:10px">Долговременная память</text><rect class="c3" x="210" y="36" width="120" height="50" rx="6"/><text x="270.0" y="57.5" text-anchor="middle" style="font-size:10px">Эпизоды</text><text x="270.0" y="72.5" text-anchor="middle" style="font-size:10px">(вектор. хранилище)</text><rect class="c5" x="210" y="100" width="120" height="50" rx="6"/><text x="270.0" y="121.5" text-anchor="middle" style="font-size:10px">Факты</text><text x="270.0" y="136.5" text-anchor="middle" style="font-size:10px">(база ключ — значение)</text><rect class="c4" x="210" y="164" width="120" height="50" rx="6"/><text x="270.0" y="185.5" text-anchor="middle" style="font-size:10px">Правила и навыки</text><text x="270.0" y="200.5" text-anchor="middle" style="font-size:10px">(процедурная)</text><line class="ln" x1="190" y1="61" x2="190" y2="189"/><line class="ln" x1="190" y1="61" x2="210" y2="61"/><line class="ln" x1="190" y1="125" x2="210" y2="125"/><line class="ln" x1="190" y1="189" x2="210" y2="189"/><line class="ln" x1="160" y1="110" x2="190" y2="110" marker-end="url(#am-a-a)"/><text x="175" y="104" class="mut" text-anchor="middle" style="font-size:9px">запись</text><line class="ln" x1="190" y1="140" x2="160" y2="140" marker-end="url(#am-a-a)"/><text x="175" y="154" class="mut" text-anchor="middle" style="font-size:9px">чтение</text><text x="170" y="238" class="mut" text-anchor="middle" style="font-size:10px">в окно — нужное сейчас, в хранилище — важное надолго</text></svg><figcaption>В контекстное окно попадают инструкция, сводка старой истории, недавние сообщения и найденные воспоминания. Важное записывается в долговременное хранилище и поднимается обратно по запросу.</figcaption></figure></div><div class="block mlcs-visual" id="vis-agent_memory-2"><h2>🖼 Типы памяти</h2><figure><svg viewBox="0 0 340 252" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Типы долговременной памяти и забывание"><defs><marker id="am-t-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c3" x="10" y="10" width="320" height="56" rx="6"/><text x="170.0" y="34.5" text-anchor="middle" style="font-size:11px">Эпизодическая: «что было»</text><text x="170.0" y="49.5" text-anchor="middle" style="font-size:11px">12 мая запуск упал — не хватило памяти</text><rect class="c5" x="10" y="76" width="320" height="56" rx="6"/><text x="170.0" y="100.5" text-anchor="middle" style="font-size:11px">Семантическая: «что верно»</text><text x="170.0" y="115.5" text-anchor="middle" style="font-size:11px">пользователь пишет на Python, пояс UTC+3</text><rect class="c4" x="10" y="142" width="320" height="56" rx="6"/><text x="170.0" y="166.5" text-anchor="middle" style="font-size:11px">Процедурная: «как делать»</text><text x="170.0" y="181.5" text-anchor="middle" style="font-size:11px">для отчёта: выгрузка → проверка пропусков</text><text x="170" y="224" class="mut" text-anchor="middle" style="font-size:10px">забывание: удаляем записи с минимальной ценностью</text><text x="170" y="240" class="mut" text-anchor="middle" style="font-size:10px">ценность = a · важность + b · свежесть</text></svg><figcaption>Эпизодическая память хранит события, семантическая — факты и предпочтения, процедурная — способы действовать. Чтобы хранилище не зарастало шумом, записи с низкой ценностью (важность и свежесть) вытесняются.</figcaption></figure></div><!-- mlcs-visual:end -->
+
+  <div class="block">
+    <h2>🔷 2. Кратковременная память</h2>
+
+    <p>Это контекст запроса: системная инструкция, недавние сообщения, результаты инструментов, найденные воспоминания. Ограничен окном модели.</p>
+    <ul>
+      <li><strong>Скользящее окно:</strong> держим последние сообщения в пределах бюджета токенов</li>
+      <li>системную инструкцию и цель задачи не вытесняем</li>
+      <li>большие результаты инструментов обрезаем или сохраняем вне контекста</li>
+    </ul>
+<pre><code>def trim(history, budget=30):
+    """Оставляем последние сообщения, пока влезаем в бюджет (слова как «токены»)."""
+    kept, used = [], 0
+    for msg in reversed(history):
+        n = len(msg.split())
+        if used + n &gt; budget:
+            break
+        kept.append(msg)
+        used += n
+    return kept[::-1]
+
+history = [f"сообщение номер {i} с несколькими словами" for i in range(10)]
+print(len(trim(history)))   # 5: по 6 слов, бюджет 30</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 3. Суммаризация истории</h2>
+
+    <p>Когда история не помещается, старую часть заменяют краткой сводкой, а последние сообщения оставляют дословно. Сводку делает LLM (здесь — заглушка).</p>
+    <ul>
+      <li>запускайте сжатие по порогу (например, при 70–80% окна)</li>
+      <li>сохраняйте в сводке факты, решения, открытые вопросы и имена, а не пересказ реплик</li>
+      <li>сводка теряет детали: важное записывайте в долговременную память до сжатия</li>
+      <li>при многократном сжатии ошибки накапливаются — пересобирайте сводку из исходных фактов</li>
+    </ul>
+<pre><code>def compress(history, keep_last=4, summarize=None):
+    old, recent = history[:-keep_last], history[-keep_last:]
+    if not old:
+        return history
+    if summarize is None:                          # заглушка вместо вызова LLM
+        summarize = lambda msgs: " / ".join(m[:20] for m in msgs)
+    return ["[сводка] " + summarize(old)] + recent
+
+short = compress(history)
+print(len(short))   # 1 сводка + 4 последних = 5</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 4. Типы долговременной памяти</h2>
+
+    <table>
+      <tr><th>Тип</th><th>Что хранит</th><th>Пример</th></tr>
+      <tr><td><strong>Эпизодическая</strong></td><td>события: что, когда, чем кончилось</td><td>«12 мая запуск упал из-за нехватки памяти»</td></tr>
+      <tr><td><strong>Семантическая</strong></td><td>факты и предпочтения, без привязки ко времени</td><td>«пользователь пишет на Python, часовой пояс UTC+3»</td></tr>
+      <tr><td><strong>Процедурная</strong></td><td>как делать: инструкции, навыки, шаблоны</td><td>«для отчёта: сначала выгрузка, потом проверка пропусков»</td></tr>
+    </table>
+    <ul>
+      <li>эпизоды ищут по сходству (вектор + время); факты — по ключу или вектору</li>
+      <li>процедурную память часто хранят как правила в системной инструкции</li>
+    </ul>
+
+  </div>
+
+  <div class="block">
+    <h2>🔷 5. Хранилище и поиск воспоминаний</h2>
+
+    <p>Воспоминания индексируют как чанки в RAG: текст + вектор + метаданные (время, важность, тип). Достают по комбинации сходства, свежести и важности (идея из работ про generative agents):</p>
+    <p><strong>score</strong> = w₁·sim(q, m) + w₂·recency(m) + w₃·importance(m), где recency = 0.5^(Δt / T½) — экспоненциальное затухание с периодом полураспада T½.</p>
+<pre><code>import re, zlib
+import numpy as np
+
+def embed(text, dim=64):
+    v = np.zeros(dim)
+    for w in re.findall(r"\w+", text.lower()):
+        v[zlib.crc32(w.encode()) % dim] += 1.0
+    n = np.linalg.norm(v)
+    return v / n if n else v
+
+class Memory:
+    def __init__(self, half_life=20.0):
+        self.items, self.t, self.half_life = [], 0, half_life
+
+    def write(self, text, importance=0.5, kind="semantic"):
+        self.t += 1
+        self.items.append({"text": text, "vec": embed(text), "imp": importance,
+                           "last": self.t, "kind": kind})
+
+    def recall(self, query, k=2, w=(1.0, 0.5, 0.5)):
+        self.t += 1
+        q = embed(query)
+        def score(m):
+            rec = 0.5 ** ((self.t - m["last"]) / self.half_life)
+            return w[0] * float(m["vec"] @ q) + w[1] * rec + w[2] * m["imp"]
+        best = sorted(self.items, key=score, reverse=True)[:k]
+        for m in best:
+            m["last"] = self.t                     # обращение «освежает» воспоминание
+        return [m["text"] for m in best]
+
+mem = Memory()
+mem.write("пользователь любит краткие ответы", importance=0.8)
+mem.write("в среду обсуждали отчёт по продажам", importance=0.4, kind="episodic")
+print(mem.recall("как отвечать пользователю", k=1))</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 6. Что и когда записывать</h2>
+
+    <p>Записывать всё подряд — значит засорить поиск. Практическая политика:</p>
+    <ul>
+      <li><strong>Записывайте:</strong> явные предпочтения и ограничения, принятые решения, итоги задач, исправленные ошибки, устойчивые факты о пользователе или проекте</li>
+      <li><strong>Не записывайте:</strong> болтовню, повторы, промежуточные рассуждения, секреты и данные, которые пользователь не просил хранить</li>
+      <li><strong>Когда:</strong> по завершении шага или задачи, перед сжатием контекста, по явной команде «запомни»</li>
+      <li>факт, который изменился, обновляют (upsert по ключу), а не дописывают противоречащую копию</li>
+    </ul>
+<pre><code>facts = {}   # семантическая память «ключ → значение»
+
+def upsert(key, value, t):
+    old = facts.get(key)
+    facts[key] = {"value": value, "updated": t}
+    return old["value"] if old and old["value"] != value else None
+
+upsert("город", "Москва", t=1)
+print(upsert("город", "Казань", t=5))   # Москва — старое значение заменено</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 7. Политика забывания</h2>
+
+    <p>Память растёт, а поиск зашумляется и дорожает — нужно забывать осознанно.</p>
+    <ul>
+      <li><strong>По давности (LRU):</strong> вытесняем то, к чему давно не обращались</li>
+      <li><strong>По важности:</strong> низкая важность уходит первой</li>
+      <li><strong>TTL:</strong> срок жизни для временных фактов («сегодня занят»)</li>
+      <li><strong>Слияние и дедупликация:</strong> похожие записи объединяют в одну, эпизоды сворачивают в обобщение</li>
+      <li><strong>Явное удаление:</strong> по просьбе пользователя и для устаревших фактов</li>
+    </ul>
+    <p>Комбинированная ценность записи: value = a·importance + b·recency; при переполнении удаляют записи с минимальной value.</p>
+<pre><code>def forget(mem, capacity=2, a=0.6, b=0.4):
+    def value(m):
+        rec = 0.5 ** ((mem.t - m["last"]) / mem.half_life)
+        return a * m["imp"] + b * rec
+    mem.items.sort(key=value, reverse=True)
+    dropped, mem.items = mem.items[capacity:], mem.items[:capacity]
+    return [m["text"] for m in dropped]
+
+mem.write("мелкая реплика про погоду", importance=0.1)
+print(forget(mem))   # ['мелкая реплика про погоду']</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 8. Плюсы и минусы</h2>
+
+    <p><strong>✅ Плюсы</strong></p>
+    <ul>
+      <li>персонализация и преемственность между сессиями</li>
+      <li>экономия контекста: в окно попадает только нужное</li>
+      <li>агент учится на прошлых ошибках и решениях</li>
+    </ul>
+    <p><strong>❌ Минусы</strong></p>
+    <ul>
+      <li>ошибки в памяти закрепляются: неверный факт будет всплывать снова</li>
+      <li>риски приватности: что хранится, кто видит, как удалить</li>
+      <li>«загрязнение»: чужие или вредоносные тексты, записанные в память, влияют на будущие ответы (memory poisoning)</li>
+      <li>дополнительная сложность: поиск, обновление, чистка</li>
+    </ul>
+
+  </div>
+
+  <div class="block">
+    <h2>🔷 9. Когда что использовать</h2>
+
+    <ul>
+      <li><strong>Одна короткая сессия:</strong> достаточно окна, память не нужна</li>
+      <li><strong>Длинный диалог:</strong> скользящее окно + суммаризация</li>
+      <li><strong>Агент между сессиями:</strong> факты о пользователе в базе фактов, эпизоды в векторном хранилище</li>
+      <li><strong>Повторяющиеся задачи:</strong> процедурная память — шаблоны и инструкции</li>
+      <li><strong>Большая база знаний:</strong> это уже RAG; граница условна — меняется источник (документы vs опыт агента)</li>
+    </ul>
+
+  </div>
+
+  <div class="block">
+    <h2>🔷 10. Частые ошибки</h2>
+
+    <ul>
+      <li>❌ Хранить всю историю дословно и отдавать её в контекст целиком</li>
+      <li>❌ Не отличать факты от гипотез модели — записывать собственные догадки как истину</li>
+      <li>❌ Дописывать противоречащие факты вместо обновления</li>
+      <li>❌ Не иметь политики забывания — шум растёт, качество поиска падает</li>
+      <li>❌ Сжимать историю, не сохранив важное в долговременную память</li>
+      <li>❌ Записывать секреты и персональные данные без разрешения</li>
+    </ul>
+    <p><strong>Связанные темы:</strong> RAG (rag), векторный поиск (vector_search), Prompt Engineering.</p>
+    <blockquote>
+«Контекст — оперативная память, хранилище — диск. Агент должен решать, что поднять, что записать и что выбросить».
+    </blockquote>
+
+  </div>
+
+</div>
+</body>
+</html>

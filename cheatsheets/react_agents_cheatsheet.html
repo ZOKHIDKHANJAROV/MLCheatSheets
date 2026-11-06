@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReAct-агенты Cheatsheet — 3 колонки</title>
+  <style>
+    @media screen { body { font-family: -apple-system, sans-serif; color: #333; background: #fafcff; padding: 10px; 
+        min-width: 900px;
+      } }
+        .container {
+      max-width: 100%;
+    }
+
+    /* Responsive columns: 3 columns on wide screens, fewer on narrow */
+    @media (min-width: 900px) {
+      .container {
+        column-count: 3;
+        column-gap: 20px;
+      }
+    }
+    
+    @media (min-width: 600px) and (max-width: 899px) {
+      .container {
+        column-count: 2;
+        column-gap: 20px;
+      }
+    }
+    
+    @media (max-width: 599px) {
+      .container {
+        column-count: 1;
+      }
+    }
+    .block { break-inside: avoid; margin-bottom: 1.2em; padding: 12px; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    h1 { font-size: 1.6em; font-weight: 700; color: #1a5fb4; text-align: center; margin: 0 0 8px; column-span: all; }
+    .subtitle { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 12px; column-span: all; }
+    h2 { font-size: 1.15em; font-weight: 700; color: #1a5fb4; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid #e0e7ff; }
+    p, ul, ol { font-size: 0.92em; margin: 0.6em 0; }
+    ul, ol { padding-left: 18px; }
+    code { font-family: 'Consolas', monospace; background-color: #f0f4ff; padding: 1px 4px; border-radius: 3px; font-size: 0.88em; }
+    pre { background-color: #f0f4ff; padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 0.84em; margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82em; margin: 6px 0; }
+    th { background-color: #e6f0ff; text-align: left; padding: 4px 6px; font-weight: 600; }
+    td { padding: 4px 6px; border-bottom: 1px solid #f0f4ff; }
+    blockquote { font-style: italic; margin: 8px 0; padding: 6px 10px; background: #f8fbff; border-left: 2px solid #1a5fb4; font-size: 0.88em; }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+    }
+
+    @media print {
+      .container { column-gap: 12px; }
+      .block { box-shadow: none; }
+      code, pre, table { font-size: 0.78em; }
+      h1 { font-size: 1.4em; }
+      h2 { font-size: 1em; }
+    }
+  </style>
+<!-- mlcs-theme -->
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
+</head>
+<body>
+<div class="container">
+  <h1>🔁 ReAct-агенты</h1>
+  <div class="subtitle">📅 Ноябрь 2026 · код — с «фейковой LLM», без реальных вызовов API</div>
+
+  <div class="block">
+    <h2>🔷 1. Что такое ReAct</h2>
+
+    <p><strong>ReAct</strong> (Reasoning + Acting, Yao и др., 2022) — подход, где модель <strong>чередует рассуждение и действие</strong>: мысль объясняет, зачем нужен шаг, действие обращается к внешнему миру, наблюдение возвращает результат.</p>
+    <blockquote>Рассуждение помогает выбрать действие, а наблюдение — скорректировать рассуждение.</blockquote>
+  </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-react_agents-1"><h2>🖼 Цикл ReAct</h2><figure><svg viewBox="0 0 340 270" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Цикл ReAct: Thought, Action, Observation"><defs><marker id="reactloop-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c2" x="10" y="8" width="90" height="30" rx="6"/><text x="55.0" y="27.0" text-anchor="middle">Final Answer</text><line class="ln" x1="55" y1="70" x2="55" y2="40" marker-end="url(#reactloop-a)"/><rect class="c1" x="10" y="70" width="90" height="42" rx="6"/><text x="55.0" y="87.5" text-anchor="middle">Thought</text><text x="55.0" y="102.5" text-anchor="middle">рассуждение</text><rect class="c3" x="125" y="70" width="90" height="42" rx="6"/><text x="170.0" y="87.5" text-anchor="middle">Action</text><text x="170.0" y="102.5" text-anchor="middle">tool[аргумент]</text><rect class="c2" x="240" y="70" width="90" height="42" rx="6"/><text x="285.0" y="87.5" text-anchor="middle">Observation</text><text x="285.0" y="102.5" text-anchor="middle">результат</text><line class="ln" x1="100" y1="91" x2="123" y2="91" marker-end="url(#reactloop-a)"/><line class="ln" x1="215" y1="91" x2="238" y2="91" marker-end="url(#reactloop-a)"/><path class="ln" d="M285,112 L285,144 L55,144 L55,114" fill="none" marker-end="url(#reactloop-a)"/><text x="55" y="126" class="mut" text-anchor="middle" style="font-size:10px">модель</text><text x="170" y="126" class="mut" text-anchor="middle" style="font-size:10px">модель → программа</text><text x="285" y="126" class="mut" text-anchor="middle" style="font-size:10px">только среда</text><text x="170" y="160" class="mut" text-anchor="middle" style="font-size:11px">повторять, пока не будет ответа</text><rect class="c4" x="10" y="176" width="320" height="76" rx="6"/><text x="170.0" y="203.0" text-anchor="middle">Остановка и защита</text><text x="170.0" y="218.0" text-anchor="middle">лимит шагов · бюджет токенов</text><text x="170.0" y="233.0" text-anchor="middle">повтор того же Action → зацикливание</text><text x="62" y="58" class="mut" text-anchor="start" style="font-size:10px">найден ответ</text></svg><figcaption>Модель пишет Thought и Action, программа выполняет действие и добавляет Observation. Цикл заканчивается финальным ответом либо ограничителями: лимит шагов, бюджет, повторы действий.</figcaption></figure></div><!-- mlcs-visual:end -->
+  <div class="block">
+    <h2>🔷 2. Формат Thought / Action / Observation</h2>
+
+    <pre><code>Question: Сколько жителей
+          в столице Франции?
+Thought: нужно узнать столицу
+Action: search[столица Франции]
+Observation: Париж
+Thought: теперь население Парижа
+Action: search[население Парижа]
+Observation: 2.1 млн
+Thought: данных достаточно
+Final Answer: 2.1 млн</code></pre>
+    <ul>
+      <li><strong>Thought</strong> — пишет модель</li>
+      <li><strong>Action</strong> — пишет модель, исполняет программа</li>
+      <li><strong>Observation</strong> — пишет только среда</li>
+    </ul>
+  </div>
+  <div class="block">
+    <h2>🔷 3. Цикл (псевдокод)</h2>
+
+    <pre><code>transcript = question
+for step in range(max_steps):
+    out = llm(transcript, stop=["Observation:"])
+    transcript += out
+    if "Final Answer:" in out:
+        return answer(out)
+    action = parse(out)
+    if action in already_seen:
+        return stop("зацикливание")
+    obs = run_tool(action)
+    transcript += "Observation: " + obs
+return stop("лимит шагов")</code></pre>
+    <p>Стоп-последовательность <code>Observation:</code> не даёт модели дописать результат самой.</p>
+  </div>
+  <div class="block">
+    <h2>🔷 4. Пример на Python (фейковая LLM)</h2>
+<pre><code>import re
+
+KB = {"столица Франции": "Париж", "население Парижа": "2.1 млн"}   # условная база знаний
+
+def search(query):
+    return KB.get(query, "ничего не найдено")
+
+def fake_llm(transcript):
+    """Заглушка модели: решает по числу уже полученных наблюдений."""
+    n = transcript.count("Observation:")
+    if n == 0:
+        return "Thought: нужно узнать столицу Франции\nAction: search[столица Франции]"
+    if n == 1:
+        return "Thought: теперь нужно население города Париж\nAction: search[население Парижа]"
+    return "Thought: данных достаточно\nFinal Answer: 2.1 млн"
+
+def looping_llm(transcript):
+    """«Сломанная» модель: повторяет одно и то же действие."""
+    return "Thought: попробую ещё раз\nAction: search[курс неизвестной валюты]"
+
+ACTION = re.compile(r"Action: (\w+)\[(.*)\]")
+
+def react(question, llm, max_steps=6):
+    transcript = f"Question: {question}\n"
+    seen = set()
+    for _ in range(max_steps):
+        out = llm(transcript)                      # генерация останавливается перед Observation
+        transcript += out + "\n"
+        if "Final Answer:" in out:
+            return out.split("Final Answer:")[1].strip(), transcript
+        match = ACTION.search(out)
+        if match is None:
+            obs = "ошибка формата: нужен Action: имя[аргумент]"
+        else:
+            name, arg = match.groups()
+            if (name, arg) in seen:                # защита от зацикливания
+                return "зацикливание", transcript
+            seen.add((name, arg))
+            obs = search(arg) if name == "search" else "неизвестное действие"
+        transcript += f"Observation: {obs}\n"      # наблюдение пишет среда, а не модель
+    return "лимит шагов", transcript
+
+answer, log = react("Сколько жителей в столице Франции?", fake_llm)
+print(answer)                                      # 2.1 млн
+print(react("курс?", looping_llm)[0])              # зацикливание</code></pre>
+  </div>
+  <div class="block">
+    <h2>🔷 5. ReAct, CoT и чистый act</h2>
+    <table><tr><th></th><th>CoT</th><th>Act</th><th>ReAct</th></tr><tr><td>Рассуждение</td><td>да</td><td>нет</td><td>да</td></tr><tr><td>Внешние инструменты</td><td>нет</td><td>да</td><td>да</td></tr><tr><td>Свежие данные</td><td>нет</td><td>да</td><td>да</td></tr><tr><td>Прозрачность шагов</td><td>высокая</td><td>низкая</td><td>высокая</td></tr><tr><td>Риск</td><td>выдумки без проверки</td><td>бессмысленные действия</td><td>зацикливание, цена</td></tr></table>
+  </div>
+  <div class="block">
+    <h2>🔷 6. Остановка</h2>
+
+    <ul>
+      <li><strong>Финальный ответ</strong>: модель выдала <code>Final Answer</code></li>
+      <li><strong>Лимит шагов</strong>: <code>max_steps</code></li>
+      <li><strong>Бюджет</strong>: токены, время, деньги</li>
+      <li><strong>Защита от повторов</strong>: то же действие с теми же аргументами</li>
+      <li><strong>Ошибка формата</strong>: несколько неудачных разборов подряд</li>
+    </ul>
+  </div>
+  <div class="block">
+    <h2>🔷 7. Типичные сбои</h2>
+
+    <ul>
+      <li>🔁 <strong>Зацикливание</strong>: модель повторяет одно действие, не получив нужного</li>
+      <li>👻 <strong>Галлюцинация наблюдений</strong>: модель сама дописывает «Observation» — лечится стоп-последовательностью</li>
+      <li>🧩 <strong>Ошибка формата</strong>: нет строки Action или скобки — парсер ломается</li>
+      <li>🌫️ <strong>Потеря цели</strong>: в длинной истории теряется исходный вопрос</li>
+      <li>🪤 <strong>Слишком ранний ответ</strong>: «Final Answer» без проверки фактов</li>
+    </ul>
+  </div>
+  <div class="block">
+    <h2>🔷 8. Плюсы и минусы</h2>
+
+    <p><strong>Плюсы</strong></p>
+    <ul>
+      <li>читаемая траектория: видно, почему принято решение</li>
+      <li>снижает выдумки за счёт реальных наблюдений</li>
+      <li>гибко работает, когда путь заранее неизвестен</li>
+    </ul>
+    <p><strong>Минусы</strong></p>
+    <ul>
+      <li>много обращений к модели — дорого и медленно</li>
+      <li>история быстро растёт и забивает контекст</li>
+      <li>чувствителен к формату и качеству инструментов</li>
+    </ul>
+  </div>
+  <div class="block">
+    <h2>🔷 9. Когда использовать</h2>
+
+    <ul>
+      <li>многошаговые вопросы, где нужны факты из внешних источников</li>
+      <li>исследовательские и поисковые задачи с неизвестным путём</li>
+      <li>нужна объяснимая траектория для отладки</li>
+    </ul>
+    <p>Для простых задач хватит CoT, для известных шагов — обычной цепочки.</p>
+  </div>
+  <div class="block">
+    <h2>🔷 10. Типичные ошибки</h2>
+
+    <ul>
+      <li>❌ Нет <code>max_steps</code> и проверки повторов</li>
+      <li>❌ Не задана стоп-последовательность — модель «выдумывает» наблюдения</li>
+      <li>❌ Хрупкий парсер без обработки неверного формата</li>
+      <li>❌ Результаты инструментов не обрезаются, контекст раздувается</li>
+      <li>❌ Не логируется траектория — сбой не воспроизвести</li>
+      <li>❌ ReAct применяют к задачам, где хватило бы одного запроса</li>
+    </ul>
+    <blockquote>«ReAct: думай → действуй → смотри на результат → думай снова».</blockquote>
+  </div>
+
+</div>
+</body>
+</html>

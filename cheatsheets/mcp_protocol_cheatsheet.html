@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Context Protocol (MCP) Cheatsheet — 3 колонки</title>
+  <style>
+    @media screen { body { font-family: -apple-system, sans-serif; color: #333; background: #fafcff; padding: 10px; 
+        min-width: 900px;
+      } }
+        .container {
+      max-width: 100%;
+    }
+
+    /* Responsive columns: 3 columns on wide screens, fewer on narrow */
+    @media (min-width: 900px) {
+      .container {
+        column-count: 3;
+        column-gap: 20px;
+      }
+    }
+    
+    @media (min-width: 600px) and (max-width: 899px) {
+      .container {
+        column-count: 2;
+        column-gap: 20px;
+      }
+    }
+    
+    @media (max-width: 599px) {
+      .container {
+        column-count: 1;
+      }
+    }
+    .block { break-inside: avoid; margin-bottom: 1.2em; padding: 12px; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    h1 { font-size: 1.6em; font-weight: 700; color: #1a5fb4; text-align: center; margin: 0 0 8px; column-span: all; }
+    .subtitle { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 12px; column-span: all; }
+    h2 { font-size: 1.15em; font-weight: 700; color: #1a5fb4; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid #e0e7ff; }
+    p, ul, ol { font-size: 0.92em; margin: 0.6em 0; }
+    ul, ol { padding-left: 18px; }
+    code { font-family: 'Consolas', monospace; background-color: #f0f4ff; padding: 1px 4px; border-radius: 3px; font-size: 0.88em; }
+    pre { background-color: #f0f4ff; padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 0.84em; margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82em; margin: 6px 0; }
+    th { background-color: #e6f0ff; text-align: left; padding: 4px 6px; font-weight: 600; }
+    td { padding: 4px 6px; border-bottom: 1px solid #f0f4ff; }
+    blockquote { font-style: italic; margin: 8px 0; padding: 6px 10px; background: #f8fbff; border-left: 2px solid #1a5fb4; font-size: 0.88em; }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+    }
+
+    @media print {
+      .container { column-gap: 12px; }
+      .block { box-shadow: none; }
+      code, pre, table { font-size: 0.78em; }
+      h1 { font-size: 1.4em; }
+      h2 { font-size: 1em; }
+    }
+  </style>
+<!-- mlcs-theme -->
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
+</head>
+<body>
+<div class="container">
+  <h1>🔌 Model Context Protocol (MCP)</h1>
+  <div class="subtitle">📅 Ноябрь 2026</div>
+
+  <div class="block">
+    <h2>🔷 1. Суть</h2>
+    <p><strong>Model Context Protocol (MCP)</strong> — открытый протокол, по которому ИИ-приложение подключается к внешним инструментам и источникам данных одним и тем же способом. Его представила компания Anthropic в конце 2024 года.</p>    <p>Идея похожа на единый разъём: приложение и сервер договариваются о формате сообщений один раз, и дальше любой совместимый клиент работает с любым совместимым сервером.</p>    <ul>
+      <li>Сервер описывает свои <strong>инструменты, данные и шаблоны</strong></li>
+      <li>Клиент узнаёт о них и даёт модели возможность их использовать</li>
+      <li>Обмен идёт сообщениями JSON-RPC</li>
+    </ul>
+  </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-mcp_protocol-1"><h2>🖼 Интеграции: до и после</h2><figure><svg viewBox="0 0 340 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Без стандарта нужно N×M коннекторов, с MCP — N+M"><defs><marker id="mcpnm-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text x="170" y="14" class="t4" text-anchor="middle" style="font-size:12px">Без стандарта: N × M = 9 коннекторов</text><line class="ln s6" x1="78" y1="35" x2="262" y2="35"/><line class="ln s6" x1="78" y1="35" x2="262" y2="65"/><line class="ln s6" x1="78" y1="35" x2="262" y2="95"/><line class="ln s6" x1="78" y1="65" x2="262" y2="35"/><line class="ln s6" x1="78" y1="65" x2="262" y2="65"/><line class="ln s6" x1="78" y1="65" x2="262" y2="95"/><line class="ln s6" x1="78" y1="95" x2="262" y2="35"/><line class="ln s6" x1="78" y1="95" x2="262" y2="65"/><line class="ln s6" x1="78" y1="95" x2="262" y2="95"/><rect class="c1" x="8" y="24" width="70" height="22" rx="6"/><text x="43.0" y="39.0" text-anchor="middle">Чат</text><rect class="c1" x="8" y="54" width="70" height="22" rx="6"/><text x="43.0" y="69.0" text-anchor="middle">IDE</text><rect class="c1" x="8" y="84" width="70" height="22" rx="6"/><text x="43.0" y="99.0" text-anchor="middle">Агент</text><rect class="c3" x="262" y="24" width="70" height="22" rx="6"/><text x="297.0" y="39.0" text-anchor="middle">Файлы</text><rect class="c3" x="262" y="54" width="70" height="22" rx="6"/><text x="297.0" y="69.0" text-anchor="middle">База</text><rect class="c3" x="262" y="84" width="70" height="22" rx="6"/><text x="297.0" y="99.0" text-anchor="middle">Трекер</text><line class="ln s6" x1="8" y1="140" x2="332" y2="140" stroke-dasharray="4 3"/><text x="170" y="170" class="t2" text-anchor="middle" style="font-size:12px">С MCP: N + M = 6 реализаций</text><line class="ln s1" x1="78" y1="201" x2="138" y2="220" marker-end="url(#mcpnm-a)"/><line class="ln s1" x1="78" y1="231" x2="138" y2="220" marker-end="url(#mcpnm-a)"/><line class="ln s1" x1="78" y1="261" x2="138" y2="220" marker-end="url(#mcpnm-a)"/><line class="ln s3" x1="202" y1="220" x2="262" y2="201" marker-end="url(#mcpnm-a)"/><line class="ln s3" x1="202" y1="220" x2="262" y2="231" marker-end="url(#mcpnm-a)"/><line class="ln s3" x1="202" y1="220" x2="262" y2="261" marker-end="url(#mcpnm-a)"/><rect class="c1" x="8" y="190" width="70" height="22" rx="6"/><text x="43.0" y="205.0" text-anchor="middle">Чат</text><rect class="c1" x="8" y="220" width="70" height="22" rx="6"/><text x="43.0" y="235.0" text-anchor="middle">IDE</text><rect class="c1" x="8" y="250" width="70" height="22" rx="6"/><text x="43.0" y="265.0" text-anchor="middle">Агент</text><rect class="c5" x="138" y="190" width="64" height="60" rx="6"/><text x="170.0" y="209.0" text-anchor="middle" style="font-size:11px">MCP</text><text x="170.0" y="224.0" text-anchor="middle" style="font-size:11px">клиент–</text><text x="170.0" y="239.0" text-anchor="middle" style="font-size:11px">сервер</text><rect class="c3" x="262" y="190" width="70" height="22" rx="6"/><text x="297.0" y="205.0" text-anchor="middle">Файлы</text><rect class="c3" x="262" y="220" width="70" height="22" rx="6"/><text x="297.0" y="235.0" text-anchor="middle">База</text><rect class="c3" x="262" y="250" width="70" height="22" rx="6"/><text x="297.0" y="265.0" text-anchor="middle">Трекер</text><text x="170" y="292" class="mut" text-anchor="middle" style="font-size:10.5px">каждая сторона реализует протокол один раз</text></svg><figcaption>Без стандарта каждое приложение пишет коннектор к каждой системе: N × M. С общим протоколом приложение реализует клиент, а система — сервер, и интеграций становится N + M.</figcaption></figure></div><div class="block mlcs-visual" id="vis-mcp_protocol-2"><h2>🖼 Архитектура MCP</h2><figure><svg viewBox="0 0 340 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Архитектура MCP: host, клиенты, серверы и три типа возможностей"><defs><marker id="mcparch-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c6" x="6" y="8" width="160" height="190" rx="8"/><text x="86.0" y="107.0" text-anchor="middle"></text><text x="86" y="26" text-anchor="middle" style="font-size:12px">Host (приложение)</text><rect class="c1" x="20" y="36" width="132" height="28" rx="6"/><text x="86.0" y="54.0" text-anchor="middle">LLM</text><line class="ln" x1="26" y1="64" x2="26" y2="168"/><line class="ln" x1="26" y1="112" x2="40" y2="112" marker-end="url(#mcparch-a)"/><line class="ln" x1="26" y1="168" x2="40" y2="168" marker-end="url(#mcparch-a)"/><rect class="c5" x="40" y="96" width="112" height="32" rx="6"/><text x="96.0" y="116.0" text-anchor="middle">MCP-клиент 1</text><rect class="c5" x="40" y="152" width="112" height="32" rx="6"/><text x="96.0" y="172.0" text-anchor="middle">MCP-клиент 2</text><line class="ln" x1="152" y1="112" x2="202" y2="112" marker-start="url(#mcparch-a)" marker-end="url(#mcparch-a)"/><line class="ln" x1="152" y1="168" x2="202" y2="168" marker-start="url(#mcparch-a)" marker-end="url(#mcparch-a)"/><text x="178" y="103" class="mut" text-anchor="middle" style="font-size:9px">JSON-RPC</text><rect class="c2" x="202" y="92" width="132" height="40" rx="6"/><text x="268.0" y="108.5" text-anchor="middle" style="font-size:11px">Сервер A</text><text x="268.0" y="123.5" text-anchor="middle" style="font-size:11px">stdio · локально</text><rect class="c2" x="202" y="148" width="132" height="40" rx="6"/><text x="268.0" y="164.5" text-anchor="middle" style="font-size:11px">Сервер B</text><text x="268.0" y="179.5" text-anchor="middle" style="font-size:11px">HTTP · удалённо</text><text x="170" y="226" text-anchor="middle" style="font-size:12px">Сервер открывает три вида возможностей</text><rect class="c3" x="6" y="238" width="104" height="52" rx="6"/><text x="58.0" y="253.0" text-anchor="middle" style="font-size:10.5px">tools</text><text x="58.0" y="268.0" text-anchor="middle" style="font-size:10.5px">действия</text><text x="58.0" y="283.0" text-anchor="middle" style="font-size:10.5px">решает модель</text><rect class="c1" x="118" y="238" width="104" height="52" rx="6"/><text x="170.0" y="253.0" text-anchor="middle" style="font-size:10.5px">resources</text><text x="170.0" y="268.0" text-anchor="middle" style="font-size:10.5px">данные</text><text x="170.0" y="283.0" text-anchor="middle" style="font-size:10.5px">решает приложение</text><rect class="c4" x="230" y="238" width="104" height="52" rx="6"/><text x="282.0" y="253.0" text-anchor="middle" style="font-size:10.5px">prompts</text><text x="282.0" y="268.0" text-anchor="middle" style="font-size:10.5px">шаблоны</text><text x="282.0" y="283.0" text-anchor="middle" style="font-size:10.5px">выбирает человек</text><text x="170" y="304" class="mut" text-anchor="middle" style="font-size:10.5px">решения о вызовах принимает host, а не сервер</text></svg><figcaption>Host держит по одному MCP-клиенту на каждый сервер. Клиент и сервер обмениваются сообщениями JSON-RPC через stdio или HTTP; сервер предлагает tools, resources и prompts.</figcaption></figure></div><!-- mlcs-visual:end -->
+
+  <div class="block">
+    <h2>🔷 2. Проблема N×M</h2>
+    <table><tr><th></th><th>Без стандарта</th><th>С MCP</th></tr><tr><td>N приложений, M систем</td><td>N × M своих коннекторов</td><td>N клиентов + M серверов</td></tr><tr><td>Пример 4 × 5</td><td>20 интеграций</td><td>9 реализаций</td></tr><tr><td>Новая система</td><td>дописать под каждое приложение</td><td>один сервер для всех</td></tr></table>    <p>Каждый коннектор приходилось писать и поддерживать отдельно. Стандартный протокол превращает произведение в сумму.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 3. Клиент и сервер</h2>
+    <ul>
+      <li><strong>Host</strong> — приложение с моделью (чат, IDE, агент)</li>
+      <li><strong>Client</strong> — компонент внутри host: держит одно соединение с одним сервером</li>
+      <li><strong>Server</strong> — программа, которая открывает возможности: файлы, базы, API</li>
+      <li>Один host может держать несколько клиентов и подключаться ко многим серверам</li>
+    </ul>    <p>Модель сама серверам не звонит: решения о вызовах принимает host, который общается с моделью.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 4. Три типа возможностей</h2>
+    <table><tr><th>Тип</th><th>Что это</th><th>Кто решает использовать</th></tr><tr><td>Tools</td><td>функции, которые что-то делают (поиск, запись, запрос)</td><td>модель</td></tr><tr><td>Resources</td><td>данные для контекста: файлы, записи, документы</td><td>приложение</td></tr><tr><td>Prompts</td><td>готовые шаблоны запросов, часто с параметрами</td><td>пользователь</td></tr></table>    <p>Кроме них, клиент может предоставлять серверу собственные возможности, например запросить у модели продолжение (sampling).</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 5. Транспорты</h2>
+    <table><tr><th>Транспорт</th><th>Как работает</th></tr><tr><td>stdio</td><td>host запускает сервер как подпроцесс; сообщения идут через stdin/stdout</td></tr><tr><td>HTTP</td><td>сервер доступен по сети; запросы клиента идут по HTTP, ответы могут приходить потоком</td></tr></table>    <ul>
+      <li>stdio — просто и локально, без сети</li>
+      <li>HTTP — для удалённых серверов, нужна аутентификация</li>
+      <li>Формат сообщений одинаков для обоих транспортов</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 6. Обмен JSON-RPC</h2>
+<pre><code># запрос клиента: есть method и id
+{"jsonrpc": "2.0", "id": 2, "method": "tools/list"}
+
+# ответ сервера: тот же id, result
+{"jsonrpc": "2.0", "id": 2, "result": {"tools": [
+    {"name": "search", "description": "Поиск по базе",
+     "inputSchema": {"type": "object"}}]}}
+
+# вызов инструмента
+{"jsonrpc": "2.0", "id": 3, "method": "tools/call",
+ "params": {"name": "search", "arguments": {"q": "agents"}}}
+
+# уведомление: нет id, ответа не ждёт
+{"jsonrpc": "2.0", "method": "notifications/initialized"}
+
+# ошибка: error с code и message
+{"jsonrpc": "2.0", "id": 3, "error": {"code": -32602, "message": "..."}}</code></pre>    <p>Ответ связывается с запросом по <code>id</code>. Сообщение без <code>id</code> — уведомление.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 7. Жизненный цикл</h2>
+<pre><code>клиент                          сервер
+  | -- initialize ------------&gt;  |   версия протокола, возможности
+  | &lt;-- результат -------------   |   что умеет сервер
+  | -- notifications/initialized  |   клиент готов
+  | -- tools/list ------------&gt;  |   каталог инструментов
+  | -- tools/call ------------&gt;  |   работа
+  | &lt;-- result / error --------   |
+  | (закрытие соединения)         |</code></pre>    <p>На этапе <code>initialize</code> стороны согласуют версию и то, какие возможности каждая поддерживает.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 8. Сервер-заглушка на Python</h2>
+<pre><code>import json
+
+TOOLS = {"echo": lambda args: args.get("text", "")}
+
+def handle(line):
+    msg = json.loads(line)
+    if "id" not in msg:                          # уведомление
+        return None
+    if msg["method"] == "tools/list":
+        result = {"tools": [{"name": n} for n in TOOLS]}
+    elif msg["method"] == "tools/call":
+        p = msg["params"]
+        result = {"content": [{"type": "text",
+                               "text": TOOLS[p["name"]](p["arguments"])}]}
+    else:
+        return json.dumps({"jsonrpc": "2.0", "id": msg["id"],
+                           "error": {"code": -32601, "message": "нет метода"}})
+    return json.dumps({"jsonrpc": "2.0", "id": msg["id"], "result": result})
+
+req = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+       "params": {"name": "echo", "arguments": {"text": "привет"}}}
+print(handle(json.dumps(req)))</code></pre>    <p>Это учебная схема: готовые SDK берут на себя разбор сообщений, версии и транспорт.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 9. Права и безопасность</h2>
+    <ul>
+      <li>Относитесь к серверу как к стороннему коду: ставьте только доверенные</li>
+      <li>Минимальные права: доступ только к нужным папкам и данным</li>
+      <li>Опасные действия (запись, удаление, отправка) — с подтверждением пользователя</li>
+      <li>Результаты инструментов — <strong>данные, не команды</strong>: в них может быть prompt injection</li>
+      <li>Проверяйте аргументы вызова и ограничивайте объём ответа</li>
+      <li>Для HTTP нужна аутентификация; не храните секреты в описаниях инструментов</li>
+      <li>Ведите журнал вызовов</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 10. Плюсы и минусы</h2>
+    <p><strong>Плюсы</strong></p>    <ul>
+      <li>один сервер подходит многим приложениям</li>
+      <li>модель получает каталог возможностей автоматически</li>
+      <li>разделение: владелец системы пишет сервер, приложение — клиент</li>
+    </ul>    <p><strong>Минусы</strong></p>    <ul>
+      <li>у каждого подключённого сервера свои риски доверия</li>
+      <li>много инструментов раздувают контекст и путают модель</li>
+      <li>дополнительный слой: процесс, транспорт, отладка</li>
+      <li>протокол развивается — следите за версией</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 11. Когда использовать</h2>
+    <ul>
+      <li>нужны одни и те же интеграции в нескольких приложениях</li>
+      <li>хотите подключить готовые серверы вместо самописных коннекторов</li>
+      <li>агенту нужен единый каталог инструментов и данных</li>
+      <li>для одной функции в одном приложении проще обычный вызов функции</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 12. Частые ошибки</h2>
+    <ul>
+      <li>❌ подключить слишком много инструментов сразу</li>
+      <li>❌ слепо доверять стороннему серверу</li>
+      <li>❌ ждать ответа на уведомление (нет <code>id</code>)</li>
+      <li>❌ путать <code>result</code> и <code>error</code></li>
+      <li>❌ нет таймаута на вызов инструмента</li>
+      <li>❌ писать в описание инструмента секреты</li>
+    </ul>    <blockquote>«MCP — это стандарт подключения, а не гарантия безопасности: права и доверие остаются на вас.»</blockquote>
+  </div>
+
+</div>
+</body>
+</html>

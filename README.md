@@ -53,7 +53,7 @@ python start.py
 - 🔁 **Интервальное повторение** — изученные темы возвращаются через 1, 3, 7, 16, 35 и 90 дней; «Помню» увеличивает интервал, «Есть пробелы» возвращает тему завтра
 - 🎮 **Интерактивные демонстрации** — градиентный спуск, МНК, переобучение, k-NN, порог и ROC, k-means, дерево решений, градиентный бустинг, SVM, перцептрон, песочница нейросети, функции активации, свёртка, PCA, Q-learning и SARSA, механизм внимания, Dropout и BatchNorm, эмбеддинги слов, геометрия L1/L2, кросс-валидация, сглаживание рядов, GAN и VAE: ползунки и пошаговые алгоритмы ([interactive/](interactive/README.md))
 - 🌙 **Тёмная тема** для портала и всех шпаргалок — кнопка 🌓 в шапке (как в системе → светлая → тёмная)
-- 💪 **Практика** — 116 упражнений (из них 6 «🐞 Найди ошибку»): подсказки открываются по одной, верное решение портал отмечает сам, после решения открывается разбор (идея, типичные ошибки), а через 2 недели упражнение возвращается на повтор
+- 💪 **Практика** — 127 упражнений (из них 6 «🐞 Найди ошибку»): подсказки открываются по одной, верное решение портал отмечает сам, после решения открывается разбор (идея, типичные ошибки), а через 2 недели упражнение возвращается на повтор
 - 🎓 **Лекции** — 100 лекций по всем темам учебных путей (10–20 минут чтения): зачем тема нужна, интуиция, как это работает, пример кода, подводные камни и вопросы в конце; кнопка «🎓 Лекция» у шпаргалки и список лекций по путям ([lectures/](lectures/))
 - 🏅 **Уровни и профиль** — за темы, лекции, упражнения, проекты и экзамены начисляется XP, а за каждый пройденный этап портал поздравляет: бонус XP, новый уровень (от 🌱 Новичка до 👑 Легенды ML), награды и следующая цель. Войти можно по имени и PIN (кнопка 👤 в шапке): при запуске через `python start.py` профиль, прогресс и уровень хранятся на сервере (файл `my_profiles.json`) и доступны с любого устройства, на GitHub Pages профиль хранится в браузере
 - 📝 **Тесты и оценки** — мини-тест к каждой теме путей (5 вопросов с вариантами) и итоговый тест этапа (12 вопросов из тестов его тем): разбор после каждого ответа, оценка 5–2 (зачёт от 70%), разбор ошибок со ссылками на шпаргалку и лекцию, слабые темы одним нажатием уходят в повторение; за зачёт начисляется XP, оценки и средний балл видны в профиле ([tests/](tests/README.md))
@@ -133,7 +133,7 @@ pip install -r animations/requirements.txt
 * 📘 [I. Классическое машинное обучение](#i-классическое-машинное-обучение) (32 раздела, 250+ cheatsheets)
 * 🧠 [II. Глубокое обучение](#ii-глубокое-обучение) (27 разделов, 200+ cheatsheets)
 * 🔬 [III. Разные темы машинного обучения](#iii-разные-темы-машинного-обучения) (4 раздела, 17 cheatsheets)
-* 💪 EXPERIMENTAL [Практические упражнения](exercises.md) (116 упражнений с умной автопроверкой, подсказками, разбором и решениями; 6 из них — «Найди ошибку»)
+* 💪 EXPERIMENTAL [Практические упражнения](exercises.md) (127 упражнений с умной автопроверкой, подсказками, разбором и решениями; 6 из них — «Найди ошибку»)
 * 🎥 EXPERIMENTAL [Анимации и визуализации](animations/README.md)
 
 ## 🗺️ Рекомендуемые пути обучения
@@ -149,6 +149,9 @@ Production ML, MLOps, интерпретируемость и deployment
 
 ### 🎯 [Специализация по доменам](ROADMAP.md#-путь-4-специализация-по-доменам)
 Computer Vision, NLP, Time Series, Reinforcement Learning
+
+### 🤖 [Путь ИИ-агентов](ROADMAP.md#-путь-5-ии-агенты-2-3-месяца) (2-3 месяца)
+Агенты на LLM: инструменты, ReAct, RAG и память, планирование, мультиагентные системы, MCP, оценка и безопасность
 
 ---
 
@@ -688,6 +691,19 @@ Computer Vision, NLP, Time Series, Reinforcement Learning
 1. [Гибридные нейро-символьные системы](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/neuro_symbolic_ai_systems_cheatsheet.html)
 1. [Rule-based системы с ML](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/rule_based_ml_systems_cheatsheet.html)
 1. [Логический вывод с обучением](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/logical_inference_learning_cheatsheet.html)
+
+### **ИИ-агенты (LLM-агенты)**
+1. [Основы ИИ-агентов](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/ai_agents_basics_cheatsheet.html)
+1. [Вызов инструментов (function calling)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/tool_use_function_calling_cheatsheet.html)
+1. [ReAct: рассуждение и действие](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/react_agents_cheatsheet.html)
+1. [Векторный поиск (ANN, HNSW, FAISS)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/vector_search_cheatsheet.html)
+1. [RAG: генерация с поиском](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/rag_cheatsheet.html)
+1. [Память агента](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/agent_memory_cheatsheet.html)
+1. [Планирование и рефлексия агентов](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/agent_planning_cheatsheet.html)
+1. [Мультиагентные системы](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/multi_agent_systems_cheatsheet.html)
+1. [Model Context Protocol (MCP)](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/mcp_protocol_cheatsheet.html)
+1. [Оценка агентов](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/agent_evaluation_cheatsheet.html)
+1. [Безопасность агентов](https://html-preview.github.io/?url=https://github.com/gurovic/MLCheatSheets/blob/main/cheatsheets/agent_safety_cheatsheet.html)
 
 ## III Разные темы машинного обучения
 

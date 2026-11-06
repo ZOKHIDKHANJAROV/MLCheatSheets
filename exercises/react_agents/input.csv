@@ -1,0 +1,269 @@
+run_id,line_no,text
+run15,1,Thought: нужно проверить: год основания Москвы
+run09,1,  Thought: нужно проверить: население Парижа 
+run22,11,Final Answer: готово
+run15,3,Observation: найдено: год
+run11,4,  Thought: нужно проверить: ВВП Японии 
+run04,10,Thought: нужно проверить: столица Франции
+run24,2,Action: search[столица Франции]
+run07,6,Observation: ничего не найдено
+run08,11,Action: search[Формула воды]
+run15,9,Observation: найдено: кур
+run19,5,Action: calc[курс евро]
+run04,8,Action: search[ВВП Японии]
+run03,1,Thought: нужно проверить: ВВП Японии
+run07,10,Thought: нужно проверить: Высота эвереста
+run10,9,Observation: ничего не найдено
+run16,3,Observation: найдено: фор
+run02,5,Action: lookup[курс евро]
+run04,11,Action: lookup[столица Франции]
+run16,13,Thought: всё
+run07,5,  Action: search[ВЫСОТА ЭВЕРЕСТА] 
+run06,5,Action: lookup[скорость света]
+run15,6,Observation: найдено: фор
+run04,14,Final Answer: готово
+run14,12,  Observation: найдено: сто 
+run19,16,Thought: нужно проверить: население Парижа
+run21,4,  Thought: попробую ещё 
+run01,1,Thought: нужно проверить: население Парижа
+run20,5,"Observation: найдено сразу всё, что нужно"
+run21,1,Thought: нужно проверить: автор Войны и мира
+run18,8,  Action: search[год основания Москвы] 
+run14,9,Observation: найдено: фор
+run08,10,Thought: нужно проверить: Формула воды
+run07,9,Observation: ничего не найдено
+run20,3,Observation: найдено: ско
+run12,1,Thought: нужно проверить: высота Эвереста
+run08,1,Thought: нужно проверить: формула воды
+run17,3,Observation: найдено: кур
+run06,16,Thought: нужно проверить: автор Войны и мира
+run16,4,Thought: попробую ещё
+run13,6,Observation: ничего не найдено
+run14,14,Final Answer: готово
+run02,9,Observation: найдено: год
+run06,1,Thought: нужно проверить: столица Франции
+run15,10,  Thought: нужно проверить: высота Эвереста 
+run04,13,Thought: данных достаточно
+run18,2,Action: search[год основания Москвы]
+run03,8,  Final Answer: готово 
+run22,1,Thought: нужно проверить: высота Эвереста
+run09,10,Thought: данных достаточно
+run07,12,Observation: ничего не найдено
+run11,1,Thought: нужно проверить: год основания Москвы
+run10,7,Thought: нужно проверить: население Парижа 
+run15,5,Action: search[формула воды]
+run03,5,Action: search[население Парижа]
+run04,6,Observation: найдено: кур
+run21,3,Observation: найдено: авт
+run07,7,Thought: нужно проверить: высота Эвереста 
+run08,7,  Thought: нужно проверить: формула воды 
+run17,11,Final Answer: готово
+run12,11,Final Answer: готово
+run17,2,Action: search[курс евро]
+run17,4,Thought: нужно проверить: население Парижа
+run22,4,Thought: попробую ещё
+run10,5,Action: search[  НАСЕЛЕНИЕ ПАРИЖА]
+run11,5,Action: lookup[ВВП Японии]
+run03,3,Observation: найдено: ВВП
+run09,9,Observation: найдено: кур
+run19,2,Action: search[столица Франции]
+run12,9,Observation: найдено: фор
+run19,4,  Thought: нужно проверить: курс евро 
+run04,2,Action: calc[высота Эвереста]
+run02,10,Thought: ясно
+run10,4,Thought: нужно проверить:   НАСЕЛЕНИЕ ПАРИЖА
+run05,5,Action: lookup[автор Войны и мира]
+run15,4,Thought: нужно проверить: формула воды
+run24,9,Observation: найдено: сто
+run13,9,Observation: ничего не найдено
+run16,8,  Action: lookup(скорость света) 
+run06,15,Observation: найдено: пло
+run24,1,Thought: нужно проверить: столица Франции
+run02,11,Final Answer: готово
+run16,14,Final Answer: готово
+run02,4,  Thought: нужно проверить: курс евро 
+run21,11,Final Answer: готово
+run14,10,Thought: нужно проверить: столица Франции
+run03,4,  Thought: нужно проверить: население Парижа 
+run06,10,Thought: нужно проверить: ВВП Японии
+run04,12,Observation: найдено: сто
+run14,8,Action: search[формула воды]
+run24,4,Thought: нужно проверить: скорость света
+run15,12,Observation: найдено: выс
+run07,3,Observation: ничего не найдено
+run16,10,Thought: нужно проверить: население Парижа
+run19,1,Thought: нужно проверить: столица Франции
+run04,4,Thought: нужно проверить: курс евро
+run12,8,Action: lookup[формула воды]
+run01,3,Observation: найдено: нас
+run22,7,Thought: нужно проверить: площадь озера Байкал
+run09,4,Thought: нужно проверить: автор Войны и мира
+run09,7,Thought: нужно проверить: курс евро
+run14,7,Thought: нужно проверить: формула воды
+run19,7,Thought: нужно проверить: ВВП Японии
+run21,7,Thought: нужно проверить: столица Франции
+run06,4,Thought: нужно проверить: скорость света
+run04,7,Thought: нужно проверить: ВВП Японии
+run18,9,Observation: ничего не найдено
+run06,11,Action: calc[ВВП Японии]
+run15,13,  Thought: данных достаточно 
+run11,6,Observation: найдено: ВВП
+run01,5,"Observation: найдено сразу всё, что нужно"
+run23,3,  Observation: найдено: сто 
+run18,6,Observation: ничего не найдено
+run06,6,Observation: найдено: ско
+run17,7,  Thought: нужно проверить: столица Франции 
+run19,8,Action: calc[ВВП Японии]
+run08,9,Observation: ничего не найдено
+run22,8,Action: lookup[площадь озера Байкал]
+run09,3,  Observation: найдено: нас 
+run16,2,Action: search[формула воды]
+run22,9,Observation: найдено: пло
+run02,2,  Action: search[год основания Москвы] 
+run12,10,Thought: всё
+run04,5,  Action: search[курс евро] 
+run04,9,Observation: найдено: ВВП
+run06,12,  Observation: найдено: ВВП 
+run14,5,Action: lookup[курс евро]
+run12,7,  Thought: нужно проверить: формула воды 
+run13,7,Thought: нужно проверить: курс евро
+run05,4,Thought: нужно проверить: автор Войны и мира
+run01,6,Final Answer: готово
+run08,12,  Observation: ничего не найдено 
+run02,8,Action: search[год основания Москвы]
+run08,4,Thought: нужно проверить: ФОРМУЛА ВОДЫ
+run06,13,Thought: нужно проверить: площадь озера Байкал
+run21,8,Action: lookup[столица Франции]
+run07,11,Action: search[Высота эвереста]
+run22,10,Thought: всё
+run23,5,"Observation: найдено сразу всё, что нужно"
+run16,1,Thought: нужно проверить: формула воды
+run17,10,Thought: данных достаточно
+run12,4,  Thought: попробую ещё 
+run12,2,Action: search[высота Эвереста]
+run16,5,Action: search столица Франции
+run16,12,  Observation: найдено: нас 
+run05,1,Thought: нужно проверить: формула воды
+run02,3,Observation: найдено: год
+run24,8,Action: search[столица Франции]
+run13,12,  Observation: ничего не найдено 
+run20,2,Action: search[скорость света]
+run19,18,Observation: найдено: нас
+run12,3,Observation: найдено: выс
+run23,1,Thought: нужно проверить: столица Франции
+run15,11,Action: lookup[высота Эвереста]
+run19,13,Thought: нужно проверить: год основания Москвы
+run06,2,  Action: calc[столица Франции] 
+run21,5,Action: search год основания Москвы
+run15,2,Action: calc[год основания Москвы]
+run19,3,  Observation: найдено: сто 
+run09,2,Action: lookup[население Парижа]
+run10,1,Thought: нужно проверить: население Парижа
+run04,3,Observation: найдено: выс
+run09,8,Action: calc[курс евро]
+run14,4,Thought: нужно проверить: курс евро
+run22,5,Action: search формула воды
+run14,2,  Action: calc[площадь озера Байкал] 
+run08,6,Observation: ничего не найдено
+run23,6,Final Answer: готово
+run05,8,Action: search[формула воды]
+run11,2,Action: lookup[год основания Москвы]
+run14,6,Observation: найдено: кур
+run14,13,  Thought: данных достаточно 
+run13,3,Observation: ничего не найдено
+run08,8,Action: search[формула воды]
+run08,5,  Action: search[ФОРМУЛА ВОДЫ] 
+run07,8,Action: search[высота Эвереста ]
+run14,11,Action: calc[столица Франции]
+run18,5,Action: search[  ГОД ОСНОВАНИЯ МОСКВЫ]
+run21,2,Action: search[автор Войны и мира]
+run02,7,Thought: нужно проверить: год основания Москвы
+run10,8,Action: search[население Парижа ]
+run17,6,Observation: найдено: нас
+run19,9,Observation: найдено: ВВП
+run09,6,Observation: найдено: авт
+run19,10,Thought: нужно проверить: высота Эвереста
+run13,8,  Action: search[курс евро] 
+run15,8,Action: lookup[курс евро]
+run06,17,Action: search[автор Войны и мира]
+run08,3,Observation: ничего не найдено
+run12,6,Observation: ошибка разбора
+run11,8,  Final Answer: готово 
+run24,5,Action: lookup[скорость света]
+run17,5,Action: search[население Парижа]
+run06,8,Action: calc[курс евро]
+run07,1,Thought: нужно проверить: высота Эвереста
+run04,1,Thought: нужно проверить: высота Эвереста
+run11,7,Thought: данных достаточно
+run14,1,Thought: нужно проверить: площадь озера Байкал
+run01,4,"Thought: ответ, видимо, такой"
+run13,11,Action: search[Курс евро]
+run22,6,Observation: ошибка разбора
+run05,10,Thought: ясно
+run01,2,Action: search[население Парижа]
+run16,11,Action: lookup[население Парижа]
+run24,10,Thought: ясно
+run19,15,Observation: найдено: год
+run03,6,Observation: найдено: нас
+run21,10,Thought: всё
+run13,4,Thought: нужно проверить: КУРС ЕВРО
+run09,11,  Final Answer: готово 
+run22,3,Observation: найдено: выс
+run16,6,Observation: ошибка разбора
+run20,6,Final Answer: готово
+run08,2,Action: search[формула воды]
+run06,7,Thought: нужно проверить: курс евро
+run02,6,Observation: найдено: кур
+run24,3,Observation: найдено: сто
+run24,7,Thought: нужно проверить: столица Франции
+run13,5,Action: search[КУРС ЕВРО]
+run05,11,Final Answer: готово
+run19,17,Action: calc[население Парижа]
+run17,9,Observation: найдено: сто
+run17,8,Action: search[столица Франции]
+run02,1,Thought: нужно проверить: год основания Москвы
+run07,2,Action: search[высота Эвереста]
+run15,14,  Final Answer: готово 
+run06,3,Observation: найдено: сто
+run18,4,Thought: нужно проверить:   ГОД ОСНОВАНИЯ МОСКВЫ
+run10,3,Observation: ничего не найдено
+run05,6,Observation: найдено: авт
+run05,9,Observation: найдено: фор
+run05,7,Thought: нужно проверить: формула воды
+run16,7,Thought: ещё раз
+run14,3,Observation: найдено: пло
+run06,9,Observation: найдено: кур
+run10,2,Action: search[население Парижа]
+run21,9,Observation: найдено: сто
+run10,6,Observation: ничего не найдено
+run20,4,"  Thought: ответ, видимо, такой "
+run17,1,Thought: нужно проверить: курс евро
+run12,5,Action: search столица Франции
+run13,10,  Thought: нужно проверить: Курс евро 
+run20,1,Thought: нужно проверить: скорость света
+run06,18,Observation: найдено: авт
+run18,3,Observation: ничего не найдено
+run05,2,Action: search[формула воды]
+run18,7,Thought: нужно проверить: год основания Москвы
+run18,1,Thought: нужно проверить: год основания Москвы
+run24,6,  Observation: найдено: ско 
+run13,2,  Action: search[курс евро] 
+run19,11,Action: lookup[высота Эвереста]
+run19,6,Observation: найдено: кур
+run05,3,Observation: найдено: фор
+run13,1,Thought: нужно проверить: курс евро
+run19,14,Action: search[год основания Москвы]
+run03,7,Thought: данных достаточно
+run15,7,  Thought: нужно проверить: курс евро 
+run24,11,Final Answer: готово
+run19,12,Observation: найдено: выс
+run03,2,Action: calc[ВВП Японии]
+run07,4,Thought: нужно проверить: ВЫСОТА ЭВЕРЕСТА
+run21,6,Observation: ошибка разбора
+run06,14,Action: search[площадь озера Байкал]
+run23,2,Action: search[столица Франции]
+run22,2,  Action: search[высота Эвереста] 
+run16,9,Observation: ошибка разбора
+run11,3,Observation: найдено: год
+run09,5,  Action: lookup[автор Войны и мира] 
+run23,4,"Thought: ответ, видимо, такой"

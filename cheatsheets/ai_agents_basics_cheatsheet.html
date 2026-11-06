@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Основы ИИ-агентов Cheatsheet — 3 колонки</title>
+  <style>
+    @media screen { body { font-family: -apple-system, sans-serif; color: #333; background: #fafcff; padding: 10px; 
+        min-width: 900px;
+      } }
+        .container {
+      max-width: 100%;
+    }
+
+    /* Responsive columns: 3 columns on wide screens, fewer on narrow */
+    @media (min-width: 900px) {
+      .container {
+        column-count: 3;
+        column-gap: 20px;
+      }
+    }
+    
+    @media (min-width: 600px) and (max-width: 899px) {
+      .container {
+        column-count: 2;
+        column-gap: 20px;
+      }
+    }
+    
+    @media (max-width: 599px) {
+      .container {
+        column-count: 1;
+      }
+    }
+    .block { break-inside: avoid; margin-bottom: 1.2em; padding: 12px; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    h1 { font-size: 1.6em; font-weight: 700; color: #1a5fb4; text-align: center; margin: 0 0 8px; column-span: all; }
+    .subtitle { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 12px; column-span: all; }
+    h2 { font-size: 1.15em; font-weight: 700; color: #1a5fb4; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid #e0e7ff; }
+    p, ul, ol { font-size: 0.92em; margin: 0.6em 0; }
+    ul, ol { padding-left: 18px; }
+    code { font-family: 'Consolas', monospace; background-color: #f0f4ff; padding: 1px 4px; border-radius: 3px; font-size: 0.88em; }
+    pre { background-color: #f0f4ff; padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 0.84em; margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82em; margin: 6px 0; }
+    th { background-color: #e6f0ff; text-align: left; padding: 4px 6px; font-weight: 600; }
+    td { padding: 4px 6px; border-bottom: 1px solid #f0f4ff; }
+    blockquote { font-style: italic; margin: 8px 0; padding: 6px 10px; background: #f8fbff; border-left: 2px solid #1a5fb4; font-size: 0.88em; }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+    }
+
+    @media print {
+      .container { column-gap: 12px; }
+      .block { box-shadow: none; }
+      code, pre, table { font-size: 0.78em; }
+      h1 { font-size: 1.4em; }
+      h2 { font-size: 1em; }
+    }
+  </style>
+<!-- mlcs-theme -->
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
+</head>
+<body>
+<div class="container">
+  <h1>🤖 Основы ИИ-агентов</h1>
+  <div class="subtitle">📅 Ноябрь 2026 · код — с «фейковой LLM», без реальных вызовов API</div>
+
+  <div class="block">
+    <h2>🔷 1. Что такое ИИ-агент</h2>
+
+    <p><strong>ИИ-агент</strong> — система, где языковая модель (LLM) в цикле сама выбирает следующее действие, вызывает инструменты и учитывает их результаты, пока не достигнет цели или не упрётся в лимит.</p>
+    <p>Ключевое отличие от обычного вызова модели: <strong>число шагов и их порядок заранее неизвестны</strong> — их определяет сама модель по ходу работы.</p>
+    <blockquote>Агент = LLM + инструменты + память + цикл с условием остановки.</blockquote>
+  </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-ai_agents_basics-1"><h2>🖼 Цикл ИИ-агента</h2><figure><svg viewBox="0 0 340 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Цикл ИИ-агента: восприятие, рассуждение, действие, наблюдение"><defs><marker id="agbasics-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c1" x="20" y="14" width="120" height="44" rx="6"/><text x="80.0" y="32.5" text-anchor="middle">1. Восприятие</text><text x="80.0" y="47.5" text-anchor="middle">цель, история</text><rect class="c5" x="200" y="14" width="120" height="44" rx="6"/><text x="260.0" y="32.5" text-anchor="middle">2. Рассуждение</text><text x="260.0" y="47.5" text-anchor="middle">LLM решает</text><rect class="c3" x="200" y="170" width="120" height="44" rx="6"/><text x="260.0" y="188.5" text-anchor="middle">3. Действие</text><text x="260.0" y="203.5" text-anchor="middle">вызов инструмента</text><rect class="c2" x="20" y="170" width="120" height="44" rx="6"/><text x="80.0" y="188.5" text-anchor="middle">4. Наблюдение</text><text x="80.0" y="203.5" text-anchor="middle">результат в контекст</text><line class="ln" x1="140" y1="36" x2="198" y2="36" marker-end="url(#agbasics-a)"/><line class="ln" x1="260" y1="58" x2="260" y2="168" marker-end="url(#agbasics-a)"/><line class="ln" x1="198" y1="192" x2="142" y2="192" marker-end="url(#agbasics-a)"/><line class="ln" x1="80" y1="168" x2="80" y2="60" marker-end="url(#agbasics-a)"/><rect class="c6" x="95" y="92" width="150" height="50" rx="6"/><text x="170.0" y="113.5" text-anchor="middle">Память + инструменты</text><text x="170.0" y="128.5" text-anchor="middle">контекст, внешний мир</text><line class="ln" x1="260" y1="142" x2="245" y2="122" stroke-dasharray="4 3" marker-end="url(#agbasics-a)"/><text x="170" y="248" class="mut" text-anchor="middle" style="font-size:11px">Цикл повторяется, пока не выдан финальный ответ</text><rect class="c4" x="60" y="258" width="220" height="30" rx="6"/><text x="170.0" y="277.0" text-anchor="middle">Лимит шагов / бюджета → стоп</text></svg><figcaption>Агент повторяет цикл «восприятие → рассуждение → действие → наблюдение»: LLM выбирает шаг, инструмент выполняет его в мире, результат возвращается в контекст. Лимит шагов не даёт циклу быть бесконечным.</figcaption></figure></div><!-- mlcs-visual:end -->
+  <div class="block">
+    <h2>🔷 2. Цикл агента</h2>
+
+    <p>Восприятие → рассуждение → действие → наблюдение:</p>
+    <ol>
+      <li><strong>Восприятие</strong>: цель пользователя, история, состояние среды</li>
+      <li><strong>Рассуждение</strong>: LLM решает, что делать дальше</li>
+      <li><strong>Действие</strong>: вызов инструмента (поиск, код, API)</li>
+      <li><strong>Наблюдение</strong>: результат попадает обратно в контекст</li>
+    </ol>
+    <p>Цикл повторяется, пока модель не выдаст финальный ответ или не сработает лимит шагов / бюджета.</p>
+  </div>
+  <div class="block">
+    <h2>🔷 3. Компоненты</h2>
+    <table><tr><th>Компонент</th><th>Роль</th></tr><tr><td><strong>LLM</strong></td><td>«мозг»: выбирает действие, формирует ответ</td></tr><tr><td><strong>Инструменты</strong></td><td>руки: поиск, код, БД, внешние API</td></tr><tr><td><strong>Память</strong></td><td>краткосрочная — контекст диалога; долгосрочная — внешнее хранилище</td></tr><tr><td><strong>Планировщик</strong></td><td>разбивает цель на подзадачи и порядок их выполнения</td></tr><tr><td><strong>Ограничители</strong></td><td>лимит шагов и бюджета, права доступа, проверки</td></tr></table>
+  </div>
+  <div class="block">
+    <h2>🔷 4. Агент, чат-бот или workflow?</h2>
+    <table><tr><th></th><th>Чат-бот</th><th>Workflow</th><th>Агент</th></tr><tr><td>Шаги</td><td>1 ответ</td><td>фиксированы кодом</td><td>выбирает модель</td></tr><tr><td>Инструменты</td><td>нет / мало</td><td>по сценарию</td><td>по ситуации</td></tr><tr><td>Предсказуемость</td><td>высокая</td><td>высокая</td><td>ниже</td></tr><tr><td>Стоимость и задержка</td><td>низкие</td><td>средние</td><td>высокие, непостоянные</td></tr></table>
+  </div>
+  <div class="block">
+    <h2>🔷 5. Пример: мини-агент на Python</h2>
+<pre><code># Мини-агент без реальной LLM: «модель» — функция с правилами
+PRICES = {"Москва": 100, "Казань": 80}          # условная база цен
+
+def search_price(city):
+    return PRICES.get(city, "нет данных")
+
+TOOLS = {"search_price": search_price}
+
+def fake_llm(goal, history):
+    """Решает по правилам, что делать, глядя на цель и историю."""
+    done = {h["arg"] for h in history}
+    for city in ("Москва", "Казань"):
+        if city in goal and city not in done:
+            return {"action": "search_price", "arg": city}
+    prices = [h["observation"] for h in history
+              if isinstance(h["observation"], int)]
+    return {"action": "finish", "arg": f"Сумма: {sum(prices)}"}
+
+def run_agent(goal, max_steps=5):
+    history = []
+    for _ in range(max_steps):
+        decision = fake_llm(goal, history)                   # рассуждение
+        if decision["action"] == "finish":                   # остановка
+            return decision["arg"], history
+        tool = TOOLS[decision["action"]]
+        observation = tool(decision["arg"])                  # действие
+        history.append({**decision, "observation": observation})  # наблюдение
+    return "лимит шагов", history
+
+answer, trace = run_agent("Сколько стоят билеты: Москва и Казань?")
+print(answer)       # Сумма: 180
+print(len(trace))   # 2</code></pre>
+    <p>«Модель» здесь — обычная функция с правилами: так цикл можно запускать и тестировать без API.</p>
+  </div>
+  <div class="block">
+    <h2>🔷 6. Автономность — это шкала</h2>
+
+    <ul>
+      <li><strong>Рекомендации</strong>: агент только предлагает, решает человек</li>
+      <li><strong>Подтверждение</strong>: действия с побочными эффектами требуют «ок»</li>
+      <li><strong>Автономно в песочнице</strong>: свободно действует в безопасной среде</li>
+      <li><strong>Полная автономность</strong>: оправдана редко и требует мониторинга</li>
+    </ul>
+    <p>Чем выше автономность и необратимее действия, тем строже ограничения.</p>
+  </div>
+  <div class="block">
+    <h2>🔷 7. Когда агент нужен, а когда хватит цепочки</h2>
+
+    <p><strong>Достаточно цепочки (workflow)</strong>, если шаги известны заранее: «извлечь → классифицировать → ответить».</p>
+    <p><strong>Нужен агент</strong>, если:</p>
+    <ul>
+      <li>путь к цели зависит от промежуточных результатов</li>
+      <li>число шагов заранее не известно</li>
+      <li>нужно выбирать из многих инструментов</li>
+      <li>допустима более высокая цена и задержка</li>
+    </ul>
+    <p>Правило: начинайте с самого простого решения и усложняйте только при доказанной необходимости.</p>
+  </div>
+  <div class="block">
+    <h2>🔷 8. Плюсы и минусы</h2>
+
+    <p><strong>Плюсы</strong></p>
+    <ul>
+      <li>решает задачи с неизвестным заранее путём</li>
+      <li>использует внешние данные и действия</li>
+      <li>гибко реагирует на неожиданные результаты</li>
+    </ul>
+    <p><strong>Минусы</strong></p>
+    <ul>
+      <li>дороже и медленнее: много обращений к модели</li>
+      <li>ошибки накапливаются от шага к шагу</li>
+      <li>труднее тестировать и воспроизводить</li>
+      <li>риск лишних или опасных действий</li>
+    </ul>
+  </div>
+  <div class="block">
+    <h2>🔷 9. Типичные ошибки</h2>
+
+    <ul>
+      <li>❌ Нет лимита шагов — зацикливание и счёт за токены</li>
+      <li>❌ Агент там, где хватило бы цепочки или одного запроса</li>
+      <li>❌ Слишком много инструментов с похожими описаниями</li>
+      <li>❌ Нет логирования шагов — невозможно разобрать сбой</li>
+      <li>❌ Опасные действия без подтверждения человеком</li>
+      <li>❌ Оценка только по финальному ответу, без анализа траектории</li>
+    </ul>
+    <blockquote>«Агент — это не магия, а цикл с моделью внутри. Контролируйте цикл: лимиты, логи, проверки.»</blockquote>
+  </div>
+
+</div>
+</body>
+</html>

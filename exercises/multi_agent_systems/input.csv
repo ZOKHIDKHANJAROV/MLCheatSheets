@@ -1,0 +1,8 @@
+agent_id,name,role,msg_tokens,price_per_1k
+1,writer,worker,400,1.0
+2,reviewer,worker,250,2.0
+3,planner,orchestrator,900,1.0
+4,critic,worker,300,1.5
+5,tester,worker,900,0.5
+6,researcher,worker,100,0.5
+7,coder,worker,650,0.5

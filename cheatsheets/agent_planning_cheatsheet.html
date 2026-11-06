@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Планирование агентов Cheatsheet — 3 колонки</title>
+  <style>
+    @media screen { body { font-family: -apple-system, sans-serif; color: #333; background: #fafcff; padding: 10px; 
+        min-width: 900px;
+      } }
+        .container {
+      max-width: 100%;
+    }
+
+    /* Responsive columns: 3 columns on wide screens, fewer on narrow */
+    @media (min-width: 900px) {
+      .container {
+        column-count: 3;
+        column-gap: 20px;
+      }
+    }
+    
+    @media (min-width: 600px) and (max-width: 899px) {
+      .container {
+        column-count: 2;
+        column-gap: 20px;
+      }
+    }
+    
+    @media (max-width: 599px) {
+      .container {
+        column-count: 1;
+      }
+    }
+    .block { break-inside: avoid; margin-bottom: 1.2em; padding: 12px; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    h1 { font-size: 1.6em; font-weight: 700; color: #1a5fb4; text-align: center; margin: 0 0 8px; column-span: all; }
+    .subtitle { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 12px; column-span: all; }
+    h2 { font-size: 1.15em; font-weight: 700; color: #1a5fb4; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid #e0e7ff; }
+    p, ul, ol { font-size: 0.92em; margin: 0.6em 0; }
+    ul, ol { padding-left: 18px; }
+    code { font-family: 'Consolas', monospace; background-color: #f0f4ff; padding: 1px 4px; border-radius: 3px; font-size: 0.88em; }
+    pre { background-color: #f0f4ff; padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 0.84em; margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82em; margin: 6px 0; }
+    th { background-color: #e6f0ff; text-align: left; padding: 4px 6px; font-weight: 600; }
+    td { padding: 4px 6px; border-bottom: 1px solid #f0f4ff; }
+    blockquote { font-style: italic; margin: 8px 0; padding: 6px 10px; background: #f8fbff; border-left: 2px solid #1a5fb4; font-size: 0.88em; }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+    }
+
+    @media print {
+      .container { column-gap: 12px; }
+      .block { box-shadow: none; }
+      code, pre, table { font-size: 0.78em; }
+      h1 { font-size: 1.4em; }
+      h2 { font-size: 1em; }
+    }
+  </style>
+<!-- mlcs-theme -->
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
+</head>
+<body>
+<div class="container">
+  <h1>🧭 Планирование агентов</h1>
+  <div class="subtitle">📅 Ноябрь 2026</div>
+
+  <div class="block">
+    <h2>🔷 1. Суть</h2>
+    <p><strong>Планирование агента</strong> — разбиение цели на шаги, их выполнение, проверка результата и исправление плана. Без плана агент действует «по одному шагу» (ReAct) и легко теряет цель на длинной задаче.</p>    <p><strong>Plan-and-execute:</strong> сначала планировщик строит весь план, затем исполнитель выполняет его шаги, а при сбое план пересматривается.</p>    <ul>
+      <li><strong>ReAct</strong> — гибко, но каждый шаг заново «думает» с нуля</li>
+      <li><strong>Plan-and-execute</strong> — дешевле на длинных задачах, шаги можно проверять</li>
+      <li><strong>Рефлексия</strong> — агент оценивает собственный результат и правит его</li>
+    </ul>
+  </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-agent_planning-1"><h2>🖼 DAG подзадач и бюджет</h2><figure><svg viewBox="0 0 345 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DAG подзадач с критическим путём и бюджетом токенов"><defs><marker id="agplan-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><text x="4" y="14" text-anchor="start" style="font-size:12px">План: подзадачи и зависимости (длительность в шагах)</text><line class="ln s6" x1="68" y1="123" x2="94" y2="53" marker-end="url(#agplan-a)"/><line class="ln s3" x1="68" y1="123" x2="94" y2="123" marker-end="url(#agplan-a)"/><line class="ln s6" x1="68" y1="123" x2="94" y2="193" marker-end="url(#agplan-a)"/><line class="ln s6" x1="158" y1="53" x2="184" y2="88" marker-end="url(#agplan-a)"/><line class="ln s3" x1="158" y1="123" x2="184" y2="88" marker-end="url(#agplan-a)"/><line class="ln s3" x1="248" y1="88" x2="274" y2="121" marker-end="url(#agplan-a)"/><line class="ln s6" x1="158" y1="193" x2="274" y2="127" marker-end="url(#agplan-a)"/><rect class="c3" x="4" y="105" width="64" height="36" rx="6"/><text x="36.0" y="119.5" text-anchor="middle" style="font-size:11px">источники</text><text x="36.0" y="134.5" text-anchor="middle" style="font-size:11px">1 шаг</text><rect class="c1" x="94" y="35" width="64" height="36" rx="6"/><text x="126.0" y="49.5" text-anchor="middle" style="font-size:11px">чтение A</text><text x="126.0" y="64.5" text-anchor="middle" style="font-size:11px">2 шага</text><rect class="c3" x="94" y="105" width="64" height="36" rx="6"/><text x="126.0" y="119.5" text-anchor="middle" style="font-size:11px">чтение B</text><text x="126.0" y="134.5" text-anchor="middle" style="font-size:11px">4 шага</text><rect class="c1" x="94" y="175" width="64" height="36" rx="6"/><text x="126.0" y="189.5" text-anchor="middle" style="font-size:11px">введение</text><text x="126.0" y="204.5" text-anchor="middle" style="font-size:11px">2 шага</text><rect class="c3" x="184" y="70" width="64" height="36" rx="6"/><text x="216.0" y="84.5" text-anchor="middle" style="font-size:11px">сверка</text><text x="216.0" y="99.5" text-anchor="middle" style="font-size:11px">2 шага</text><rect class="c3" x="274" y="105" width="64" height="36" rx="6"/><text x="306.0" y="119.5" text-anchor="middle" style="font-size:11px">отчёт</text><text x="306.0" y="134.5" text-anchor="middle" style="font-size:11px">3 шага</text><rect class="c3" x="4" y="232" width="14" height="10" rx="2"/><text x="11.0" y="241.0" text-anchor="middle"></text><text x="24" y="241" text-anchor="start" style="font-size:11px">критический путь: slack = 0, T = 1+4+2+3 = 10</text><rect class="c1" x="4" y="248" width="14" height="10" rx="2"/><text x="11.0" y="257.0" text-anchor="middle"></text><text x="24" y="257" text-anchor="start" style="font-size:10.5px">есть запас: A и введение можно сдвинуть или вести параллельно</text><text x="4" y="280" class="mut" text-anchor="start" style="font-size:11px">Бюджет токенов:</text><rect class="c6" x="104" y="270" width="236" height="12" rx="3"/><rect class="c2" x="104" y="270" width="170" height="12" rx="3"/><text x="189" y="280" text-anchor="middle" style="font-size:10px">потрачено</text><text x="307" y="280" class="mut" text-anchor="middle" style="font-size:10px">остаток</text></svg><figcaption>План агента — граф зависимостей. Длина критического пути (здесь 10 шагов) задаёт минимальное время; подзадачи с запасом можно вести параллельно. Бюджет токенов ограничивает весь план целиком.</figcaption></figure></div><!-- mlcs-visual:end -->
+
+  <div class="block">
+    <h2>🔷 2. Ключевые понятия</h2>
+    <table><tr><th>Понятие</th><th>Смысл</th></tr><tr><td>Декомпозиция</td><td>цель → подзадачи с зависимостями (DAG)</td></tr><tr><td>Топологический порядок</td><td>порядок, где предпосылка идёт раньше зависимого шага</td></tr><tr><td>Критический путь</td><td>самая длинная цепочка зависимых шагов — она задаёт минимальное время</td></tr><tr><td>Reflexion</td><td>после неудачи агент пишет текстовую рефлексию и хранит её в памяти для следующей попытки</td></tr><tr><td>Self-critique</td><td>модель проверяет и правит собственный ответ</td></tr><tr><td>Tree of Thoughts</td><td>несколько вариантов «мыслей» на шаге, оценка и поиск с откатом</td></tr><tr><td>Перепланирование</td><td>пересборка оставшейся части плана при сбое</td></tr><tr><td>Бюджет</td><td>предел шагов, токенов, времени или денег</td></tr></table>
+  </div>
+
+  <div class="block">
+    <h2>🔷 3. Plan-and-execute</h2>
+<pre><code>def plan_and_execute(goal, planner, executor, max_replans=2):
+    plan = planner(goal)              # список шагов
+    done, replans = [], 0
+    while plan:
+        step = plan[0]
+        result = executor(step, done)
+        if result.ok:
+            done.append((step, result))
+            plan = plan[1:]
+        elif replans &lt; max_replans:
+            replans += 1              # учтём ошибку и пересоберём остаток
+            plan = planner(goal, done=done, error=result.error)
+        else:
+            return {"status": "failed", "done": done}
+    return {"status": "ok", "done": done}</code></pre>
+  </div>
+
+  <div class="block">
+    <h2>🔷 4. Декомпозиция: DAG подзадач</h2>
+    <p>Подзадачи с зависимостями образуют граф без циклов. Стандартная библиотека умеет упорядочивать его:</p><pre><code>from graphlib import TopologicalSorter
+
+deps = {                       # подзадача: от чего зависит
+    "найти источники": set(),
+    "прочитать A": {"найти источники"},
+    "прочитать B": {"найти источники"},
+    "сверить цифры": {"прочитать A", "прочитать B"},
+    "написать отчёт": {"сверить цифры"},
+}
+order = list(TopologicalSorter(deps).static_order())
+print(order)   # источники → A, B → сверка → отчёт</code></pre>    <p>Независимые подзадачи (A и B) можно выполнять параллельно. Цикл в зависимостях — ошибка плана: <code>TopologicalSorter</code> бросит <code>CycleError</code>.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 5. Reflexion и self-critique</h2>
+<pre><code>def solve_with_reflection(task, llm, check, max_tries=3):
+    reflections = []                           # «память» об ошибках
+    for attempt in range(max_tries):
+        answer = llm(task, hints=reflections)
+        ok, feedback = check(answer)           # тесты, правила или модель-критик
+        if ok:
+            return answer
+        reflections.append(llm(f"Почему не получилось: {feedback}. Что изменить?"))
+    return None</code></pre>    <ul>
+      <li>Обратная связь лучше всего работает, когда она <strong>внешняя</strong> (тесты, результат инструмента)</li>
+      <li>Критик той же модели без внешнего сигнала может уверенно подтверждать неверный ответ</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 6. Tree of Thoughts (идея)</h2>
+    <p>Вместо одной цепочки рассуждений агент разворачивает <strong>дерево</strong>: на каждом шаге несколько кандидатов-«мыслей», оценка каждого и поиск (в ширину, в глубину или beam) с возвратом из тупиков.</p><pre><code>def tree_search(root, expand, score, beam=3, depth=3):
+    frontier = [root]
+    for _ in range(depth):
+        candidates = [c for node in frontier for c in expand(node)]
+        candidates.sort(key=score, reverse=True)
+        frontier = candidates[:beam]           # оставляем лучших
+    return max(frontier, key=score)</code></pre>    <p>Цена — число вызовов модели: <code>beam × ветвление × глубина</code>. Применяйте там, где важен перебор вариантов (головоломки, планирование), а не для каждого запроса.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 7. Перепланирование при ошибке</h2>
+    <table><tr><th>Ситуация</th><th>Реакция</th></tr><tr><td>временный сбой (сеть, лимит)</td><td>повтор с паузой (retry)</td></tr><tr><td>шаг дал неверный результат</td><td>рефлексия + повтор шага</td></tr><tr><td>предпосылка оказалась ложной</td><td>пересобрать оставшийся план</td></tr><tr><td>нет прогресса несколько шагов</td><td>остановиться и позвать человека</td></tr><tr><td>бюджет исчерпан</td><td>вернуть частичный результат и отчёт</td></tr></table>    <p>Выполненные шаги не отменяйте без нужды — пересобирайте только остаток плана.</p>
+  </div>
+
+  <div class="block">
+    <h2>🔷 8. Бюджет шагов и токенов</h2>
+<pre><code>class Budget:
+    def __init__(self, max_steps=20, max_tokens=50_000):
+        self.steps_left, self.tokens_left = max_steps, max_tokens
+
+    def spend(self, tokens):
+        self.steps_left -= 1
+        self.tokens_left -= tokens
+        return self.steps_left &gt;= 0 and self.tokens_left &gt;= 0
+
+budget = Budget(max_steps=3, max_tokens=1000)
+for step_cost in (400, 400, 400):
+    if not budget.spend(step_cost):
+        print("бюджет исчерпан — остановка")
+        break</code></pre>    <ul>
+      <li>Лимит нужен всегда: агент без него способен зациклиться</li>
+      <li>Следите и за повторами: одинаковый вызов подряд — признак цикла</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 9. Плюсы и минусы</h2>
+    <p><strong>Плюсы</strong></p>    <ul>
+      <li>явная цель и прогресс — легко отлаживать</li>
+      <li>можно проверять шаги и параллелить независимые</li>
+      <li>дешевле ReAct на длинных задачах</li>
+    </ul>    <p><strong>Минусы</strong></p>    <ul>
+      <li>план устаревает при неожиданных результатах</li>
+      <li>лишние вызовы на планирование и рефлексию</li>
+      <li>модель может строить правдоподобный, но невыполнимый план</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 10. Когда использовать</h2>
+    <ul>
+      <li>задача длинная и разбивается на понятные шаги</li>
+      <li>шаги зависят друг от друга (есть порядок)</li>
+      <li>результат можно проверить (тесты, правила)</li>
+      <li>для коротких задач хватит одного вызова или ReAct</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h2>🔷 11. Частые ошибки</h2>
+    <ul>
+      <li>❌ нет лимита шагов и токенов</li>
+      <li>❌ план без проверки зависимостей (циклы, лишние шаги)</li>
+      <li>❌ рефлексия без внешнего сигнала</li>
+      <li>❌ перепланирование с нуля вместо правки остатка</li>
+      <li>❌ слишком мелкая декомпозиция — расходы на координацию больше пользы</li>
+    </ul>    <blockquote>«План — гипотеза. Агент должен уметь его проверять и менять, а не просто выполнять.»</blockquote>
+  </div>
+
+</div>
+</body>
+</html>

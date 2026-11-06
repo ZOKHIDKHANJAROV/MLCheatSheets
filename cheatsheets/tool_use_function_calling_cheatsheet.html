@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вызов инструментов (Function Calling) Cheatsheet — 3 колонки</title>
+  <style>
+    @media screen { body { font-family: -apple-system, sans-serif; color: #333; background: #fafcff; padding: 10px; 
+        min-width: 900px;
+      } }
+        .container {
+      max-width: 100%;
+    }
+
+    /* Responsive columns: 3 columns on wide screens, fewer on narrow */
+    @media (min-width: 900px) {
+      .container {
+        column-count: 3;
+        column-gap: 20px;
+      }
+    }
+    
+    @media (min-width: 600px) and (max-width: 899px) {
+      .container {
+        column-count: 2;
+        column-gap: 20px;
+      }
+    }
+    
+    @media (max-width: 599px) {
+      .container {
+        column-count: 1;
+      }
+    }
+    .block { break-inside: avoid; margin-bottom: 1.2em; padding: 12px; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    h1 { font-size: 1.6em; font-weight: 700; color: #1a5fb4; text-align: center; margin: 0 0 8px; column-span: all; }
+    .subtitle { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 12px; column-span: all; }
+    h2 { font-size: 1.15em; font-weight: 700; color: #1a5fb4; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid #e0e7ff; }
+    p, ul, ol { font-size: 0.92em; margin: 0.6em 0; }
+    ul, ol { padding-left: 18px; }
+    code { font-family: 'Consolas', monospace; background-color: #f0f4ff; padding: 1px 4px; border-radius: 3px; font-size: 0.88em; }
+    pre { background-color: #f0f4ff; padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 0.84em; margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82em; margin: 6px 0; }
+    th { background-color: #e6f0ff; text-align: left; padding: 4px 6px; font-weight: 600; }
+    td { padding: 4px 6px; border-bottom: 1px solid #f0f4ff; }
+    blockquote { font-style: italic; margin: 8px 0; padding: 6px 10px; background: #f8fbff; border-left: 2px solid #1a5fb4; font-size: 0.88em; }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+    }
+
+    @media print {
+      .container { column-gap: 12px; }
+      .block { box-shadow: none; }
+      code, pre, table { font-size: 0.78em; }
+      h1 { font-size: 1.4em; }
+      h2 { font-size: 1em; }
+    }
+  </style>
+<!-- mlcs-theme -->
+<link rel="stylesheet" href="../assets/theme.css?v=3">
+<script src="../assets/theme.js?v=3"></script>
+</head>
+<body>
+<div class="container">
+  <h1>🛠️ Вызов инструментов (Function Calling)</h1>
+  <div class="subtitle">📅 Ноябрь 2026 · код — с «фейковой LLM», без реальных вызовов API</div>
+
+  <div class="block">
+    <h2>🔷 1. Идея</h2>
+
+    <p><strong>Function calling</strong> — механизм, при котором модель не выполняет код сама, а возвращает <strong>структурированный запрос</strong>: имя функции и аргументы в JSON. Выполняет функцию ваш код, результат возвращается модели.</p>
+    <blockquote>Модель решает, <em>что</em> вызвать. Вызывает и отвечает за безопасность — приложение.</blockquote>
+  </div><!-- mlcs-visual:start --><div class="block mlcs-visual" id="vis-tool_use_function_calling-1"><h2>🖼 Вызов инструмента шаг за шагом</h2><figure><svg viewBox="0 0 380 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Последовательность вызова инструмента"><defs><marker id="toolcall-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="c5" x="10" y="6" width="100" height="30" rx="6"/><text x="60.0" y="25.0" text-anchor="middle">Модель</text><rect class="c1" x="140" y="6" width="100" height="30" rx="6"/><text x="190.0" y="25.0" text-anchor="middle">Приложение</text><rect class="c3" x="270" y="6" width="100" height="30" rx="6"/><text x="320.0" y="25.0" text-anchor="middle">Инструмент</text><line class="ln s6" x1="60" y1="38" x2="60" y2="262" stroke-dasharray="4 3"/><line class="ln s6" x1="190" y1="38" x2="190" y2="262" stroke-dasharray="4 3"/><line class="ln s6" x1="320" y1="38" x2="320" y2="262" stroke-dasharray="4 3"/><line class="ln" x1="190" y1="66" x2="60" y2="66" marker-end="url(#toolcall-a)"/><text x="125.0" y="61" class="mut" text-anchor="middle" style="font-size:10px">messages + схемы</text><line class="ln" x1="60" y1="102" x2="190" y2="102" marker-end="url(#toolcall-a)"/><text x="125.0" y="97" class="mut" text-anchor="middle" style="font-size:10px">tool_call: имя, args</text><line class="ln" x1="190" y1="138" x2="320" y2="138" marker-end="url(#toolcall-a)"/><text x="255.0" y="133" class="mut" text-anchor="middle" style="font-size:10px">валидация, вызов</text><line class="ln" x1="320" y1="174" x2="190" y2="174" stroke-dasharray="4 3" marker-end="url(#toolcall-a)"/><text x="255.0" y="169" class="mut" text-anchor="middle" style="font-size:10px">результат / ошибка</text><line class="ln" x1="190" y1="210" x2="60" y2="210" marker-end="url(#toolcall-a)"/><text x="125.0" y="205" class="mut" text-anchor="middle" style="font-size:10px">tool_result (id)</text><line class="ln" x1="60" y1="246" x2="190" y2="246" marker-end="url(#toolcall-a)"/><text x="125.0" y="241" class="mut" text-anchor="middle" style="font-size:10px">финальный текст</text><text x="190" y="282" class="mut" text-anchor="middle" style="font-size:10px">шаги 2–5 повторяются до финального текста или max_steps</text></svg><figcaption>Модель только просит вызвать функцию (tool_call), а приложение проверяет аргументы, выполняет её и возвращает tool_result с тем же id. Цикл повторяется, пока модель не ответит текстом.</figcaption></figure></div><!-- mlcs-visual:end -->
+  <div class="block">
+    <h2>🔷 2. JSON-схема инструмента</h2>
+
+    <pre><code>{
+  "name": "get_weather",
+  "description": "Температура в городе",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "city":  {"type": "string"},
+      "units": {"type": "string",
+                "enum": ["c", "f"]}
+    },
+    "required": ["city"]
+  }
+}</code></pre>
+    <p>Модель опирается на <code>name</code> и <code>description</code>, поэтому описание пишут как инструкцию: что делает и когда использовать.</p>
+  </div>
+  <div class="block">
+    <h2>🔷 3. Цикл вызова</h2>
+
+    <ol>
+      <li>Отправляем модели сообщения + список схем инструментов</li>
+      <li>Модель отвечает либо текстом, либо <code>tool_call</code> (имя, аргументы, id)</li>
+      <li>Приложение валидирует аргументы и выполняет функцию</li>
+      <li>Результат добавляется в историю как <code>tool_result</code> с тем же id</li>
+      <li>Снова вызываем модель — до финального текста или лимита шагов</li>
+    </ol>
+    <pre><code>for _ in range(max_steps):
+    reply = llm(messages, tools)
+    if not reply.tool_calls:
+        return reply.text
+    for call in reply.tool_calls:
+        messages.append(execute(call))
+return "лимит шагов"</code></pre>
+  </div>
+  <div class="block">
+    <h2>🔷 4. Полный пример (заглушка вместо LLM)</h2>
+<pre><code>SCHEMA = {
+    "name": "get_weather",
+    "description": "Температура воздуха в городе",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "city": {"type": "string"},
+            "units": {"type": "string", "enum": ["c", "f"]},
+        },
+        "required": ["city"],
+    },
+}
+TYPES = {"string": str, "integer": int, "number": (int, float)}
+
+def validate(args, schema):
+    """Возвращает список ошибок (пустой — аргументы корректны)."""
+    params = schema["parameters"]
+    errors = [f"нет поля {k}" for k in params.get("required", []) if k not in args]
+    for key, value in args.items():
+        spec = params["properties"].get(key)
+        if spec is None:
+            errors.append(f"лишнее поле {key}")
+        elif not isinstance(value, TYPES[spec["type"]]):
+            errors.append(f"{key}: ожидался {spec['type']}")
+        elif "enum" in spec and value not in spec["enum"]:
+            errors.append(f"{key}: допустимо {spec['enum']}")
+    return errors
+
+WEATHER = {"Москва": 5, "Казань": 3}            # условные данные
+
+def get_weather(city, units="c"):
+    t = WEATHER[city]
+    return t if units == "c" else round(t * 9 / 5 + 32, 1)
+
+REGISTRY = {"get_weather": (SCHEMA, get_weather)}
+
+def execute(call):
+    """Выполняет вызов и всегда возвращает tool_result (даже при ошибке)."""
+    result = {"role": "tool", "tool_call_id": call["id"], "is_error": False}
+    schema, fn = REGISTRY.get(call["name"], (None, None))
+    if fn is None:
+        return {**result, "is_error": True, "content": "неизвестный инструмент"}
+    errors = validate(call["arguments"], schema)
+    if errors:
+        return {**result, "is_error": True, "content": "; ".join(errors)}
+    try:
+        return {**result, "content": fn(**call["arguments"])}
+    except Exception as exc:                      # ошибка инструмента — тоже наблюдение
+        return {**result, "is_error": True, "content": f"сбой: {exc!r}"}
+
+def fake_llm(messages):
+    """Заглушка модели: сначала два параллельных вызова (один с ошибкой)."""
+    tools = [m for m in messages if m["role"] == "tool"]
+    if not tools:
+        return {"tool_calls": [
+            {"id": "c1", "name": "get_weather", "arguments": {"city": "Москва"}},
+            {"id": "c2", "name": "get_weather", "arguments": {"city": "Казань", "units": "k"}},
+        ]}
+    if any(m["is_error"] for m in tools) and len(tools) == 2:
+        return {"tool_calls": [
+            {"id": "c3", "name": "get_weather", "arguments": {"city": "Казань", "units": "f"}},
+        ]}
+    return {"content": "Москва: 5 °C, Казань: 37.4 °F"}
+
+def run(user_text, max_steps=4):
+    messages = [{"role": "user", "content": user_text}]
+    for _ in range(max_steps):
+        reply = fake_llm(messages)
+        if "tool_calls" not in reply:
+            return reply["content"]
+        messages.append({"role": "assistant", "tool_calls": reply["tool_calls"]})
+        for call in reply["tool_calls"]:          # независимые вызовы можно запускать параллельно
+            messages.append(execute(call))
+    return "превышен лимит шагов"
+
+print(run("Какая погода в Москве и Казани?"))   # Москва: 5 °C, Казань: 37.4 °F</code></pre>
+  </div>
+  <div class="block">
+    <h2>🔷 5. Параллельные вызовы</h2>
+
+    <p>Модель может вернуть <strong>несколько</strong> <code>tool_call</code> за один ход — если вызовы независимы (погода в двух городах).</p>
+    <ul>
+      <li>каждый результат возвращается со своим <code>tool_call_id</code></li>
+      <li>независимые вызовы можно запускать одновременно (потоки, asyncio)</li>
+      <li>зависимые вызовы (результат первого нужен второму) идут последовательно, в разных ходах</li>
+    </ul>
+  </div>
+  <div class="block">
+    <h2>🔷 6. Валидация и ошибки</h2>
+
+    <ul>
+      <li><strong>Проверяйте аргументы</strong> по схеме до выполнения: обязательные поля, типы, <code>enum</code>, диапазоны</li>
+      <li>Модель может выдумать функцию или аргумент — проверяйте имя по реестру</li>
+      <li><strong>Ошибку возвращайте модели</strong> как tool_result с понятным текстом: она сможет исправить вызов</li>
+      <li>Исключения инструмента не должны ронять весь цикл</li>
+    </ul>
+  </div>
+  <div class="block">
+    <h2>🔷 7. Ограничения цикла</h2>
+    <table><tr><th>Ограничитель</th><th>Зачем</th></tr><tr><td><code>max_steps</code></td><td>защита от бесконечных циклов</td></tr><tr><td>лимит токенов / стоимости</td><td>контроль бюджета</td></tr><tr><td>таймаут инструмента</td><td>не зависать на медленном API</td></tr><tr><td>белый список инструментов</td><td>модель не вызовет лишнего</td></tr><tr><td>подтверждение человеком</td><td>для необратимых действий</td></tr></table>
+  </div>
+  <div class="block">
+    <h2>🔷 8. Плюсы и минусы</h2>
+
+    <p><strong>Плюсы</strong></p>
+    <ul>
+      <li>структурированный вывод вместо разбора свободного текста</li>
+      <li>модель получает свежие данные и может действовать</li>
+      <li>инструменты легко добавлять и тестировать отдельно</li>
+    </ul>
+    <p><strong>Минусы</strong></p>
+    <ul>
+      <li>модель может ошибиться в аргументах или выбрать не тот инструмент</li>
+      <li>описания схем занимают контекст</li>
+      <li>риск инъекций через содержимое результатов</li>
+    </ul>
+  </div>
+  <div class="block">
+    <h2>🔷 9. Когда использовать</h2>
+
+    <ul>
+      <li>нужны актуальные данные (поиск, БД, погода, курсы)</li>
+      <li>нужны точные вычисления (калькулятор, код)</li>
+      <li>нужно совершить действие (создать задачу, отправить письмо)</li>
+      <li>нужен надёжный структурированный ответ</li>
+    </ul>
+    <p>Если ответ целиком известен модели и не требует внешних данных — инструмент не нужен.</p>
+  </div>
+  <div class="block">
+    <h2>🔷 10. Типичные ошибки</h2>
+
+    <ul>
+      <li>❌ Расплывчатое описание инструмента — модель выбирает его невпопад</li>
+      <li>❌ Нет валидации: аргументы идут в код «как есть»</li>
+      <li>❌ Ошибка инструмента скрыта — модель не знает, что вызов не удался</li>
+      <li>❌ Не сопоставлен <code>tool_call_id</code> с результатом</li>
+      <li>❌ Нет <code>max_steps</code> — модель бесконечно повторяет вызов</li>
+      <li>❌ Результат огромен и забивает контекст — его нужно обрезать или суммировать</li>
+      <li>❌ Опасная функция без прав и подтверждений</li>
+    </ul>
+    <blockquote>«Результаты инструментов — недоверенные данные: текст внутри них не должен становиться командой.»</blockquote>
+  </div>
+
+</div>
+</body>
+</html>
